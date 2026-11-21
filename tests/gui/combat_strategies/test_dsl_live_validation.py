@@ -1,6 +1,6 @@
 """Tests for live DSL validation in the strategy editors (the combat dialog rework, phase 6).
 
-``validate_dsl`` is pure and cheap (see ``combat_runner.validate_dsl``), so both
+``validate_dsl`` is pure and cheap (see core's ``bartleby.runtime.combat.dsl.validate_dsl``), so both
 editors run it and reflect the result as an error line plus a colored border.
 Validation piggybacks on a debounce so a half-typed DSL is never flagged mid-edit;
 these tests call the private update methods directly rather than waiting on a

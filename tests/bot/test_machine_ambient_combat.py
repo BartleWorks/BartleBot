@@ -16,6 +16,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bartleby.runtime.combat import fight as core_fight
 from wizwalker import XYZ
 
 from bartlebot.bot import ambient_combat
@@ -96,7 +97,7 @@ def combat(monkeypatch):
     )
     monkeypatch.setattr(combat_runner, "resolve_combat", mocks.resolve)
     monkeypatch.setattr(combat_runner, "seed_chat_baselines", mocks.seed)
-    monkeypatch.setattr(combat_runner, "_run_combat", mocks.fights)
+    monkeypatch.setattr(core_fight, "_run_combat", mocks.fights)
     monkeypatch.setattr(combat_runner, "poll_combat_drops", mocks.poll_drops)
     monkeypatch.setattr(ambient_combat, "_go_to_hub", mocks.hub)
     monkeypatch.setattr(collect_wisps, "collect_as_group", mocks.wisps)
@@ -416,82 +417,6 @@ async def test_no_port_map_skips_porting(fast, combat, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Holding the fighter's first cast
-# ---------------------------------------------------------------------------
-
-
-class _Clock:
-    def __init__(self, now: float = 100.0):
-        self.now = now
-
-    def __call__(self) -> float:
-        return self.now
-
-
-def _held(fighter, helper, clock: _Clock, *, phase=None):
-    from wizwalker.memory import DuelPhase
-
-    fighter.duel.duel_phase = AsyncMock(return_value=phase or DuelPhase.planning)
-    session = ambient_combat.AmbientSession(MagicMock(), [fighter, helper], [fighter], clock=clock)
-    pending = asyncio.get_running_loop().create_future()
-    return session, ambient_combat._Hold([helper]), {helper: pending}
-
-
-async def test_the_hold_expires_twenty_seconds_after_the_first_planning_phase():
-    fighter, helper = _client(), _client()
-    clock = _Clock(100.0)
-    session, hold, joins = _held(fighter, helper, clock)
-
-    assert await session._released(fighter, hold, joins) is False  # planning first seen at 100
-    clock.now = 100.0 + ambient_combat.AMBIENT_HELP_HOLD - 0.1
-    assert await session._released(fighter, hold, joins) is False
-    clock.now = 100.0 + ambient_combat.AMBIENT_HELP_HOLD
-    assert await session._released(fighter, hold, joins) is True
-
-
-async def test_a_join_moves_the_anchor_since_the_game_restarts_its_timer():
-    fighter, helper = _client(), _client()
-    clock = _Clock(100.0)
-    session, hold, joins = _held(fighter, helper, clock)
-    await session._released(fighter, hold, joins)
-    session.joined_at[helper] = 110.0
-
-    clock.now = 110.0 + ambient_combat.AMBIENT_HELP_HOLD - 0.1
-    assert await session._released(fighter, hold, joins) is False
-    clock.now = 110.0 + ambient_combat.AMBIENT_HELP_HOLD
-    assert await session._released(fighter, hold, joins) is True
-
-
-async def test_the_hold_waits_for_planning_to_start_counting():
-    from wizwalker.memory import DuelPhase
-
-    fighter, helper = _client(), _client()
-    clock = _Clock(100.0)
-    session, hold, joins = _held(fighter, helper, clock, phase=DuelPhase.execution)
-
-    clock.now = 500.0
-    assert await session._released(fighter, hold, joins) is False
-
-
-async def test_an_unreadable_phase_counts_the_hold_from_detection():
-    fighter, helper = _client(), _client()
-    clock = _Clock(100.0)
-    session, hold, joins = _held(fighter, helper, clock)
-    fighter.duel.duel_phase = AsyncMock(side_effect=RuntimeError("unreadable"))
-
-    clock.now = 100.0 + ambient_combat.AMBIENT_HELP_HOLD
-    assert await session._released(fighter, hold, joins) is True
-
-
-async def test_the_hold_ends_once_every_helper_is_in_or_has_given_up():
-    fighter, helper = _client(), _client()
-    session, hold, joins = _held(fighter, helper, _Clock())
-    joins[helper].set_result(False)  # gave up
-
-    assert await session._released(fighter, hold, joins) is True
-
-
-# ---------------------------------------------------------------------------
 # Where everyone ends up
 # ---------------------------------------------------------------------------
 
@@ -744,7 +669,7 @@ async def test_a_fight_is_fled_at_the_ambient_time_limit(fast, combat, monkeypat
         watch.note_fled(client)
         client.in_battle.return_value = False
 
-    monkeypatch.setattr(combat_runner, "_run_combat", fight)
+    monkeypatch.setattr(core_fight, "_run_combat", fight)
     caplog.set_level(logging.WARNING)
     await _session(machine, combat)
 

@@ -12,7 +12,9 @@ WHICH TOOLS
     once the install is complete.
 
     Core's snapshots (dialog captions, name tables, realm names) are core's, with their own
-    dumpers in ``bartleby-core/tools/``, run there (its ``docs/GAME_DATA.md``).
+    dumpers in ``bartleby-core/tools/``, run there (its ``docs/GAME_DATA.md``). Spell names are
+    core's too, but their dumper is here, since it reads BartleBot's type dumps: its snapshot is
+    diffed against the one core holds.
 
 A list of objects with a ``"key"`` (the badge categories) is compared key by key, with a
 note when the order of the shared keys changed, since that order is what the bot library's
@@ -32,6 +34,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from bartleby.runtime.game import spell_names
+
 REPO = Path(__file__).resolve().parents[2]
 DATA = REPO / "bartlebot" / "game" / "data"
 TEST_GAME_DATA = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101 Test\Data\GameData")
@@ -46,6 +50,8 @@ ROOT_WAD_TOOLS = (
     "world_names",
 )
 ZONE_WAD_TOOLS = ("entity_names", "reagent_nodes", "zone_names")
+#: Snapshots a tool here writes that live in core, and the file each is diffed against.
+CORE_SNAPSHOTS = {"spell_names.json": spell_names.NAMES_PATH}
 
 #: Top-level fields that change on every run and say nothing about the game.
 STAMPS = {"_comment", "generated", "source", "skipped", "errors"}
@@ -117,7 +123,7 @@ def main() -> int:
     failed = [] if args.no_regenerate else regenerate(args.game_data, args.out, args.zone_wads)
 
     for path in sorted(args.out.glob("*.json")):
-        shipped = DATA / path.name
+        shipped = CORE_SNAPSHOTS.get(path.name, DATA / path.name)
         if not shipped.exists():
             continue
         lines = differences(

@@ -1,7 +1,7 @@
 """Checking a DSL away from the GUI: the checker, a surface's deferred checks, and the surfaces using them.
 
 What matters is *where the parse ran*, so the tests here record every parse in this
-process: ``combat_runner._checked`` is the one place a parse happens, and it is wrapped to
+process: core's ``dsl._checked`` is the one place a parse happens, and it is wrapped to
 note the thread it ran on. A check run in the child process never reaches it, which is
 the point -- nothing parses here at all.
 """
@@ -13,6 +13,8 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 
 import pytest
+from bartleby.runtime.combat import dsl as combat_runner
+from bartleby.runtime.combat.dsl import dsl_check, known_dsl_check
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 
 from bartlebot.combat.strategy_store import StrategyKind, save_player_strategy
@@ -22,8 +24,6 @@ from bartlebot.gui.combat_strategies import dsl_checks
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks, DslChecker, checker
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
-from bartlebot.nodes import combat_runner
-from bartlebot.nodes.combat_runner import dsl_check, known_dsl_check
 
 _BROKEN = "not even close to valid (("
 _VALID = "any<damage> @ enemy"

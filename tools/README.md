@@ -15,7 +15,7 @@ game assets, either*).
 | `dump_badge_categories.py` | `badge_categories.json` |
 | `dump_entity_names.py` | `entity_names.json` |
 | `dump_reagent_nodes.py` | `reagent_nodes.json` |
-| `dump_spell_names.py` | `spell_names.json` |
+| `dump_spell_names.py` | core's `spell_names.json`, in `../bartleby-core/bartleby/runtime/game/data/` (it reads the type dumps here) |
 | `dump_spell_schools.py` | `spell_schools.json` |
 | `dump_stat_caps.py` | `stat_caps.json` |
 | `dump_world_names.py` | `world_names.json` |

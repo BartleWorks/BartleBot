@@ -8,7 +8,7 @@ documents, and which of its panels owns what.
 
 ## Never parse a combat DSL on the GUI thread
 
-A DSL check is an Earley parse, up to ~800 ms for a long strategy. `combat_runner.dsl_check`
+A DSL check is an Earley parse, up to ~800 ms for a long strategy. Core's `bartleby.runtime.combat.dsl.dsl_check`
 caches answers in memory and on disk, but a strategy just written or imported, or every
 strategy after a wizsprinter bump, has none, and asking for it from a widget freezes the
 window -- once per card in a list, and once per *keystroke* in a DSL box, since every

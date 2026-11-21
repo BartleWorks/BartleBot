@@ -11,8 +11,8 @@ running node and waits for the loop to park. Everything after that is here:
    refused leaves that player where it is too.
 2. The fighter's first cast is **held** until its helpers are in, or have given up, or
    AMBIENT_HELP_HOLD has passed since the later of its first planning phase and the latest
-   join. The game restarts its 30s planning timer on every join, so the fighter still casts
-   in round one.
+   join (core's ``bartleby.runtime.combat.hold``). The game restarts its 30s planning timer
+   on every join, so the fighter still casts in round one.
 3. **Every client seen in battle** gets its combat run with its own slot's strategy, whatever
    brought it there: a helper, a client that walked in, a bystander pulled into a second fight.
 4. After a **won** fight, anyone low collects wisps, then helpers still in the zone they
@@ -44,9 +44,11 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from bartleby.runtime.combat.dsl import parse_strategies
+from bartleby.runtime.combat.fight import CombatRun, FightEnd, FightResult
+from bartleby.runtime.combat.hold import FirstCastHold
 from bartleby.runtime.timing import (
     AMBIENT_COMBAT_MAX_DURATION,
-    AMBIENT_HELP_HOLD,
     ENTER_COMBAT_TIMEOUT,
     POLL_INTERVAL,
     WISP_COLLECT_TIMEOUT,
@@ -79,7 +81,7 @@ class _Start:
 class SessionEnd:
     """What the machine needs from a session."""
 
-    fight: combat_runner.FightResult
+    fight: FightResult
     fled: int = 0
     """How many fights were fled; each counts toward the flee limit."""
     recover: bool = False
@@ -87,15 +89,6 @@ class SessionEnd:
     log_out: list = field(default_factory=list)
     """The players still in a fight a relaunched player could not get back into, for crash
     recovery to log out. Empty outside crash recovery."""
-
-
-@dataclass
-class _Hold:
-    """One fighter's held first cast."""
-
-    helpers: list
-    planning_at: float | None = None
-    released: bool = False
 
 
 @dataclass
@@ -183,9 +176,12 @@ class AmbientSession:
         for fighter in self.fighters:
             await centers.publish(machine, fighter, self._slot[fighter])
 
-        run = combat_runner.CombatRun({c: self._slot[c] + 1 for c in clients}, machine.log, AMBIENT_COMBAT_MAX_DURATION)
+        run = CombatRun({c: self._slot[c] + 1 for c in clients}, machine.log, AMBIENT_COMBAT_MAX_DURATION)
         await run.identify()
-        holds = {f: _Hold([h for h, hf in self.helpers.items() if hf is f]) for f in self.fighters}
+        holds = {
+            f: FirstCastHold([h for h, hf in self.helpers.items() if hf is f], started=self._detected, clock=self.clock)
+            for f in self.fighters
+        }
         ported = asyncio.create_task(self._port(porters)) if porters else None
         joins = {
             h: asyncio.create_task(self._port_and_join(h, ported, centers) if h in porters else self._join(h, centers))
@@ -199,26 +195,26 @@ class AmbientSession:
             if ported is not None:
                 ported.cancel()
             run.cancel()
-        fight = run.result()
-        for number, exc in fight.errors:
+        result = run.result()
+        for number, exc in result.errors:
             self._log(f"error on P{number}: {exc}", logging.DEBUG)
-        if fight.end is combat_runner.FightEnd.STUCK:
+        if result.end is FightEnd.STUCK:
             self._log("the fight did not end after a flee was called for", logging.WARNING)
         if machine.is_stopped:
-            return SessionEnd(fight)  # the user has the clients now: nobody moves
+            return SessionEnd(result)  # the user has the clients now: nobody moves
         if self.log_out:
-            return SessionEnd(fight, recover=True, log_out=list(self.log_out))
+            return SessionEnd(result, recover=True, log_out=list(self.log_out))
 
         if self.participants:
             # In the background, so the FSM resumes as soon as the fight is over.
             combat_runner.start_combat_drop_poll(machine, self.participants, [self._slot[c] for c in self.participants])
 
         if not self.may_move:
-            return SessionEnd(fight, fled=int(fight.end is combat_runner.FightEnd.FLED or bool(self.idle_fled)))
-        if fight.end is combat_runner.FightEnd.STUCK:
-            return SessionEnd(fight, recover=True)  # players still in battle: moving them does nothing
+            return SessionEnd(result, fled=int(result.end is FightEnd.FLED or bool(self.idle_fled)))
+        if result.end is FightEnd.STUCK:
+            return SessionEnd(result, recover=True)  # players still in battle: moving them does nothing
         fled = await self._leave(centers, run.watch.fled | self.idle_fled)
-        return SessionEnd(fight, fled=fled, recover=self.force_recovery or not await self._all_home())
+        return SessionEnd(result, fled=fled, recover=self.force_recovery or not await self._all_home())
 
     async def _find_helpers(self) -> list:
         """Every client not in battle that is proven to share a fighter's realm, and where it stands.
@@ -316,7 +312,7 @@ class AmbientSession:
 
     async def _fight(self, run, centers, dsls: list[str], holds: dict, joins: dict) -> None:
         """Start each client's combat once it is in battle, until no one is and every task is done."""
-        await combat_runner.parse_strategies(dsls)
+        await parse_strategies(dsls)
         while True:
             if self.machine.is_stopped:
                 return
@@ -361,26 +357,11 @@ class AmbientSession:
                 stranded.append(client)
         return stranded
 
-    async def _released(self, fighter, hold: _Hold, joins: dict) -> bool:
+    async def _released(self, fighter, hold: FirstCastHold, joins: dict) -> bool:
         """Whether *fighter* may start casting: its helpers are all settled, or the hold ran out."""
         if hold.released:
             return True
-        now = self.clock()
-        if all(joins[h].done() for h in hold.helpers):
-            hold.released = True
-        else:
-            if hold.planning_at is None:
-                try:
-                    from wizwalker.memory import DuelPhase  # noqa: PLC0415
-
-                    if await fighter.duel.duel_phase() == DuelPhase.planning:
-                        hold.planning_at = now
-                except Exception:
-                    hold.planning_at = self._detected  # unreadable: count from detection
-            if hold.planning_at is not None:
-                anchor = max([hold.planning_at, *(self.joined_at.get(h, 0.0) for h in hold.helpers)])
-                hold.released = now >= anchor + AMBIENT_HELP_HOLD
-        if hold.released and hold.helpers:
+        if await hold.ready(fighter, lambda helper: joins[helper].done(), self.joined_at) and hold.joining:
             self._log(f"{self._p(fighter)} starts casting", logging.DEBUG)
         return hold.released
 

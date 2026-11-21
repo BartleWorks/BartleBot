@@ -17,6 +17,7 @@ import random
 from pathlib import Path
 
 import pytest
+from bartleby.runtime.combat.dsl import validate_dsl
 from bartleby.shared.combat_defaults import (
     SHIPPED_DEFAULT_PLAYER_ID,
     SHIPPED_DEFAULT_SUPPORT_ID,
@@ -26,7 +27,6 @@ from lark import Lark
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import TreeToConfig, get_sprinty_grammar
 from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only
 
-from bartlebot.nodes.combat_runner import validate_dsl
 from tests.strategies.fight import (
     AMPLIFY,
     ATTENUATE,

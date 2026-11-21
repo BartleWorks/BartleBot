@@ -1107,8 +1107,9 @@ class BotMachine:
         goes to its recovery state if anyone was left out of place. Guarded against
         re-entry and against conflicting with intentional combat nodes.
         """
+        from bartleby.runtime.combat.fight import slots_in_battle
+
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.combat_runner import slots_in_battle
 
         while not self._stop_flag.is_set():
             try:
@@ -1252,7 +1253,7 @@ class BotMachine:
         Where anyone ends up does not matter: the caller sends the bot to its recovery state
         either way. Never raises.
         """
-        from bartlebot.nodes.combat_runner import slots_in_battle
+        from bartleby.runtime.combat.fight import slots_in_battle
 
         if self._stop_flag.is_set():
             return []

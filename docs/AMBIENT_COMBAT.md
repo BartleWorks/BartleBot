@@ -7,6 +7,10 @@ unlikely to find them. Issue #116; fleeing is #111.
 
 The session lives in `bartlebot/bot/ambient_combat.py` (`AmbientSession`). The machine's part is
 detecting the fight, getting the running node out of the way, and acting on how the session ended.
+The fight itself is bartleby-core's, since BartleBuddy fights with it too (BartleBuddy #31, Stage 2):
+`bartleby.runtime.combat.fight` runs each player's combat and flees (`CombatRun`, `FightWatch`), and
+`bartleby.runtime.combat.hold` holds the first cast (`FirstCastHold`). Resolving the strategy and
+joining the fight stay BartleBot's, in `bartlebot/nodes/combat_runner.py`.
 
 ## How the game behaves
 
@@ -98,6 +102,7 @@ Players are named by number in every log line (P1, P2), never by name.
    `AMBIENT_HELP_HOLD` (20s) has passed since the **anchor**: the later of the fighter's first
    `planning` phase and the most recent join, since each join restarts the game's timer. If the
    phase cannot be read, the anchor is the detection. With no helpers the fight starts at once.
+   Each fighter's hold is core's `FirstCastHold`, asked by `AmbientSession._released`.
 6. **Fight everyone in battle.** Until no client is in battle and every combat task is done, any
    client seen in battle gets its combat run with **its own slot's** strategy
    (`resolve_combat(..., num_clients=len(clients), ambient=True)` gives one per slot): a helper,
@@ -161,7 +166,7 @@ the navigation map, or a failed teleport, goes straight to recovery: the relog t
 
 ## Fleeing and the flee limit
 
-A fight is fled by every one of our players in it, never by one alone (`combat_runner.FightWatch`):
+A fight is fled by every one of our players in it, never by one alone (core's `bartleby.runtime.combat.fight.FightWatch`):
 when none of them has held a castable damage card and no enemy has carried damage over time for
 several planning phases in a row, or once the fight runs past its time limit
 (`AMBIENT_COMBAT_MAX_DURATION` here, `max_duration` in `handle_combat`, both 600s).

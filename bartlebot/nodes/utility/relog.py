@@ -58,6 +58,7 @@ import asyncio
 import logging
 
 from bartleby.runtime.clients import group_manager
+from bartleby.runtime.combat.fight import slots_in_battle
 from bartleby.runtime.game import dialog_captions, wizard_names
 from bartleby.runtime.launcher import auto_select
 from bartleby.runtime.paths import (
@@ -80,7 +81,6 @@ from bartleby.runtime.timing import (
 from wizwalker.errors import ClientClosedError
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.combat_runner import slots_in_battle
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.settings_manager import SettingsManager
 

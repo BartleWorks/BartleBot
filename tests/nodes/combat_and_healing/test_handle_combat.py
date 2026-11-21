@@ -5,6 +5,7 @@ import logging
 from unittest.mock import AsyncMock, call, patch
 
 import pytest
+from bartleby.runtime.combat import fight as core_fight
 from wizwalker import XYZ
 
 import bartlebot.nodes.combat_and_healing.handle_combat as hc
@@ -46,7 +47,7 @@ def _patch_resolve_combat(combat_order: list[int]):
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.combat_runner._run_combat", new_callable=AsyncMock
+    "bartleby.runtime.combat.fight._run_combat", new_callable=AsyncMock
 )
 
 
@@ -159,10 +160,10 @@ async def test_timeout_during_sprinty_combat_fails():
         await asyncio.sleep(10)
 
     with (
-        patch("bartlebot.nodes.combat_runner._run_combat", new=AsyncMock(side_effect=_hang_combat)),
+        patch("bartleby.runtime.combat.fight._run_combat", new=AsyncMock(side_effect=_hang_combat)),
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
-        patch.object(combat_runner, "FLEE_TIMEOUT", 0.05),
+        patch.object(core_fight, "FLEE_TIMEOUT", 0.05),
     ):
         result = await hc.run(
             FakeMachine(),
@@ -678,8 +679,8 @@ async def test_an_unreadable_mana_reading_does_not_stop_the_fight():
 @pytest.mark.parametrize(
     ("end", "errors", "line"),
     [
-        (combat_runner.FightEnd.FLED, [], "fled the fight"),
-        (combat_runner.FightEnd.FINISHED, [(1, RuntimeError("boom"))], "P1: combat raised"),
+        (core_fight.FightEnd.FLED, [], "fled the fight"),
+        (core_fight.FightEnd.FINISHED, [(1, RuntimeError("boom"))], "P1: combat raised"),
     ],
 )
 async def test_a_fled_or_broken_fight_fails_without_polling_for_drops(end, errors, line):
@@ -688,7 +689,7 @@ async def test_a_fled_or_broken_fight_fails_without_polling_for_drops(end, error
     client.in_battle.return_value = True
     machine = FakeMachine()
     with (
-        patch.object(hc, "run_fight", AsyncMock(return_value=combat_runner.FightResult(end, errors))),
+        patch.object(hc, "run_fight", AsyncMock(return_value=core_fight.FightResult(end, errors))),
         patch.object(hc, "start_combat_drop_poll") as drop_poll,
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
@@ -704,7 +705,7 @@ async def test_the_fight_is_given_what_is_left_of_max_duration():
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
-    finished = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
+    finished = core_fight.FightResult(core_fight.FightEnd.FINISHED, [])
     with (
         patch.object(hc, "run_fight", AsyncMock(return_value=finished)) as run_fight,
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
@@ -724,7 +725,7 @@ async def test_a_fled_fight_counts_toward_the_flee_limit():
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
     machine = FakeMachine()
-    fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
+    fled = core_fight.FightResult(core_fight.FightEnd.FLED, [])
     with (
         patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
@@ -754,7 +755,7 @@ def _fled_on(level, source: str = "duel strategy 'Default Team Duel' (the shippe
         BotConfig(id="bot-f", name="Bot", initial="boss", recovery_state="boss", states=[boss], transitions=[])
     )
     machine.state = "boss"
-    fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
+    fled = core_fight.FightResult(core_fight.FightEnd.FLED, [])
     return machine, client, fled, ([LAST_RESORT_DSL], [], source, level)
 
 
@@ -807,7 +808,7 @@ async def test_a_won_fight_reports_no_flee():
     from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
 
     machine, client, _fled, resolved = _fled_on(Level.SHIPPED_DEFAULT)
-    won = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
+    won = core_fight.FightResult(core_fight.FightEnd.FINISHED, [])
     with (
         patch.object(hc, "resolve_combat", return_value=resolved),
         patch.object(hc, "run_fight", AsyncMock(return_value=won)),

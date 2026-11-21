@@ -11,6 +11,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bartleby.runtime.combat import fight as core_fight
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.nodes import combat_runner
@@ -187,7 +188,7 @@ async def test_an_ambient_fight_cancels_the_node_then_runs_it_again(monkeypatch)
 
     monkeypatch.setattr(combat_runner, "resolve_combat", MagicMock(return_value=(["dsl"], [], "test", None)))
     monkeypatch.setattr(combat_runner, "seed_chat_baselines", AsyncMock())
-    monkeypatch.setattr(combat_runner, "_run_combat", fight)
+    monkeypatch.setattr(core_fight, "_run_combat", fight)
     monkeypatch.setattr(combat_runner, "poll_combat_drops", AsyncMock(return_value=[]))
 
     task = asyncio.create_task(machine.run())

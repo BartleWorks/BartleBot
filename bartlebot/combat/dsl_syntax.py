@@ -4,7 +4,7 @@ Feeds the DSL editor's highlighting and completion (``gui/widgets/inputs/dsl_edi
 Pure — no Qt, no wizwalker — so all of it is testable without a ``QApplication``.
 
 This module *scans*; it does not parse. The grammar is wizsprinter's
-(``combat_config_parser.get_sprinty_grammar``) and ``combat_runner.dsl_error`` is
+(``combat_config_parser.get_sprinty_grammar``) and core's ``bartleby.runtime.combat.dsl.dsl_error`` is
 still the only judge of whether a DSL is valid. A parser cannot do this job: it
 has nothing to say about half a line, which is exactly what an editor holds while
 someone types, and Lark's "what could come next" query only exists for its LALR

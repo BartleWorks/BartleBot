@@ -1,6 +1,6 @@
 """Checking a combat DSL without holding up the window.
 
-A check is a full Earley parse (``combat_runner.dsl_check``): up to 800 ms for the longest
+A check is a full Earley parse (core's ``bartleby.runtime.combat.dsl.dsl_check``): up to 800 ms for the longest
 shipped strategy, on whatever thread asks. Cached answers come back at once, from memory
 or from disk, and those are nearly all of them -- but a strategy the user has just written
 or imported, or every strategy after a wizsprinter bump, has none yet, and asking for it
@@ -25,7 +25,7 @@ down, and the quit skips the Python teardown that would have told it to leave, s
 watches the app's process and ends with it (``combat/dsl_check_worker.py``). Before that, every
 session that started one left it running after the app had gone.
 
-The child only parses (``combat_runner.check_dsl_uncached``); the answer comes back here
+The child only parses (``dsl.check_dsl_uncached``); the answer comes back here
 and is stored in this process's caches, so the two never write the cache file at once.
 If the process cannot be had -- it failed to start, or died -- checks fall back to a
 thread, which is slower for the GUI but still never parses on it.
@@ -40,11 +40,11 @@ from collections.abc import Callable, Hashable
 from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 
+from bartleby.runtime.combat.dsl import DslCheck, check_dsl_uncached, known_dsl_check, store_dsl_check
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
 from bartlebot.combat.dsl_check_worker import exit_with_parent
 from bartlebot.combat.strategy_summary import Validate
-from bartlebot.nodes.combat_runner import DslCheck, check_dsl_uncached, known_dsl_check, store_dsl_check
 
 logger = logging.getLogger(__name__)
 

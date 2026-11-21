@@ -4,14 +4,14 @@ import asyncio
 import logging
 import time
 
+from bartleby.runtime.combat.fight import FightEnd, run_fight
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     FightCenter,
-    FightEnd,
     duel_center,
     join_fight,
     resolve_combat,
-    run_fight,
     seed_chat_baselines,
     start_combat_drop_poll,
 )

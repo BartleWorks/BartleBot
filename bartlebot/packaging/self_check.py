@@ -195,14 +195,13 @@ def check_shared_set(root: Path) -> str:
 
 def game_data_files() -> list[Path]:
     """Every file under ``game/data/`` the app reads, by the path its reader holds."""
-    from bartleby.runtime.game import dialog_captions, name_tables, realms
+    from bartleby.runtime.game import dialog_captions, name_tables, realms, spell_names
 
     from bartlebot.game import (  # noqa: PLC0415
         badge_categories,
         entity_names,
         restricted_zones,
         scales,
-        spell_names,
         spell_schools,
         stat_caps,
         worlds,
@@ -257,6 +256,7 @@ def check_native(_root: Path) -> str:
     window, #278), Pillow's DDS decoder (game art), Velopack, and cryptography's Ed25519 (the update feed's
     signature)."""
     import velopack  # noqa: F401, PLC0415
+    from bartleby.runtime.combat.dsl import check_dsl_uncached  # noqa: PLC0415
     from bartleby.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
     from curl_cffi import requests  # noqa: F401, PLC0415
     from PIL import DdsImagePlugin, Image  # noqa: F401, PLC0415
@@ -265,7 +265,6 @@ def check_native(_root: Path) -> str:
     # no window: a build missing either would fail only once a user met a challenge.
     from webview.platforms import edgechromium  # noqa: F401, PLC0415
 
-    from bartlebot.nodes.combat_runner import check_dsl_uncached  # noqa: PLC0415
     from bartlebot.updates.feed import verify  # noqa: PLC0415
 
     checked = check_dsl_uncached(LAST_RESORT_DSL)
