@@ -48,4 +48,13 @@ def test_every_tool_it_runs_is_one_of_bartlebots_and_writes_a_shipped_file():
     # failed on every run, and compared against a file BartleBot no longer ships.
     for name in snapshots.ROOT_WAD_TOOLS + snapshots.ZONE_WAD_TOOLS:
         assert (snapshots.REPO / "tools" / f"dump_{name}.py").is_file(), name
-        assert (snapshots.DATA / f"{name}.json").is_file(), name
+        shipped = snapshots.CORE_SNAPSHOTS.get(f"{name}.json", snapshots.DATA / f"{name}.json")
+        assert shipped.is_file(), name
+
+
+def test_spell_names_are_diffed_against_cores_snapshot():
+    """Their dumper is BartleBot's, for its type dumps, but the snapshot is core's (BartleBuddy #31)."""
+    from bartleby.runtime.game import spell_names
+
+    assert snapshots.CORE_SNAPSHOTS == {"spell_names.json": spell_names.NAMES_PATH}
+    assert not (snapshots.DATA / "spell_names.json").exists()

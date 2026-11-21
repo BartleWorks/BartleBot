@@ -34,12 +34,12 @@ from functools import cache, lru_cache
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from bartleby.runtime.combat.dsl import _combat_provider
 from wizwalker.extensions.wizsprinter import sprinty_combat
 from wizwalker.memory import EffectTarget, SpellEffects
 from wizwalker.memory.memory_objects.enums import HangingDisposition
 
 from bartlebot.combat.strategy_store import load_player_strategy
-from bartlebot.nodes.combat_runner import _combat_provider
 from bartlebot.paths import project_root
 from tests.wizsprinter.fakes import Card, Effect, Hanging, Member, fake_combat
 

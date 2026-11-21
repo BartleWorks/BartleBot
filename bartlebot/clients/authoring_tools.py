@@ -46,12 +46,13 @@ from types import SimpleNamespace
 
 from bartleby.runtime.actions.helpers import Member, SpeedBoost
 from bartleby.runtime.arbiter import Arbiter
+from bartleby.runtime.combat.fight import _run_combat
 from bartleby.runtime.game import wizard_names
 from bartleby.runtime.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL
 
 from bartlebot.bot.client_health_monitor import restriction_for
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
+from bartlebot.nodes.combat_runner import resolve_combat
 
 logger = logging.getLogger(__name__)
 

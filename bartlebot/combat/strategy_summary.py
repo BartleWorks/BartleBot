@@ -18,9 +18,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from bartleby.runtime.combat.dsl import validate_dsl
+
 from bartlebot.combat.slot_order import unfixed_slot_uses
 from bartlebot.content.store_roots import Origin
-from bartlebot.nodes.combat_runner import validate_dsl
 
 #: Answers a DSL's parse error, or None: :func:`validate_dsl`, or a stand-in that answers
 #: only from checks already known (``gui/combat_strategies/dsl_checks.py``).

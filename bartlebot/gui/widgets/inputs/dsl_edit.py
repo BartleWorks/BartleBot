@@ -1,7 +1,7 @@
 """Text boxes for the combat DSL: syntax coloring, underlines, and completion.
 
 Two kinds of underline: a parse error, in ``error``, and a spell name no card has, in
-``syntax_warning`` — ``combat_runner.dsl_error`` and ``dsl_warnings`` decide both.
+``syntax_warning`` — core's ``bartleby.runtime.combat.dsl.dsl_error`` and ``dsl_warnings`` decide both.
 
 Two classes, because the DSL is edited in two widgets of different Qt types —
 ``DslPlainTextEdit`` for the Player Strategies tab and ``DslGrowingTextEdit`` for an
@@ -30,13 +30,13 @@ import logging
 import re
 
 from bartleby.qt.theming.theme import THEME
+from bartleby.runtime.combat.dsl import DslError, DslWarning
 from PyQt6.QtCore import QEvent, QStringListModel, Qt, QTimer
 from PyQt6.QtGui import QKeyEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument
 from PyQt6.QtWidgets import QCompleter, QPlainTextEdit, QWidget
 
 from bartlebot.combat import dsl_syntax
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
-from bartlebot.nodes.combat_runner import DslError, DslWarning
 
 logger = logging.getLogger(__name__)
 

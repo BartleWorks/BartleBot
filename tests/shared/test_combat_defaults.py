@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.runtime.combat.dsl import validate_dsl
 from bartleby.shared import combat_defaults
 from bartleby.shared.combat_defaults import (
     LAST_RESORT_DSL,
@@ -33,8 +34,6 @@ from bartleby.shared.combat_defaults import (
 from bartleby.shared.official_set import set_version
 from bartleby.shared.store_files import index_dir, slugify
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-
-from bartlebot.nodes.combat_runner import validate_dsl
 
 STRATEGIES = Path(__file__).resolve().parents[2] / "strategies"
 DUELS = STRATEGIES / "duel"

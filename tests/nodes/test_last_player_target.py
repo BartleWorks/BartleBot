@@ -12,6 +12,7 @@ a four-player team, and only when read by somebody who isn't the hitter.
 from __future__ import annotations
 
 import pytest
+from bartleby.runtime.combat.dsl import validate_dsl
 from lark import Lark
 from wizwalker.extensions.wizsprinter.combat_backends.combat_api import TargetType
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (
@@ -19,8 +20,6 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
     get_sprinty_grammar,
 )
 from wizwalker.extensions.wizsprinter.sprinty_combat import SprintyCombat
-
-from bartlebot.nodes.combat_runner import validate_dsl
 
 
 @pytest.fixture(scope="module")

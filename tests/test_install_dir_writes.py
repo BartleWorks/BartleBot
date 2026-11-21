@@ -14,13 +14,13 @@ import pytest
 from bartleby.qt.app.logging_setup import session_log_dir
 from bartleby.qt.app.ui_state import UiState
 from bartleby.runtime.clients import wizwalker_cache
+from bartleby.runtime.combat import dsl_check_cache
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 from bartleby.shared.vendor import vendor_dir
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.combat import dsl_check_cache
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import save_bot_strategy, save_player_strategy
 from bartlebot.content import bot_roots

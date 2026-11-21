@@ -29,11 +29,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 from bartleby.runtime.clients import game_keys
+from bartleby.runtime.combat.fight import slots_in_battle
 from bartleby.runtime.game.key_bindings import GameAction, KeyMap, action_label
 from bartleby.runtime.launcher.launch_profile import quick_friend_teleport_on
 from bartleby.shared.game_install import install_of_client, process_executable
-
-from bartlebot.nodes.combat_runner import slots_in_battle
 
 logger = logging.getLogger(__name__)
 

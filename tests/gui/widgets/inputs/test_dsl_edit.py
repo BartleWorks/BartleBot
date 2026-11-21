@@ -7,6 +7,7 @@ around the completion popup the way Qt's completer expects.
 
 import pytest
 from bartleby.qt.theming.theme import DARK, LIGHT, active_theme, set_theme_instance
+from bartleby.runtime.combat.dsl import dsl_error, dsl_warnings
 from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtGui import QColor, QTextCharFormat, QTextCursor
@@ -16,7 +17,6 @@ from bartlebot.combat import dsl_syntax
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit, DslPlainTextEdit
-from bartlebot.nodes.combat_runner import dsl_error, dsl_warnings
 
 _BROKEN = "any<damag> @ enemy"  # stops parsing at line 1, column 5
 

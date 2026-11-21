@@ -9,10 +9,10 @@ import inspect
 import re
 
 import pytest
+from bartleby.runtime.combat.dsl import validate_dsl
 
 from bartlebot.combat import dsl_syntax as ds
 from bartlebot.combat.dsl_syntax import Context, Kind
-from bartlebot.nodes.combat_runner import validate_dsl
 
 
 def _grammar() -> str:
@@ -50,9 +50,8 @@ def test_move_keywords_match_the_grammar():
 
 
 def test_discard_parses_as_the_move_the_combat_code_special_cases():
+    from bartleby.runtime.combat.dsl import _combat_provider
     from wizwalker.extensions.wizsprinter.combat_backends.combat_api import TargetType
-
-    from bartlebot.nodes.combat_runner import _combat_provider
 
     config = _combat_provider("discard @ spell(Tempest, any<aoe>)").config
     move = config.infinite_rounds[0].priorities[0]

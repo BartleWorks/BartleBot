@@ -61,6 +61,7 @@ from bartleby.qt.widgets.buttons.icon_button import IconButton
 from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.labels.rule_heading import RuleHeading
+from bartleby.runtime.combat.dsl import DslError, dsl_error, dsl_warning_text, dsl_warnings
 from bartleby.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -76,7 +77,6 @@ from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
-from bartlebot.nodes.combat_runner import DslError, dsl_error, dsl_warning_text, dsl_warnings
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
 #: each carries. Module level because the tests name them and because ``choose_strategy``
