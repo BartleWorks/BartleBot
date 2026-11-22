@@ -15,11 +15,11 @@ import re
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.combat.strategy_store import (
     Origin,
-    StrategyKind,
     delete_player_strategy,
     fingerprint,
     list_player_strategies,

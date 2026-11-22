@@ -16,9 +16,9 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.runtime.combat.strategy_summary import format_combat_order
 from PIL import Image
 
-from bartlebot.combat.strategy_summary import format_combat_order
 from bartlebot.game import card_art
 from bartlebot.game.art_extraction import (
     DUEL_SLOT_ICON_SOURCES,

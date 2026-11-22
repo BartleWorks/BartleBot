@@ -50,16 +50,16 @@ from bartleby.qt.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.combat.strategy_summary import summarize_duel
 from bartleby.shared.combat_defaults import SHIPPED_DUEL_IDS, TeamSize, chosen_default, set_default_choice
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.store_files import held_listings
+from bartleby.shared.strategy_library import StrategyKind
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
+from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.combat.combat_resolution import SIZE_RANGE, default_choice_notes
-from bartlebot.combat.strategy_store import StrategyKind
-from bartlebot.combat.strategy_summary import summarize_duel
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
@@ -198,7 +198,7 @@ class DefaultDuelCard(SettingCard):
         since a default is for every bot. Opened from a click, a synchronous slot, as
         ``exec()`` must be (``bartlebot/gui/CLAUDE.md``, qasync).
         """
-        ws = StrategyWorkingSet.from_store()
+        ws = load_working_set()
         current = self._chosen or SHIPPED_DUEL_IDS[self._size]
         dlg = CombatStrategyDialog(
             ws,
@@ -218,7 +218,7 @@ class DefaultDuelCard(SettingCard):
 
     def _redraw_now(self) -> None:
         self._checks.reset()
-        library = StrategyWorkingSet.from_store()
+        library = load_working_set()
         duel = library.get(StrategyKind.DUEL, self._chosen) if self._chosen else None
         notes = default_choice_notes(self._size, self._chosen)
         shown = duel or library.get(StrategyKind.DUEL, SHIPPED_DUEL_IDS[self._size])
@@ -228,9 +228,7 @@ class DefaultDuelCard(SettingCard):
             self._strategy_card.deleteLater()
             self._strategy_card = None
         if shown is not None:
-            summary = summarize_duel(
-                shown, library.lookup().players, name=shown.name, validate=self._checks.validator()
-            )
+            summary = summarize_duel(shown, library.players, name=shown.name, validate=self._checks.validator())
             # With its source pill, as the combat dialog draws it: Official for the
             # recommended one, and whatever the user's choice is.
             summary = replace(summary, source=library.status(StrategyKind.DUEL, shown.id))

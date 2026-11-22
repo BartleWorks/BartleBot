@@ -33,7 +33,9 @@ unaffected.
 
 Finding, naming and writing a file by the id inside it lives in
 :mod:`bartleby.shared.store_files`, which the shared library uses too; it is
-re-exported here because every store imports it from this module.
+re-exported here because every store imports it from this module. So are the Source
+words, ``SOURCE_LABELS`` and ``LISTED_ORIGINS``, core's since the strategy tags moved
+there (BartleBuddy #31, Stage 5).
 """
 
 from __future__ import annotations
@@ -43,6 +45,8 @@ from pathlib import Path
 
 from bartleby.shared import official_set
 from bartleby.shared.store_files import (
+    LISTED_ORIGINS,
+    SOURCE_LABELS,
     Origin,
     declared_id,
     delete_by_id,
@@ -90,23 +94,6 @@ DEV_ENV_VAR = "BARTLEBOT_DEV"
 def dev_mode() -> bool:
     """Whether the default user root is redirected to the project root."""
     return os.environ.get(DEV_ENV_VAR, "") not in ("", "0")
-
-
-#: What every surface calls where an item comes from: bots, templates, subgraphs and
-#: strategies alike, so no two of them describe the same origin in two vocabularies.
-#: "Official" means shipped, which means tested and proven in game: it is worked out from
-#: the root a file is in, never read from the file, so nothing a user receives can claim
-#: it (#149). "Custom" rather than "User": it is the user's own, in one word.
-SOURCE_LABELS = {
-    Origin.SHIPPED: "Official",
-    Origin.SHIPPED_OVERRIDE: "Official (modified)",
-    Origin.USER: "Custom",
-    Origin.MISSING: "Missing",
-}
-
-#: The origins a list can show, in the order a Source filter offers them. Missing is not
-#: one: a missing item is never listed.
-LISTED_ORIGINS: tuple[Origin, ...] = (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER)
 
 
 #: What an override's pill adds when the Official item under it has changed since the

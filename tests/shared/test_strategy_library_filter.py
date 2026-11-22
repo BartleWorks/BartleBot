@@ -13,12 +13,12 @@ Strategy Library window's versions did; the window itself was retired by #4.
 """
 
 import pytest
+from bartleby.runtime.combat.strategy_summary import StrategySummary
+from bartleby.runtime.combat.strategy_workset import StrategyWorkingSet
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from PyQt6.QtCore import Qt
 
-from bartlebot.combat.strategy_store import StrategyKind
-from bartlebot.combat.strategy_summary import StrategySummary
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import (
     CombatStrategyDialog,
@@ -41,9 +41,7 @@ def store(tmp_path, monkeypatch):
 
 
 def _dialog(tmp_path, players=(), duels=(), decks=(), **kw) -> CombatStrategyDialog:
-    ws = StrategyWorkingSet(
-        players=list(players), duels=list(duels), decks=list(decks), root=tmp_path, user_root=tmp_path
-    )
+    ws = StrategyWorkingSet(players=list(players), duels=list(duels), decks=list(decks), roots=(tmp_path, tmp_path))
     return CombatStrategyDialog(ws, parent=None, **kw)
 
 

@@ -2759,7 +2759,7 @@ def test_file_combat_strategies_opens_the_library_without_the_bot_strategy(qapp,
 
     ws = MockDlg.call_args.args[0]
     assert MockDlg.call_args.kwargs["mode"] is DialogMode.LIBRARY
-    assert ws.bot_strategy is None and ws.bot_id is None
+    assert ws.owner is None and not ws.takes_owner
 
 
 # ---------------------------------------------------------------------------

@@ -404,7 +404,7 @@ class Decks:
         gets its name and nothing else, which is the honest answer: a Fire
         wizard has no stand-in for a Storm hitter.
         """
-        from bartlebot.combat.card_kinds import describe_kind  # noqa: PLC0415
+        from bartleby.runtime.combat.card_kinds import describe_kind  # noqa: PLC0415
 
         kind = describe_kind(report.kinds.get(name))
         line = f"{name} — {kind}" if kind else name

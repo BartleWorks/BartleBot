@@ -3,11 +3,11 @@
 Shaped like the bot library's top bar, and for the same reasons: filters first, then
 the search box filling what they leave, and the *selected* values underneath as
 removable chips, with the vocabulary itself kept behind the pickers. Which pickers a
-tab gets is :mod:`bartlebot.combat.strategy_tags`' business — Source everywhere, Role on
+tab gets is :mod:`bartleby.runtime.combat.strategy_tags`' business — Source everywhere, Role on
 Player and Deck, School on Duel and Player, Team size on Duel alone.
 
 The bar reads nothing and filters nothing. It holds a selection, says when it has
-changed, and hands it over as a :class:`~bartlebot.combat.strategy_tags.StrategyFilter`; the
+changed, and hands it over as a :class:`~bartleby.runtime.combat.strategy_tags.StrategyFilter`; the
 page applies it. Nothing here persists: every opening of the dialog starts
 unfiltered, because a remembered filter hiding entries is exactly the "where did my
 strategy go" a Pick-mode visitor cannot diagnose.
@@ -23,23 +23,23 @@ from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.layout.discard import discard_widget
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow
 from bartleby.qt.widgets.pills.pill import NeutralChip
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-
-from bartlebot.combat.deck_io import PIP_SCHOOLS
-from bartlebot.combat.strategy_store import StrategyKind
-from bartlebot.combat.strategy_tags import (
+from bartleby.runtime.combat.strategy_tags import (
     KIND_GROUPS,
     SCHOOL_KINDS,
     SOURCE,
     TEAM_SIZE_KINDS,
     TEAM_SIZES,
-    THIS_BOT_SOURCE,
     StrategyFacets,
     StrategyFilter,
     count_facets,
     team_label,
 )
+from bartleby.shared.strategy_library import StrategyKind
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+
+from bartlebot.combat.bot_strategy_owner import THIS_BOT_SOURCE
+from bartlebot.combat.deck_io import PIP_SCHOOLS
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
 from bartlebot.gui.widgets.pills.tag_pill import TagChip

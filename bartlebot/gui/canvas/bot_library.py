@@ -22,6 +22,7 @@ from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartleby.qt.widgets.pills.pill import NeutralPill
+from bartleby.runtime.combat.strategy_tags import SOURCE
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import (
     QIcon,
@@ -38,7 +39,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.content import bot_roots, bot_summary
 from bartlebot.content.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group

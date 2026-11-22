@@ -48,7 +48,7 @@ a filter, the full detail on the right, unelided, with a usage count — the sha
 WHAT IT IS A VIEW OF
 --------------------
 
-A :class:`~bartlebot.combat.strategy_workset.StrategyWorkingSet` — deep copies, edited
+A :class:`~bartleby.runtime.combat.strategy_workset.StrategyWorkingSet` — deep copies, edited
 freely, written only by ``commit()``. Nothing below this dialog decides when a
 file is written any more. See that module for why dirtiness is derived rather
 than reported.
@@ -81,7 +81,7 @@ TAGS, FILTERS AND FAVORITES (#125)
 
 Each tab has a :class:`~bartlebot.gui.combat_strategies.filter_bar.StrategyFilterBar`
 across its top: facet pickers and the search box, with the selection as chips below.
-:mod:`bartlebot.combat.strategy_tags` holds the vocabulary and the matching rule.
+:mod:`bartleby.runtime.combat.strategy_tags` holds the vocabulary and the matching rule.
 
 Favorites are the one thing here that is *not* inside the Save/Cancel boundary. A
 star is saved to the user's settings on the click, because it is a preference about
@@ -108,7 +108,24 @@ from bartleby.qt.widgets.labels.elided_label import apply_muted_color
 from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartleby.runtime.combat.strategy_summary import (
+    StrategySummary,
+    name_list,
+    summarize_deck,
+    summarize_duel,
+    summarize_player,
+)
+from bartleby.runtime.combat.strategy_tags import (
+    KIND_GROUPS,
+    STORED_GROUPS,
+    StrategyFacets,
+    facets_match,
+    normalize_strategy_tags,
+    tag_groups,
+)
+from bartleby.runtime.combat.strategy_workset import OWN_KINDS, Conflict, SharedUse, StrategyOwner, StrategyWorkingSet
 from bartleby.shared.store_files import held_listings
+from bartleby.shared.strategy_library import StrategyKind
 from PyQt6.QtCore import QEvent, QObject, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -129,24 +146,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.bot_combat_strategy import own_players_of
-from bartlebot.combat.strategy_store import Origin, StrategyKind
-from bartlebot.combat.strategy_summary import (
-    StrategySummary,
-    name_list,
-    summarize_deck,
-    summarize_duel,
-    summarize_player,
-)
-from bartlebot.combat.strategy_tags import (
-    KIND_GROUPS,
-    STORED_GROUPS,
-    THIS_BOT_SOURCE,
-    StrategyFacets,
-    facets_match,
-    normalize_strategy_tags,
-)
-from bartlebot.combat.strategy_workset import OWN_KINDS, Conflict, SharedUse, StrategyWorkingSet
+from bartlebot.combat.bot_strategy_owner import THIS_BOT_SOURCE, BotStrategyOwner, bot_strategy_of
+from bartlebot.combat.strategy_store import Origin
 from bartlebot.content.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
@@ -225,6 +226,9 @@ DELETE_USED_NOTE = "those links will point at nothing until they are changed"
 #: never has to re-summarize the entry behind it.
 _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 
+#: The tag vocabulary the filter chips come from: the library's, with This bot first in Source.
+_TAG_GROUPS = tag_groups(THIS_BOT_SOURCE)
+
 #: Where a section header row keeps its text. Not DisplayRole: the item would paint it
 #: underneath the heading widget drawn over the row.
 _HEADING_ROLE = Qt.ItemDataRole.UserRole + 2
@@ -291,8 +295,8 @@ def summary_haystack(summary: StrategySummary) -> str:
     is only cheap relative to the summary it comes from — producing that summary
     parses every DSL the entry references.
     """
-    if summary.bot_strategy_name is not None:
-        source = f"{THIS_BOT_SOURCE} {summary.bot_strategy_name}"
+    if summary.owner_name is not None:
+        source = f"{THIS_BOT_SOURCE} {summary.owner_name}"
     else:
         source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
     tags = " ".join(summary.tags)
@@ -302,7 +306,7 @@ def summary_haystack(summary: StrategySummary) -> str:
 def summary_facets(summary: StrategySummary) -> StrategyFacets:
     """What the facet filter asks of an entry: its stored tags plus its derived source."""
     tags = set(summary.tags)
-    if summary.bot_strategy_name is not None:
+    if summary.owner_name is not None:
         tags.add(THIS_BOT_SOURCE)
     elif summary.source is not None:
         tags.add(SOURCE_LABELS[summary.source])
@@ -722,14 +726,14 @@ class _KindPage(QWidget):
             # duels names its own player strategies, and a library duel one only when
             # a hand-edited file broke the rule, which it then shows rather than hides.
             summary = summarize_duel(
-                item, self._ws.lookup().players, name=item.name, validate=self._checks.validator(item.id)
+                item, self._ws.in_reach(StrategyKind.PLAYER), name=item.name, validate=self._checks.validator(item.id)
             )
         elif self._kind is StrategyKind.PLAYER:
             summary = summarize_player(item, validate=self._checks.validator(item.id))
         else:
             summary = summarize_deck(item)
         if self._ws.is_own_entry(self._kind, item.id):
-            return replace(summary, bot_strategy_name=self._ws.bot_strategy.name)
+            return replace(summary, owner_name=self._ws.owner.name)
         return replace(
             summary,
             source=self._ws.status(self._kind, item.id),
@@ -783,7 +787,7 @@ class _KindPage(QWidget):
         sections: list[tuple[str, str, list]] = []
         own = self._ws.own_items(self._kind) if self._show_own else []
         if self._show_own:
-            heading = self._ws.bot_strategy.name if self._ws.bot_strategy is not None else _THIS_BOT_HEADING
+            heading = self._ws.owner.name if self._ws.owner is not None else _THIS_BOT_HEADING
             sections.append((THIS_BOT_SECTION, heading, own))
         shadowed = {e.id for e in own}
         library = [e for e in self._ws.items(self._kind) if e.id not in shadowed]
@@ -881,7 +885,9 @@ class _KindPage(QWidget):
             for item, _card in self._card_map:
                 uuid = item.data(Qt.ItemDataRole.UserRole)
                 facets = self._facets.get(uuid, StrategyFacets())
-                visible = matches_query(item.data(_HAYSTACK_ROLE) or "", query) and facets_match(facets, flt)
+                visible = matches_query(item.data(_HAYSTACK_ROLE) or "", query) and facets_match(
+                    facets, flt, _TAG_GROUPS
+                )
                 item.setHidden(not visible)
                 if visible:
                     shown.add(uuid)
@@ -933,7 +939,7 @@ class _KindPage(QWidget):
         box = QHBoxLayout(row)
         box.setContentsMargins(4, 2, 4, 2)
         box.setSpacing(6)
-        no_bot_strategy = self._ws.bot_strategy is None
+        no_bot_strategy = self._ws.owner is None
         label = QLabel(NO_BOT_STRATEGY_NOTE if no_bot_strategy else BOT_STRATEGY_EMPTY_NOTE, row)
         label.setWordWrap(True)
         apply_muted_color(label)
@@ -1127,7 +1133,7 @@ class _KindPage(QWidget):
 
     def _update_create_buttons(self) -> None:
         """New needs somewhere to put its entry; Duplicate also needs something to copy."""
-        room = not self._show_own or self._ws.bot_strategy is not None
+        room = not self._show_own or self._ws.owner is not None
         self._new_btn.setEnabled(room)
         # Not one saved by a newer version: the copy would be in that format too, and refused at Save.
         copyable = self._ws.get(self._kind, self._selected_id) is not None
@@ -1145,7 +1151,7 @@ class _KindPage(QWidget):
             # Never built-in and never reverted: an own entry's Delete is a plain one. The
             # section heading names the Bot Combat Strategy, so the name alone is enough.
             self._set_delete_button(revert=False, built_in=False)
-            self._about.set_notes(usage, f"In '{self._ws.bot_strategy.name}' only", can_add_to_library=self._editable)
+            self._about.set_notes(usage, f"In '{self._ws.owner.name}' only", can_add_to_library=self._editable)
             return
         # The working set's status, not the file's origin: an edit made a moment ago
         # already makes a built-in revertible, before anything is written (#124).
@@ -1184,9 +1190,7 @@ class _KindPage(QWidget):
     # -- create / duplicate / remove / move -----------------------------
 
     def _on_new(self) -> None:
-        self._show_made(
-            self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
-        )
+        self._show_made(self._ws.create(self._kind, NEW_NAMES[self._kind], own=self.creates_in_bot_strategy))
 
     def start_new(self, copy_of: str | None = None):
         """Open on a new entry rather than an empty pane, and return it (#272).
@@ -1199,9 +1203,9 @@ class _KindPage(QWidget):
             return None
         source = self._ws.get(self._kind, copy_of)
         if source is None:
-            made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
+            made = self._ws.create(self._kind, NEW_NAMES[self._kind], own=self.creates_in_bot_strategy)
         else:
-            made = self._ws.duplicate(self._kind, source.id, in_bot_strategy=self.creates_in_bot_strategy)
+            made = self._ws.duplicate(self._kind, source.id, own=self.creates_in_bot_strategy)
             made.name = self._ws.unique_name(self._kind, NEW_NAMES[self._kind])
             made.description = ""
         self._show_made(made)
@@ -1244,7 +1248,7 @@ class _KindPage(QWidget):
         sources = Sources(strategy_root=root, strategy_user_root=user_root)
         if self._kind is StrategyKind.DUEL:
             # One of the bot's own finds its links there first, as a run does.
-            owner = self._ws.bot_strategy if self._ws.is_own_entry(self._kind, uuid) else None
+            owner = bot_strategy_of(self._ws) if self._ws.is_own_entry(self._kind, uuid) else None
             return export_duel(entry, sources, bot_strategy=owner)
         if self._kind is StrategyKind.PLAYER:
             return export_player(entry, sources)
@@ -1261,7 +1265,7 @@ class _KindPage(QWidget):
             return
         # In the Bot Combat Strategy editor a copy always lands in it, a library entry's
         # included: that is how one fight gets something slightly different (#118).
-        copy = self._ws.duplicate(self._kind, self._selected_id, in_bot_strategy=self.creates_in_bot_strategy)
+        copy = self._ws.duplicate(self._kind, self._selected_id, own=self.creates_in_bot_strategy)
         if copy is not None:
             self._show_made(copy)
 
@@ -1314,7 +1318,7 @@ class _KindPage(QWidget):
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None or not self._ws.is_own_entry(self._kind, entry.id):
             return
-        moving = own_players_of(entry, self._ws.bot_strategy) if self._kind is StrategyKind.DUEL else []
+        moving = self._ws.own_players_of(entry) if self._kind is StrategyKind.DUEL else []
         if moving:
             answer = QMessageBox.question(
                 self,
@@ -1439,7 +1443,7 @@ class CombatStrategyDialog(QDialog):
 
         # The This bot section is for the ways in from the Combat tab, and only when a bot
         # is loaded. The library view never shows it (#118).
-        show_own = mode is not DialogMode.LIBRARY and ws.bot_id is not None
+        show_own = mode is not DialogMode.LIBRARY and ws.takes_owner
         self._tabs = QTabWidget()
         self._pages: dict[StrategyKind, _KindPage] = {}
         for k in tabs_for(mode, kind):
@@ -1592,10 +1596,16 @@ class CombatStrategyDialog(QDialog):
         # Redrawn in case the dialog stays open, as it does when a write fails.
         self._pages[self._pick_kind].rebuild_list()
 
+    def _bot_of(self, owner: StrategyOwner) -> str | None:
+        """The name of the bot *owner*'s Bot Combat Strategy is for, as the Save confirmation names it."""
+        if self._bot_name is None or not isinstance(owner, BotStrategyOwner):
+            return None
+        return self._bot_name(owner.strategy.bot_id)
+
     def _commit_and_accept(self) -> None:
         if self._mode is not DialogMode.PICK:
             self._drop_unused_starter()
-            uses = self._ws.shared_uses(self._bot_name)
+            uses = self._ws.shared_uses(self._bot_of)
             if uses and not self._confirm_shared_edits(uses):
                 return
         # Asked before the commit, which baselines everything and so forgets what was new.
@@ -1675,7 +1685,7 @@ class CombatStrategyDialog(QDialog):
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Question)
         box.setWindowTitle("Save changes to shared strategies?")
-        other = self._mode is not DialogMode.LIBRARY and self._ws.bot_strategy is not None
+        other = self._mode is not DialogMode.LIBRARY and self._ws.owner is not None
         box.setText(shared_edit_message(uses, other=other))
         save = box.addButton("Save anyway", QMessageBox.ButtonRole.AcceptRole)
         back = box.addButton("Go back", QMessageBox.ButtonRole.RejectRole)
@@ -1734,12 +1744,12 @@ class CombatStrategyDialog(QDialog):
         if not dsl:
             return
         duel = self._pages.get(StrategyKind.DUEL)
-        in_bot_strategy = duel is not None and self._ws.is_own_entry(StrategyKind.DUEL, duel.selected_id())
+        own = duel is not None and self._ws.is_own_entry(StrategyKind.DUEL, duel.selected_id())
         suggested = self._ws.unique_name(StrategyKind.PLAYER, "New Player Strategy")
         name, ok = QInputDialog.getText(self, "Save as Player Strategy", "Name:", text=suggested)
         if not ok or not name.strip():
             return
-        pcs = self._ws.create(StrategyKind.PLAYER, name.strip(), in_bot_strategy=in_bot_strategy)
+        pcs = self._ws.create(StrategyKind.PLAYER, name.strip(), own=own)
         pcs.dsl = assignment.dsl
         pcs.schools = list(assignment.schools)
         if StrategyKind.PLAYER in self._pages:
@@ -1771,12 +1781,12 @@ class CombatStrategyDialog(QDialog):
     def _on_create_bot_strategy(self) -> None:
         """Make a Bot Combat Strategy for a bot that has none — inside the working set, so
         Cancel discards it like any other edit."""
-        if self._ws.bot_id is None or self._ws.bot_strategy is not None:
+        if not self._ws.takes_owner or self._ws.owner is not None:
             return
         name, ok = QInputDialog.getText(self, "New Bot Combat Strategy", "Name:", text="Default")
         if not ok or not name.strip():
             return
-        self._ws.create_bot_strategy(name.strip())
+        self._ws.create_owner(name.strip())
         for page in self._pages.values():
             page.rebuild_list()
 

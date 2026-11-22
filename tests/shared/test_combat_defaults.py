@@ -35,6 +35,8 @@ from bartleby.shared.official_set import set_version
 from bartleby.shared.store_files import index_dir, slugify
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
+from bartlebot.combat.bot_strategy_owner import load_working_set
+
 STRATEGIES = Path(__file__).resolve().parents[2] / "strategies"
 DUELS = STRATEGIES / "duel"
 PLAYERS = STRATEGIES / "player"
@@ -235,7 +237,7 @@ def test_shared_set_version_rose_when_turn_1_aoe_left():
 def test_no_shipped_duel_leaves_a_slot_to_chance(path: Path):
     """A shipped support aims at ``ally(last)``, which is P1 only under a combat order that
     puts P1 in the last slot (#212)."""
-    from bartlebot.combat.strategy_summary import slot_order_warning  # noqa: PLC0415
+    from bartleby.runtime.combat.strategy_summary import slot_order_warning  # noqa: PLC0415
 
     pcs_dsl = {pcs.id: pcs.dsl for pcs in map(PlayerCombatStrategy.load, _player_files())}
 
@@ -455,11 +457,11 @@ def test_every_shipped_deck_is_named_a_deck_and_says_what_it_is_for(path: Path):
 
 def test_the_shipped_decks_read_as_official(tmp_path: Path):
     """A deck in the install directory and none in the user's is Official, as a strategy is."""
-    from bartlebot.combat.strategy_store import StrategyKind  # noqa: PLC0415
-    from bartlebot.combat.strategy_workset import StrategyWorkingSet  # noqa: PLC0415
+    from bartleby.shared.strategy_library import StrategyKind
+
     from bartlebot.content.store_roots import Origin  # noqa: PLC0415
 
-    ws = StrategyWorkingSet.from_store(root=STRATEGIES.parent, user_root=tmp_path)
+    ws = load_working_set(root=STRATEGIES.parent, user_root=tmp_path)
     ids = list(index_dir(STRATEGIES / "decks"))
 
     assert ids

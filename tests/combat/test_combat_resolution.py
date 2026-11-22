@@ -376,7 +376,7 @@ def _shipped_bots() -> list[BotConfig]:
 
 def test_no_two_shipped_bot_combat_strategies_for_one_bot_tie():
     """Level 2 never needs a tie-break. Holds vacuously until Official Bot Combat Strategies ship."""
-    shipped = strategy_store.list_shipped(strategy_store.StrategyKind.BOT)
+    shipped = strategy_store.list_shipped_bot_strategies()
     owners = {bcs.bot_id for bcs in shipped}
     for bot in (b for b in _shipped_bots() if b.id in owners):
         candidates = [bcs for bcs in shipped if bcs.bot_id == bot.id]

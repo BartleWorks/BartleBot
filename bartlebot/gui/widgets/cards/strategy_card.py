@@ -2,7 +2,7 @@
 
 Promoted out of the strategy picker's private ``_StrategyCard`` so the picker,
 the Strategy Library window and any future strategy list can all draw the same
-card from the same :class:`~bartlebot.combat.strategy_summary.StrategySummary` — see
+card from the same :class:`~bartleby.runtime.combat.strategy_summary.StrategySummary` — see
 that module's docstring for why the summary itself is shared.
 
 Sized by a real ``sizeHint()`` rather than a fixed height: a card with a
@@ -19,12 +19,12 @@ from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.labels.art_icon_view import ArtIconView
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.layout.flow_layout import flow_container
+from bartleby.runtime.combat.strategy_summary import HealthStatus, StrategySummary
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from bartlebot.combat.strategy_summary import HealthStatus, StrategySummary
-from bartlebot.combat.strategy_tags import THIS_BOT_SOURCE
+from bartlebot.combat.bot_strategy_owner import THIS_BOT_SOURCE
 from bartlebot.gui.widgets.pickers.school_picker import school_icon
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.pills.source_pill import source_pill
@@ -108,15 +108,15 @@ class StrategyCard(QWidget):
         self._name_lbl = name_row
         self._source_pill: QLabel | None = None
         self._star: IconButton | None = None
-        if summary.source is None and summary.bot_strategy_name is None and favorite is None:
+        if summary.source is None and summary.owner_name is None and favorite is None:
             header.addWidget(name_row)
         else:
             row = QHBoxLayout()
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(6)
             row.addWidget(name_row, 1)
-            if summary.bot_strategy_name is not None:
-                pill = this_bot_pill(summary.bot_strategy_name)
+            if summary.owner_name is not None:
+                pill = this_bot_pill(summary.owner_name)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
             elif summary.source is not None:

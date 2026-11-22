@@ -10,12 +10,12 @@ through it, and this checks they still do.
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QApplication, QWidget
 
-from bartlebot.combat.strategy_store import StrategyKind
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.combat_strategies.dialog import _KindPage
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
@@ -24,7 +24,7 @@ from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 
 
 def _strategy_page() -> QWidget:
-    return _KindPage(StrategyKind.PLAYER, StrategyWorkingSet.from_store())
+    return _KindPage(StrategyKind.PLAYER, load_working_set())
 
 
 def _player_editor() -> QWidget:

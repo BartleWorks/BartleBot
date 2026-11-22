@@ -162,12 +162,12 @@ def check_shared_set(root: Path) -> str:
     """The shared Official set: its version, every duel, player strategy and deck loads, and the shipped defaults are in it."""
     from bartleby.shared import combat_defaults  # noqa: PLC0415
     from bartleby.shared.official_set import SET_FILE, set_version  # noqa: PLC0415
-    from bartleby.shared.strategy_library import LIBRARY_DIRNAME, MODELS, LibraryKind, kind_dir  # noqa: PLC0415
+    from bartleby.shared.strategy_library import LIBRARY_DIRNAME, MODELS, StrategyKind, kind_dir  # noqa: PLC0415
 
     _folder(root, LIBRARY_DIRNAME)
     version = set_version(root)
     _require(version is not None, f"no version in {SET_FILE.as_posix()}")
-    ids: dict[LibraryKind, set[str]] = {}
+    ids: dict[StrategyKind, set[str]] = {}
     for kind, model in MODELS.items():
         folder = kind_dir(root, kind)
         paths = sorted(folder.glob("*.json")) if folder.is_dir() else []
@@ -188,21 +188,20 @@ def check_shared_set(root: Path) -> str:
         combat_defaults.SHIPPED_DEFAULT_SUPPORT_ID,
         combat_defaults.SHIPPED_GUARDIAN_SUPPORT_ID,
     }
-    missing = sorted((duels - ids[LibraryKind.DUEL]) | (players - ids[LibraryKind.PLAYER]))
+    missing = sorted((duels - ids[StrategyKind.DUEL]) | (players - ids[StrategyKind.PLAYER]))
     _require(not missing, f"shipped defaults missing from the set: {missing}")
     return f"version {version}: " + ", ".join(_count(len(found), kind.value) for kind, found in ids.items())
 
 
 def game_data_files() -> list[Path]:
     """Every file under ``game/data/`` the app reads, by the path its reader holds."""
-    from bartleby.runtime.game import dialog_captions, name_tables, realms, spell_names
+    from bartleby.runtime.game import dialog_captions, name_tables, realms, spell_names, spell_schools
 
     from bartlebot.game import (  # noqa: PLC0415
         badge_categories,
         entity_names,
         restricted_zones,
         scales,
-        spell_schools,
         stat_caps,
         worlds,
         zone_names,

@@ -11,12 +11,14 @@ from unittest.mock import patch
 
 import pytest
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.runtime.combat.strategy_workset import StrategyWorkingSet
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QSplitter
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_owner import THIS_BOT_SOURCE, load_working_set
 from bartlebot.combat.strategy_store import (
-    StrategyKind,
     list_duel_strategies,
     load_bot_strategy,
     save_bot_strategy,
@@ -24,8 +26,6 @@ from bartlebot.combat.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.combat.strategy_tags import THIS_BOT_SOURCE
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.assignment_card import strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
@@ -61,9 +61,7 @@ def _ws(roots, bcs: BotCombatStrategy | None = None, bot_id: str | None = "bot-1
     shipped, user = roots
     if bcs is not None:
         save_bot_strategy(bcs, shipped, user)
-    return StrategyWorkingSet.from_store(
-        root=shipped, user_root=user, bot_strategy_id=bcs.id if bcs else None, bot_id=bot_id
-    )
+    return load_working_set(root=shipped, user_root=user, bot_strategy_id=bcs.id if bcs else None, bot_id=bot_id)
 
 
 def _bcs(**kw) -> BotCombatStrategy:
@@ -292,7 +290,7 @@ def test_create_one_makes_a_bot_strategy_that_cancel_discards(qapp, roots):
         dlg._on_create_bot_strategy()
 
     page = dlg.page(DUEL)
-    assert ws.bot_strategy.name == "Solo"
+    assert ws.owner.name == "Solo"
     assert page.section_headings()[0] == "Solo"
     assert page.note_text() == BOT_STRATEGY_EMPTY_NOTE
     assert page.new_button.isEnabled()
@@ -481,7 +479,7 @@ def test_a_move_reaches_disk_at_save_and_not_before(qapp, roots):
     dlg._on_commit()
 
     assert [d.id for d in list_duel_strategies(*roots)] == [boss.id]
-    assert load_bot_strategy(ws.bot_strategy.id, *roots).duel_strategies == []
+    assert load_bot_strategy(ws.owner.id, *roots).duel_strategies == []
 
 
 # ---------------------------------------------------------------------------
@@ -506,7 +504,7 @@ def test_saving_an_edit_to_a_shared_entry_asks_first_and_names_the_uses(qapp, ro
         dlg._on_commit()
 
     [uses] = asked.call_args.args
-    assert [(u.name, u.bot_strategies) for u in uses] == [("Boss Burn v2", ("'Team' (Darkmoor)",))]
+    assert [(u.name, u.owners) for u in uses] == [("Boss Burn v2", ("'Team' (Darkmoor)",))]
 
 
 def test_going_back_writes_nothing_and_keeps_the_dialog_open(qapp, roots):

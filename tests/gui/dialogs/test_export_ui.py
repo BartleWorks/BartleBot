@@ -10,19 +10,19 @@ from pathlib import Path
 
 import pytest
 from bartleby.shared import share_file
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckData, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from PyQt6.QtWidgets import QDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.combat.strategy_store import (
-    StrategyKind,
     save_bot_strategy,
     save_deck_preset,
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots, share_export, store_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.gui.canvas.bot_library import EXPORT_TEXT, BotLibraryPanel
@@ -126,7 +126,7 @@ def test_each_strategy_dialog_tab_exports_from_its_cards_menu(
 ):
     shipped, user = strategy_roots
     save(item, shipped, user)
-    dialog = CombatStrategyDialog(StrategyWorkingSet.from_store(root=shipped, user_root=user), kind=kind)
+    dialog = CombatStrategyDialog(load_working_set(root=shipped, user_root=user), kind=kind)
     captured = _Captured()
     monkeypatch.setattr("bartlebot.gui.combat_strategies.dialog.run_export", captured)
 
@@ -140,7 +140,7 @@ def test_each_strategy_dialog_tab_exports_from_its_cards_menu(
 def test_an_entry_with_unsaved_edits_says_to_save_before_exporting(qapp, strategy_roots):
     shipped, user = strategy_roots
     save_player_strategy(PlayerCombatStrategy(id="p1", name="Hitter"), shipped, user)
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     dialog = CombatStrategyDialog(ws, kind=StrategyKind.PLAYER)
     ws.get(StrategyKind.PLAYER, "p1").dsl = "pass"
 

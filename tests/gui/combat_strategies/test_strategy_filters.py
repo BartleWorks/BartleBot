@@ -11,14 +11,15 @@ from __future__ import annotations
 
 import pytest
 from bartleby.qt.widgets.pills.pill import NeutralChip
+from bartleby.runtime.combat.strategy_summary import StrategySummary
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QCoreApplication, QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QApplication
 
-from bartlebot.combat.strategy_store import StrategyKind, save_deck_preset, save_player_strategy
-from bartlebot.combat.strategy_summary import StrategySummary
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.combat.bot_strategy_owner import load_working_set
+from bartlebot.combat.strategy_store import save_deck_preset, save_player_strategy
 from bartlebot.content import store_roots
 from bartlebot.content.store_roots import SOURCE_LABELS, Origin
 from bartlebot.gui.combat_strategies.dialog import (
@@ -51,7 +52,7 @@ def roots(tmp_path, monkeypatch):
 
 def _dialog(roots, **kw) -> CombatStrategyDialog:
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     return CombatStrategyDialog(ws, **kw)
 
 
@@ -76,7 +77,7 @@ def _players(roots):
 def _player_page(roots):
     """The dialog, its working set, and its Player tab. Hold the dialog: the page dies with it."""
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     dlg = CombatStrategyDialog(ws, kind=StrategyKind.PLAYER)
     return dlg, ws, dlg._pages[StrategyKind.PLAYER]
 
@@ -185,7 +186,7 @@ def test_the_source_filter_follows_an_unsaved_edit_on_the_next_filter_change(qap
 
 def test_team_size_filters_duels_by_their_player_range(qapp, roots):
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     solo = ws.create(StrategyKind.DUEL, "Solo")
     solo.min_players, solo.max_players = 1, 1
     team = ws.create(StrategyKind.DUEL, "Team")
@@ -201,7 +202,7 @@ def test_team_size_filters_duels_by_their_player_range(qapp, roots):
 
 def test_works_with_school_on_a_duel_asks_every_slot(qapp, roots):
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     storm_only = ws.create(StrategyKind.DUEL, "Storm only")
     storm_only.max_players = 1
     storm_only.player_assignments = [PlayerAssignment(players=[1], dsl="x", schools=["Storm"])]
@@ -367,7 +368,7 @@ def test_clicking_the_star_saves_at_once_and_moves_the_card(qapp, roots):
 def test_cancel_does_not_take_a_favorite_back(qapp, roots):
     support, _hitter, _healer = _players(roots)
     shipped, user = roots
-    dlg = CombatStrategyDialog(StrategyWorkingSet.from_store(root=shipped, user_root=user), kind=StrategyKind.PLAYER)
+    dlg = CombatStrategyDialog(load_working_set(root=shipped, user_root=user), kind=StrategyKind.PLAYER)
 
     dlg._pages[StrategyKind.PLAYER].set_favorite(support.id, True)
     dlg.reject()
@@ -487,7 +488,7 @@ def test_loading_an_entry_shows_its_roles_without_editing_it(qapp, roots):
 
 def test_a_deck_preset_role_round_trips_through_save(qapp, roots):
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     preset = ws.create(StrategyKind.DECK, "Deck")
     dlg = CombatStrategyDialog(ws, kind=StrategyKind.DECK, current_id=preset.id)
     page = dlg._pages[StrategyKind.DECK]
@@ -496,14 +497,14 @@ def test_a_deck_preset_role_round_trips_through_save(qapp, roots):
     pick(page.about.tag_pickers[0], "Support")
     ws.commit()
 
-    [saved] = StrategyWorkingSet.from_store(root=shipped, user_root=user).items(StrategyKind.DECK)
+    [saved] = load_working_set(root=shipped, user_root=user).items(StrategyKind.DECK)
     assert isinstance(saved, DeckPreset)
     assert saved.tags == ["Support"]
 
 
 def test_a_duel_card_shows_no_role_pills(qapp, roots):
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     duel = ws.create(StrategyKind.DUEL, "Duel")
     dlg = CombatStrategyDialog(ws)
     page = dlg._pages[StrategyKind.DUEL]

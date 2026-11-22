@@ -456,7 +456,7 @@ class AppController(QObject):
         quit_event = asyncio.Event()
         # Nothing to flush here any more: combat edits used to sit in a 500 ms
         # debounce that a quit could beat, and now live behind the combat strategy
-        # dialog's own Save button. See bartlebot.combat.strategy_workset.
+        # dialog's own Save button. See bartleby.runtime.combat.strategy_workset.
         self._app.aboutToQuit.connect(self._client_manager.stop)
         # Give the system-wide hotkeys back while the thread that registered them can.
         self._app.aboutToQuit.connect(self._hotkeys.close)

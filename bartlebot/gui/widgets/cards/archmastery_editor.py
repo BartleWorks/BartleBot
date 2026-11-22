@@ -171,7 +171,7 @@ class ArchmasteryEditor(QWidget):
 
         Nothing here reaches disk: the deck this holds is the working copy the combat
         strategy dialog's Save commits, and its dirtiness is derived from the fields
-        rather than reported — see :mod:`bartlebot.combat.strategy_workset`. Which is also why
+        rather than reported — see :mod:`bartleby.runtime.combat.strategy_workset`. Which is also why
         a click that changes nothing must not emit: it would count as a change the user
         would then be warned about losing.
         """

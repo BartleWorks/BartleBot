@@ -23,6 +23,7 @@ from unittest.mock import patch
 import pytest
 from bartleby.qt.widgets.layout.scroll_gutter import is_gutter_reserved
 from bartleby.qt.widgets.pills.pill import AccentPill, NeutralPill
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import (
     DeckData,
     DeckPreset,
@@ -34,15 +35,14 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
+from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.combat.strategy_store import (
-    StrategyKind,
     list_duel_strategies,
     list_player_strategies,
     save_deck_preset,
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, EDIT_VERB, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
@@ -70,7 +70,7 @@ def roots(tmp_path, monkeypatch):
 
 def _dialog(roots, **kw) -> CombatStrategyDialog:
     shipped, user = roots
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    ws = load_working_set(root=shipped, user_root=user)
     return CombatStrategyDialog(ws, **kw)
 
 
@@ -142,7 +142,7 @@ def test_declining_the_discard_prompt_keeps_the_dialog_open(qapp, roots):
 
 def test_a_save_that_could_not_write_keeps_the_dialog_open(qapp, roots, monkeypatch):
     """commit() logs and skips a failed write; closing anyway would lose it silently."""
-    import bartlebot.combat.strategy_workset as ws_mod
+    from bartleby.shared import strategy_library  # noqa: PLC0415
 
     pcs = PlayerCombatStrategy(name="Blade", dsl="blade")
     save_player_strategy(pcs, roots[0])
@@ -152,7 +152,7 @@ def test_a_save_that_could_not_write_keeps_the_dialog_open(qapp, roots, monkeypa
     def boom(*_a, **_kw):
         raise OSError("disk full")
 
-    monkeypatch.setitem(ws_mod._SAVERS, StrategyKind.PLAYER, boom)
+    monkeypatch.setattr(strategy_library, "save", boom)
     with patch.object(QMessageBox, "warning") as warned:
         dlg._on_commit()
 

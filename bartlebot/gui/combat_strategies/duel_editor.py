@@ -35,7 +35,7 @@ WHAT LIVES ELSEWHERE
 after every keystroke, is gone. This editor still mutates the config it is handed
 directly — but what it is handed is a working copy, so writing through is safe, and when
 the write happens is the dialog's Save button's business. See
-:mod:`bartlebot.combat.strategy_workset`.
+:mod:`bartleby.runtime.combat.strategy_workset`.
 """
 
 from __future__ import annotations
@@ -46,6 +46,7 @@ from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.discard import discard_widget
 from bartleby.qt.widgets.layout.drag_reorder import DragReorder
+from bartleby.runtime.combat.strategy_summary import slot_order_warning
 from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -55,7 +56,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.strategy_summary import slot_order_warning
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 
@@ -90,7 +90,7 @@ class DuelConfigEditor(QWidget):
 
     Mutates the loaded ``DuelConfig`` directly as the user edits — there is no separate
     "apply" step, and no autosave of its own. What it is handed is a working copy out of
-    :class:`~bartlebot.combat.strategy_workset.StrategyWorkingSet`, so writing through is safe
+    :class:`~bartleby.runtime.combat.strategy_workset.StrategyWorkingSet`, so writing through is safe
     and *when* it is written is the dialog's Save button's business. ``changed`` is still
     emitted, but only so an embedder can refresh what it draws — nothing downstream of it
     touches disk.

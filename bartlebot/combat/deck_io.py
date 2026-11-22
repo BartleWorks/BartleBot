@@ -57,6 +57,7 @@ from typing import TYPE_CHECKING
 
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import game_keys
+from bartleby.runtime.combat.card_kinds import classify_effects
 from bartleby.runtime.game.key_bindings import GameAction
 from bartleby.runtime.paths import ARCHMASTERY_GAUGE_PATH, DECK_CONFIGURATION_PATH, archmastery_school_path
 from bartleby.runtime.timing import (
@@ -93,7 +94,6 @@ from wizwalker.memory.memory_objects.window import (
     window_at_path,
 )
 
-from bartlebot.combat.card_kinds import classify_effects
 from bartlebot.game import zone_names
 
 if TYPE_CHECKING:
