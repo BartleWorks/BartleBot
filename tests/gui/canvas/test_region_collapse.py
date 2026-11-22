@@ -701,6 +701,9 @@ def test_a_new_region_gets_its_button(canvas):
     assert not canvas.scene.region_items["r3"].collapse_button_rect().isNull()
 
 
+# A known flake (no issue, by decision): the click's expand timed out once under -n auto, in
+# the edit case, and passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 @pytest.mark.parametrize("mode", ["edit", "run"])
 def test_clicking_the_collapsed_nodes_plus_expands_it(canvas, qtbot, mode):
     """Through the view, with the minimap painting the same item at its own tiny scale."""
