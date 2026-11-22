@@ -480,7 +480,7 @@ https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
 | 4 | #331 | the team's order told to wizsprinter, and the followers joining in it | landed |
 | 5 | #332 | the strategy layer moves to core | landed |
 | 6 | #333 | the Combat Strategies window moves to core | landed |
-| 7 | #334 | mob and boss duels | planned |
+| 7 | #334 | mob and boss duels, and the duel card in core | landed |
 | 8 | core #22 | equipping a deck by its name | landed |
 | 9 | BartleBuddy #34 | deck sets, and Boss decks | planned |
 
