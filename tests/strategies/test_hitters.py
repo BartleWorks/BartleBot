@@ -4,8 +4,9 @@ single-target hitters, and the cheat-boss hitters (#212), walked through describ
 A hitter heals itself below 30% health, shields itself while it holds no shield (Stage 6),
 buffs while a buff adds to its next hit -- Mass
 Feint, Feint on the boss, a blade on itself, an aura while none is up -- and hits once
-none can cast and the pips allow: AoE, or single-target at the boss. Short of pips it
-casts a filler or a buff that won't stack, or passes, and keeps its buffs. Default Team
+none can cast and the pips allow: AoE, or single-target at the boss, or with no boss
+left, single-target at a mob. Short of pips for any hit it casts a filler or a buff that
+won't stack, or passes, and keeps its buffs. Default Team
 Hitter opens a mob fight with AoE in round 1. ``docs/COMBAT_CONFIG.md``'s "What the hitter
 does" is the rule these pin.
 """
@@ -65,6 +66,8 @@ CHEAT_HITTER_IDS = [NO_BLADES_HITTER_ID, NO_FEINTS_HITTER_ID]
 
 MOB = Enemy("Mob")
 BOSS = Enemy("Boss", boss=True)
+#: A boss killed with its minion still standing: at 0 health it stays in the circle a while.
+DEAD_BOSS = Enemy("Boss", boss=True, health=0)
 
 
 def default_dsl() -> str:
@@ -178,18 +181,37 @@ async def test_with_no_buff_that_stacks_and_the_pips_it_casts_aoe():
 
 
 @pytest.mark.parametrize("enemies", [[MOB], [MOB, MOB]], ids=["one-mob", "mobs"])
-async def test_short_of_pips_for_aoe_in_a_mob_fight_it_never_hits_one_mob(enemies):
+async def test_short_of_pips_for_aoe_in_a_mob_fight_it_hits_one_mob(enemies):
+    """Waiting for AoE pips once left a minion standing while the team only bladed (2026-11-21)."""
     me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
 
     turn = await cast(default_dsl(), solo(SIRENS, STORM_SHARK, KRAKEN, me=me, enemies=enemies, pips=3))
 
-    assert turn.passed
+    assert turn == Turn("Kraken", "Mob")
 
 
-async def test_short_of_pips_for_aoe_it_casts_a_filler():
+async def test_with_its_boss_dead_it_hits_the_minion_left():
     me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
 
-    assert (await cast(default_dsl(), solo(SIRENS, STORM_SHARK, WYLDFIRE, me=me, pips=3))).card == "Wyldfire"
+    turn = await cast(default_dsl(), solo(SIRENS, KRAKEN, me=me, enemies=[DEAD_BOSS, MOB], pips=3))
+
+    assert turn == Turn("Kraken", "Mob")
+
+
+async def test_a_mob_fight_with_the_pips_casts_aoe_before_a_single_hit():
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    assert (await cast(default_dsl(), solo(KRAKEN, SIRENS, me=me))).card == "Sirens"
+
+
+async def test_a_mob_fight_still_buffs_before_a_single_hit():
+    assert await cast(default_dsl(), solo(KRAKEN, STORM_BLADE, SIRENS, pips=3)) == Turn("Storm Blade", "P1")
+
+
+async def test_short_of_pips_for_any_hit_it_casts_a_filler():
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    assert (await cast(default_dsl(), solo(SIRENS, KRAKEN, WYLDFIRE, me=me, pips=2))).card == "Wyldfire"
 
 
 async def test_a_shadow_spell_is_a_filler():
@@ -251,6 +273,13 @@ async def test_the_team_hitter_buffs_after_round_1_of_a_mob_fight():
     fight = as_p1(STORM_BLADE, SIRENS, round=2)
 
     assert (await cast(shipped_dsl(SHIPPED_TEAM_HITTER_ID), fight)) == Turn("Storm Blade", "P1")
+
+
+async def test_the_team_hitter_hits_the_minion_left_once_its_boss_is_dead():
+    p1 = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+    fight = Fight(team=[*team(2)[:-1], p1], enemies=[DEAD_BOSS, MOB], hand=[SIRENS, KRAKEN], round=2, pips=3)
+
+    assert await cast(shipped_dsl(SHIPPED_TEAM_HITTER_ID), fight) == Turn("Kraken", "Mob")
 
 
 async def test_the_team_hitter_heals_before_its_round_1_aoe():

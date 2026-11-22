@@ -328,17 +328,22 @@ wins:
 4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
    the support's Feint line; `any<blade & stacks>[sharp] @ self`; and
    `?(self.beneficial_auras == 0) any<aura & out_damage>`, an aura only while none is up.
-5. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`.
+5. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`,
+   then, with no boss left, `?(all(enemies).is_boss == 0) any<damage>[any<mod_damage>] @ enemy`.
 6. Fillers: `any<global>`, then `any<shadow>`.
 7. The buffs that don't stack: the Feint line and the blade line without `stacks`.
 8. `pass`.
 
 A hit it can't afford doesn't cast, so with buffs up and too few pips it falls to a
-filler, a buff that won't stack, or a pass, and keeps its buffs. There is no
-single-target line at a mob: short of pips for AoE in a mob fight, the hitter waits
-rather than spend its buffs on one mob. Until smart combat (#30) can tell when a hit
-kills, "no buff left that stacks" stands in for it. No trap aims at a mob, which could be
-a minion, and a mass trap other than Mass Feint is the supports' to cast.
+filler, a buff that won't stack, or a pass, and keeps its buffs. With no boss left, a
+single-target hit at a mob is the last hit, below the AoE: a hitter short of pips for
+its AoE, or holding none, hits one mob rather than buff and pass. Until Official set 10
+there was no such line, and the hitter waited for AoE pips rather than spend its buffs on
+one mob; then a minion left standing after its boss died was only bladed at, every round,
+by every wizard (2026-11-21). The buffs still come first, so a mob fight is still "buff,
+then hit". Until smart combat (#30) can tell when a hit kills, "no buff left that stacks"
+stands in for it. No trap aims at a mob, which could be a minion, and a mass trap other
+than Mass Feint is the supports' to cast.
 
 - **Default Team Hitter is Default plus a `{1}` line**, which is the same ladder with
   `?(all(enemies).is_boss == 0) any<damage & aoe>[any<mod_damage>]` after the shield: in a
@@ -349,9 +354,10 @@ a minion, and a mass trap other than Mass Feint is the supports' to cast.
 - **Default AoE Hitter and Default Single-target Hitter** take the heal, the shield, the
   Mass Feint line and the stacking buffs (the single-target one the Feint line too), keep their own
   hit line, then a buff that won't stack, then `pass`. The single-target hitter has no AoE
-  to wait for, so after its hit at the boss it has a second, gated on a mob fight:
+  to wait for, so after its hit at the boss it has Default's mob-fight hit:
   `?(all(enemies).is_boss == 0) any<damage>[any<mod_damage>] @ enemy`. Without it, a mob
-  fight was buffs and passes to the end (#212).
+  fight was buffs and passes to the end (#212). The AoE hitter has none, since it casts
+  nothing single-target.
 - **Default No-Blades Hitter and Default No-Feints Hitter** are P1 of the cheat-boss duels:
   Default's ladder without the card the boss's cheat watches, as the supports beside them
   are (#212). The No-Blades one has no blade line and fuses no Sharpened Blade; the
