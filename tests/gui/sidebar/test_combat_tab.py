@@ -2241,6 +2241,10 @@ def test_only_the_specialized_cards_have_a_grip(qapp, store):
     assert all(panel.grip is not None for panel in tab._group_panels())
 
 
+# A known flake (no issue, by decision): the drop was once not in the order yet under -n auto,
+# and it passes alone. Likely core's drag_card, which waits a fixed time for the card to settle.
+# See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 def test_dragging_a_strategy_card_moves_it_and_saves_the_order(qapp, store):
     tab, bcs = _three_strategy_tab(qapp)
     panels = tab._group_panels()
