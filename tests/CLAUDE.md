@@ -18,8 +18,9 @@ What every change ships with here. The ways this suite goes slow or flaky are co
   repo (shipped bots and templates, install-dir writes, integration) stay in `tests/`; a `tools/`
   script's test goes in `tests/tools/`, and our wizsprinter fork's in `tests/wizsprinter/`.
   A new folder needs an empty `__init__.py`, or pytest quietly stops collecting it.
-  Shared helpers (`conftest.py`, `picker_helpers.py`, `port_sim.py`) stay at `tests/`.
-  A drag on a card list is core's `bartleby.qt.testing.drag_helpers`.
+  Shared helpers (`conftest.py`, `port_sim.py`) stay at `tests/`.
+  A drag on a card list is core's `bartleby.qt.testing.drag_helpers`, picking rows in a
+  picker its `picker_helpers`, and a made-up art cache its `extracted_art`.
 
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
