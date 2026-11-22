@@ -18,11 +18,16 @@ from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.cards.card_art_tile import art_icon
 from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.pickers.picker_popup import SECTION_ICON_PX
+from bartleby.qt.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary
 from bartleby.qt.widgets.pills.pill import NeutralPill
+from bartleby.qt.widgets.pills.source_pill import source_pill
+from bartleby.qt.widgets.pills.tag_pill import TagChip, TagPill
 from bartleby.runtime.combat.strategy_tags import SOURCE
+from bartleby.runtime.game import card_art
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import (
     QIcon,
@@ -46,16 +51,8 @@ from bartlebot.content.store_roots import SOURCE_LABELS, Origin
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
 from bartlebot.content.templates import setup_steps, template_diff
-from bartlebot.game import card_art
-from bartlebot.gui.widgets.cards.card_art_tile import art_icon
-from bartlebot.gui.widgets.pickers.tag_picker import (
-    BOT_VOCABULARY,
-    SUBGRAPH_VOCABULARY,
-    TagPickerButton,
-    source_vocabulary,
-)
-from bartlebot.gui.widgets.pills.source_pill import source_pill
-from bartlebot.gui.widgets.pills.tag_pill import TagChip, TagPill
+from bartlebot.game import bot_art
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.settings_manager import SettingsManager
 
 #: Why an Official subgraph's Delete is grayed out: the store only ever removes the user's copy.
@@ -239,7 +236,7 @@ CATEGORY_PAD_Y = 5
 
 def _badge_icon(badge: str | None) -> QIcon | None:
     """The extracted icon for a badge category, or None -- which most installs get for all of them."""
-    return None if badge is None else _art_icon(card_art.badge_icon_path(badge))
+    return None if badge is None else _art_icon(bot_art.badge_icon_path(badge))
 
 
 def _art_icon(path: Path | None) -> QIcon | None:
@@ -634,7 +631,7 @@ class BotLibraryPanel(ThemedMixin, QWidget):
         # the last place anyone looked for a filter.
         self._pickers: dict[str, TagPickerButton] = {}
         for group in TAG_GROUPS:
-            picker = TagPickerButton(title=group, placeholder=group, group=group)
+            picker = TagPickerButton(title=group, placeholder=group, group=group, vocabulary=BOT_VOCABULARY)
             picker.setToolTip(f"Filter by {group.lower()} tag")
             picker.selection_changed.connect(self._on_tag_selection_changed)
             self._pickers[group] = picker
@@ -866,7 +863,7 @@ class BotLibraryPanel(ThemedMixin, QWidget):
         # Selection is row 0 either way (see refresh), so this ordering *is* the
         # default: Recent when there is one, All on a first run.
         if self._recent_metas:
-            self.add_category_row(self._RECENT_KEY, self._RECENT, _art_icon(card_art.icon_path(card_art.RECENT_ICON)))
+            self.add_category_row(self._RECENT_KEY, self._RECENT, _art_icon(card_art.icon_path(bot_art.RECENT_ICON)))
         self.add_category_row(self._ALL_KEY, self._ALL, _badge_icon(ALL_BADGE))
         for folder in self._category_map:
             if folder == self._OTHER_KEY:

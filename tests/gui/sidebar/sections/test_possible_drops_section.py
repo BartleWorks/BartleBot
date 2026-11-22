@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from bartleby.qt.art_signal import announce_art_changed
+from bartleby.qt.testing.extracted_art import write_extracted_art
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sections.possible_drops_section import _DropsListWidget
-from tests.extracted_art import write_extracted_art
 
 
 def test_new_art_gives_the_rows_their_category_icons(qapp):

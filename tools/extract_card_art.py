@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartleby.runtime.game.card_art import INDEX_FILENAME, own_art_dir  # noqa: E402
 from wizwalker.utils import DEFAULT_INSTALL  # noqa: E402
 
 from bartlebot.game.art_extraction import (  # noqa: E402
@@ -37,7 +38,6 @@ from bartlebot.game.art_extraction import (  # noqa: E402
     installed_game_data_dir,
     type_dump,
 )
-from bartlebot.game.card_art import INDEX_FILENAME, art_dir  # noqa: E402
 
 
 def default_game_dir() -> Path:
@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    out_dir = args.out or art_dir()
+    out_dir = args.out or own_art_dir()
     try:
         result = extract_art(
             args.game_dir or default_game_dir(),
@@ -99,4 +99,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Which app this is, which says where the art cache is, as bartlebot.py does first.
+    from bartleby.shared.product import use
+
+    from bartlebot.packaging.product import product
+
+    use(product())
     sys.exit(main())

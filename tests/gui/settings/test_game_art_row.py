@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import pytest
 from bartleby.qt.art_signal import art_signal
+from bartleby.runtime.game import card_art
 from bartleby.shared.game_install import set_install_dir
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.game import art_extraction, card_art
+from bartlebot.game import art_extraction
 from bartlebot.game.art_extraction import ExtractionError
 from bartlebot.gui.settings.game_art_row import (
     EXTRACT_DETAILS,

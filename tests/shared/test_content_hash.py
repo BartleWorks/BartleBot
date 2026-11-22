@@ -34,7 +34,7 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.content import bot_roots
-from bartlebot.content.store_roots import Origin, pill_text
+from bartlebot.content.store_roots import Origin
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from bartlebot.paths import project_root
 from tests.content.subgraphs.test_subgraph_store import _defn
@@ -401,28 +401,14 @@ def test_an_override_edited_back_to_the_official_content_reads_as_official(tmp_p
 
 
 # ---------------------------------------------------------------------------
-# The pill
+# The dialog
 # ---------------------------------------------------------------------------
 
 
-def test_the_pill_adds_official_updated_to_a_modified_official_item_only():
-    assert pill_text(Origin.SHIPPED_OVERRIDE, official_updated=True) == "Official (modified) · Official updated"
-    assert pill_text(Origin.SHIPPED_OVERRIDE) == "Official (modified)"
-    assert pill_text(Origin.SHIPPED, official_updated=True) == "Official"
-    assert pill_text(Origin.USER, official_updated=True) == "Custom"
-
-
-def test_the_source_pill_widget_says_it_and_explains(qapp):
-    from bartlebot.gui.widgets.pills.source_pill import OFFICIAL_UPDATED_TIP, source_pill  # noqa: PLC0415
-
-    pill = source_pill(Origin.SHIPPED_OVERRIDE, official_updated=True)
-    assert pill.text() == "Official (modified) · Official updated"
-    assert pill.toolTip() == OFFICIAL_UPDATED_TIP
-    assert source_pill(Origin.SHIPPED_OVERRIDE).text() == "Official (modified)"
-
-
 def test_the_strategy_dialog_card_and_note_say_official_updated(qapp, tmp_path):
-    from bartlebot.gui.combat_strategies.dialog import OFFICIAL_UPDATED_NOTE, CombatStrategyDialog  # noqa: PLC0415
+    from bartleby.qt.combat.dialog import OFFICIAL_UPDATED_NOTE  # noqa: PLC0415
+
+    from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog
 
     shipped, user = _roots(tmp_path)
     save_duel_strategy(_duel("Official"), shipped)

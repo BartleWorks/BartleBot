@@ -9,7 +9,7 @@ and compares; this file is the list.
     uv run python tools/render_sheet.py --compare BEFORE_DIR AFTER_DIR
 
 Sample data only: four accounts aliased ``P1`` to ``P4`` on ``example.com`` addresses, one
-launch profile, no wizard names and no game art. The settings and the art cache are a
+launch profile, core's sample strategy library, no wizard names and no game art. The settings and the art cache are a
 throwaway ``%APPDATA%``, never the developer's, and the screen the launch fit is judged
 against is pinned, so the pixels depend on this tree alone, and the core it pins.
 """
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import functools
 import logging
 import os
 import sys
@@ -34,6 +35,10 @@ PROFILES = [{"name": "Farm Team", "accounts": [a["username"] for a in ACCOUNTS],
 #: A 4K screen at 100%: the launch cards are judged against it, so none is refused by the
 #: machine the sheet happens to be rendered on.
 SCREEN = ((3840, 2160), 1.0)
+
+#: The sample Bot Combat Strategy the Combat Strategies window is drawn with, and its bot.
+BOT_STRATEGY_ID = "00000000-0000-4000-8000-000000000041"
+SAMPLE_BOT_ID = "00000000-0000-4000-8000-000000000051"
 
 #: Log lines as the Log tab shows them, at the level it shows by default.
 LOG_LINES = [
@@ -175,6 +180,58 @@ def _setup(page: str | None):
     return build
 
 
+@functools.cache
+def _library() -> tuple[tempfile.TemporaryDirectory, Path, Path]:
+    """Core's sample strategy library and one sample Bot Combat Strategy, in a folder of the run's own: its two roots."""
+    from bartleby.qt.testing import sample_library  # noqa: PLC0415
+    from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment  # noqa: PLC0415
+
+    from bartlebot.combat.bot_strategy_models import BotCombatStrategy  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import save_bot_strategy  # noqa: PLC0415
+
+    folder = tempfile.TemporaryDirectory(prefix="render_sheet_library_", ignore_cleanup_errors=True)
+    shipped, user = Path(folder.name) / "shipped", Path(folder.name) / "user"
+    sample_library.write_sample_library(shipped, user)
+    own = DuelCombatStrategy(
+        id="00000000-0000-4000-8000-000000000031",
+        name="First Boss",
+        max_players=2,
+        player_assignments=[PlayerAssignment(players=[1, 2], dsl=sample_library.HIT)],
+    )
+    strategy = BotCombatStrategy(
+        id=BOT_STRATEGY_ID, name="Sample Strategy", bot_id=SAMPLE_BOT_ID, duel_strategies=[own]
+    )
+    save_bot_strategy(strategy, root=shipped, user_root=user)
+    return folder, shipped, user
+
+
+def _combat_strategies(mode: str, kind: str, entry: str):
+    """The Combat Strategies window in *mode* (a ``DialogMode`` name), on *kind*'s tab with *entry* selected."""
+
+    def build():
+        from bartleby.qt.combat.deck_link import DeckClientLink  # noqa: PLC0415
+        from bartleby.qt.testing import sample_library  # noqa: PLC0415
+        from bartleby.shared.strategy_library import StrategyKind  # noqa: PLC0415
+
+        from bartlebot.combat.bot_strategy_owner import load_working_set  # noqa: PLC0415
+        from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode  # noqa: PLC0415
+
+        _folder, shipped, user = _library()
+        with_bot = DialogMode[mode] is not DialogMode.LIBRARY
+        ws = load_working_set(shipped, user, bot_strategy_id=BOT_STRATEGY_ID if with_bot else None)
+        return CombatStrategyDialog(
+            ws,
+            kind=StrategyKind[kind],
+            mode=DialogMode[mode],
+            current_id=getattr(sample_library, entry),
+            player_color_keys=[1, 2, 3, 4],
+            player_account_labels=[a["alias"] for a in ACCOUNTS],
+            deck_link=DeckClientLink(lambda: 1, lambda _slot, _done: False, lambda _slot, _deck, _done: False),
+        )
+
+    return build
+
+
 def surfaces() -> list:
     """BartleBot's sheet, in the order the plan names it."""
     Surface = core_render_sheet().Surface
@@ -191,6 +248,11 @@ def surfaces() -> list:
         Surface("setup_mode", _setup(None), (600, 640)),
         Surface("setup_accounts", _setup("AccountsPage"), (600, 640)),
         Surface("setup_launch_profile", _setup("LaunchProfilePage"), (600, 640)),
+        Surface("combat_strategies_duel", _combat_strategies("LIBRARY", "DUEL", "TEAM_DUEL_ID"), (1200, 720)),
+        Surface("combat_strategies_player", _combat_strategies("LIBRARY", "PLAYER", "SUPPORT_ID"), (1200, 720)),
+        Surface("combat_strategies_deck", _combat_strategies("LIBRARY", "DECK", "DECK_ID"), (1200, 720)),
+        Surface("combat_strategies_bot", _combat_strategies("BOT_STRATEGY", "DUEL", "SOLO_DUEL_ID"), (1200, 720)),
+        Surface("combat_strategies_pick", _combat_strategies("PICK", "DUEL", "OWN_DUEL_ID"), (1200, 720)),
     ]
 
 

@@ -5,20 +5,21 @@ the bar over the game windows owns the *clients*.  Name and run status used to b
 in the second one, where they disappeared with the game view.
 
 ``BotHeader`` also absorbed what the Bot tab used to hold, so the metadata
-behavior that lived in ``test_tag_picker`` — pills in Run mode, chips in Edit —
+behavior that lived in ``test_tag_vocabularies`` — pills in Run mode, chips in Edit —
 is still exercised there against this class.
 """
 
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.widgets.pills.tag_pill import TagPill
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QApplication, QSizePolicy, QWidget
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_header import BotHeader, _MetaLabel
-from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagPill
+from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill
 
 
 def _config(**overrides) -> BotConfig:

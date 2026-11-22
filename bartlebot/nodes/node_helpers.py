@@ -44,6 +44,7 @@ from bartleby.runtime.actions.node_helpers import (  # noqa: F401 — re-exporte
     close_crowns_shop,
     close_friend_profile,
     close_friends_list,
+    close_spellbook,
     diagnose_path,
     distance,
     find_windows_by_path,
@@ -52,6 +53,7 @@ from bartleby.runtime.actions.node_helpers import (  # noqa: F401 — re-exporte
     is_enabled_by_path,
     is_friends_list_open,
     is_named_window_visible,
+    is_spellbook_open,
     is_visible_by_path,
     iter_windows_by_path,
     list_online_friends,
@@ -1178,26 +1180,6 @@ async def teleport_cooldown(client) -> float | None:
     if await is_enabled_by_path(client, HUB_BUTTON_PATH):
         return 0.0
     return parse_countdown(await get_text_by_path(client, TELEPORT_TIMER_PATH))
-
-
-async def is_spellbook_open(client) -> bool:
-    """Whether the spellbook is open, on any of its pages: backpack, deck, settings, realms, housing.
-
-    Read from DeckConfiguration, the spellbook window itself. Its close button is no use for
-    this, since it keeps reading visible once the window is closed (see is_visible_by_path).
-    """
-    return await is_visible_by_path(client, DECK_CONFIGURATION_PATH)
-
-
-async def close_spellbook(client) -> bool:
-    """Click the spellbook's close button until the spellbook is gone. True once it is.
-
-    One click is not reliable: straight after a quicksell sale the game dropped it and the
-    backpack stayed open, with the node reporting success. An open spellbook covers the
-    screen and takes every click aimed behind it, so a caller that leaves one open breaks
-    whatever runs next. A spellbook already closed costs one read and no click.
-    """
-    return await click_until_gone(client, BACKPACK_CLOSE_BUTTON_PATH, is_open=lambda: is_spellbook_open(client))
 
 
 # ---------------------------------------------------------------------------

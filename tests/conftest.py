@@ -561,7 +561,7 @@ def isolated_settings(_appdata_root, monkeypatch):
     official_set.reset_shipped_root()
     # The art index is cached, and a cache read under the last test's APPDATA describes
     # an art folder this test does not have (#239's tests write one each).
-    from bartlebot.game import card_art  # noqa: PLC0415
+    from bartleby.runtime.game import card_art  # noqa: PLC0415
 
     card_art.forget_cache()
     # Nor may a test that reaches an install hook write the machine's install key or file

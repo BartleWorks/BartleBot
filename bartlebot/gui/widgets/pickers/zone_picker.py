@@ -6,7 +6,7 @@ broad filter), and the zone id rides along as each row's meta, so a zone can als
 name the tester and the session log use.
 
 Each world's section header carries that world's emblem, extracted from the game by
-``game/art_extraction.py`` and found through ``card_art.world_icon_path`` (#29). Every one of
+``game/art_extraction.py`` and found through ``bot_art.world_icon_path`` (#29). Every one of
 the 25 sections resolves: 22 worlds have a ``Button_World_`` texture of their own, and the three
 that are dungeon groups rather than worlds -- Castle Darkmoor, Kembaalung, Zigazag -- share
 the generic dungeon badge. **The icon is decoration over a caption that already carries the
@@ -22,13 +22,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
+from bartleby.qt.widgets.cards.card_art_tile import art_icon
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot.game import card_art, worlds, zone_names, zone_nav
-from bartlebot.gui.widgets.cards.card_art_tile import art_icon
+from bartlebot.game import bot_art, worlds, zone_names, zone_nav
 
 SUGGESTED_TITLE = "Recent Zones"
 SUGGESTED_LIMIT = 8
@@ -74,7 +74,7 @@ def world_icon_resolver(nav: zone_nav.NavMap) -> Callable[[str], QIcon | None]:
         key = titles.get(title)
         if key is None:
             return None
-        path = card_art.world_icon_path(key)
+        path = bot_art.world_icon_path(key)
         return None if path is None else art_icon(path)
 
     return resolve

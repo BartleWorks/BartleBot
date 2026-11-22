@@ -37,7 +37,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import SubgraphInput
 from bartlebot.gui.canvas.call_node_item import canvas_edge_color
-from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY
+from bartlebot.gui.widgets.pickers.tag_vocabularies import SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.pills.tags_field import TagsField
 from bartlebot.nodes.param_schema import narrowest_type
 

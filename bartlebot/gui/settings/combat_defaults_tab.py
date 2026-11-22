@@ -46,9 +46,11 @@ from dataclasses import replace
 
 from bartleby.qt.app.logging_setup import set_turn_trace
 from bartleby.qt.art_signal import follow_art
+from bartleby.qt.combat.dsl_checks import DeferredDslChecks
 from bartleby.qt.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.cards.strategy_card import StrategyCard
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.runtime.combat.strategy_summary import summarize_duel
 from bartleby.shared.combat_defaults import SHIPPED_DUEL_IDS, TeamSize, chosen_default, set_default_choice
@@ -61,8 +63,6 @@ from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.combat.combat_resolution import SIZE_RANGE, default_choice_notes
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
-from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.settings_manager import SettingsManager, default_for
 
 logger = logging.getLogger(__name__)

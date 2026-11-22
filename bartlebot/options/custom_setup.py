@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import logging
 
-from bartlebot.game import card_art
+from bartleby.runtime.game import card_art
+
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

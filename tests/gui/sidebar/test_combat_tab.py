@@ -1639,7 +1639,7 @@ def _content_texts(card) -> list[str]:
     A card row is a composite -- art tile, count, display name, and the template name
     where it differs -- so its text is gathered from the labels inside it. That gather
     belongs to the list widget itself now, because the Deck Presets page shows the same
-    rows; see ``tests/gui/widgets/cards/test_deck_card_list.py``.
+    rows; see core's ``tests/qt/widgets/cards/test_deck_card_list.py``.
     """
     return card.content.row_texts()
 
@@ -3259,8 +3259,7 @@ def test_a_flagged_pill_keeps_its_click(qapp):
 def test_new_art_swaps_a_deck_cards_summary_for_its_strip_and_its_sentence_for_icons(qapp):
     """Art extracted while the sidebar is up (#239): the folded card shows tiles and the badge."""
     from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
-
-    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+    from bartleby.qt.testing.extracted_art import write_extracted_art  # noqa: PLC0415
 
     section = _PlayerDecksSection()
     section.refresh({1: DeckData(normal={"Test Card": 4}, archmastery_school="Fire")})

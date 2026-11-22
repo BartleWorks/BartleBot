@@ -23,6 +23,9 @@ from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.buttons.link_button import LinkButton
 from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
+from bartleby.qt.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary
+from bartleby.qt.widgets.pills.source_pill import source_pill
+from bartleby.qt.widgets.pills.tag_pill import TagPill
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
@@ -55,9 +58,7 @@ from bartlebot.content.subgraphs.subgraph_store import (
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
 from bartlebot.content.subgraphs.subgraphs import entry_nodes, exit_nodes, port_name
 from bartlebot.gui.context_help import set_help_topic
-from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
-from bartlebot.gui.widgets.pills.source_pill import source_pill
-from bartlebot.gui.widgets.pills.tag_pill import TagPill
+from bartlebot.gui.widgets.pickers.tag_vocabularies import SUBGRAPH_VOCABULARY
 from bartlebot.nodes.help_text import retry_limit_note
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name

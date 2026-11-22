@@ -6,22 +6,18 @@ Conventions for everything under `bartlebot/gui/`. The family's GUI rules are co
 `bartleby/qt/CLAUDE.md`, imported above; these are BartleBot's own: its canvas, its
 documents, and which of its panels owns what.
 
-## Never parse a combat DSL on the GUI thread
+## The Combat Strategies window is core's, with the Bot Combat Strategy added
 
-A DSL check is an Earley parse, up to ~800 ms for a long strategy. Core's `bartleby.runtime.combat.dsl.dsl_check`
-caches answers in memory and on disk, but a strategy just written or imported, or every
-strategy after a wizsprinter bump, has none, and asking for it from a widget freezes the
-window -- once per card in a list, and once per *keystroke* in a DSL box, since every
-edit redraws the strategy's card. A surface drawing health passes
-`DeferredDslChecks.validator(key)` to `summarize_duel`/`summarize_player` and calls
-`request_unknown()` afterwards; an editor's debounce calls `checker().request(text)` and
-listens for `checked`. Both live in `gui/combat_strategies/dsl_checks.py`, which also has
-why the checks run in a child process rather than a thread (the interpreter lock).
+Core's `bartleby/qt/combat/` is the window, its editors and the DSL checks (core's
+`bartleby/qt/CLAUDE.md`, imported above, has their rules); `gui/combat_strategies/dialog.py`
+subclasses the window, its page, its card and its About section with what only BartleBot has:
+the `BOT_STRATEGY` mode, the This bot section and pill, Add to library, Export…, the F1 topic
+and the bot's name in the Save confirmation. Two rules:
 
-One known exception, kept on purpose: loading a strategy into `PlayerStrategyEditor`, or
-refreshing an `AssignmentCard`, still parses an unknown DSL on the GUI thread, because a
-loaded strategy shows its error at once and tests hold it to that. It costs up to ~800 ms
-only for a DSL with no answer yet (just imported, or after a wizsprinter bump).
+- **A change both products should have goes in core**, and one about a bot goes here, through
+  a hook. A test of what core draws is in core too.
+- **Patch what the window calls where it calls it**: `bartleby.qt.combat.dialog.QMessageBox`
+  for core's own questions, this module's for Add to library and a new Bot Combat Strategy.
 
 ## The canvas config can be swapped under every surface
 
@@ -347,13 +343,13 @@ its tests do.
 ## Source: Official, Official (modified), Custom
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,
-in **the same three words** (`store_roots.SOURCE_LABELS`) and **the same pill**
-(`widgets/pills/source_pill.source_pill`): Official filled with the accent, a modified one
+in **the same three words** (core's `store_files.SOURCE_LABELS`) and **the same pill**
+(core's `widgets/pills/source_pill.source_pill`): Official filled with the accent, a modified one
 outlined in it, Custom gray (#149). Never "Built-in", which says where a file is rather
 than what it promises: Official means shipped, and so tested in game. It is worked out
 from the root a file is in (`bot_roots.is_shipped`, `Origin`) and never read from the
 file. A list long enough to need it has a Source filter beside it, offering the same
-words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
+words (core's `tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
 Subgraphs folder, the node browser's Subgraphs tab, and File › Templates… (#164), whose
 gallery is New Bot's cards with a last line added. New Bot's gallery has pills only.
 Beside it on both lists of subgraphs is a *Category* filter (#172); in the bot library it

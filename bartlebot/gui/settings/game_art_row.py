@@ -24,11 +24,12 @@ from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
+from bartleby.runtime.game import card_art
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QDialog, QProgressBar, QVBoxLayout, QWidget
 
-from bartlebot.game import art_extraction, card_art
+from bartlebot.game import art_extraction
 from bartlebot.game.art_extraction import (
     ExtractionCancelled,
     ExtractionError,

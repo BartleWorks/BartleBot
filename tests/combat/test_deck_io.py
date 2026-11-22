@@ -2954,6 +2954,13 @@ def test_an_unpinned_deck_follows_the_app_setting():
     assert resolve_apply_archmastery(deck, app_default=False) == (False, "the app setting")
 
 
+def test_an_unpinned_deck_follows_bartlebots_own_setting(monkeypatch):
+    from bartlebot.combat import deck_io  # noqa: PLC0415
+
+    monkeypatch.setattr(deck_io, "app_default_apply_archmastery", lambda: True)
+    assert resolve_apply_archmastery(DeckData(archmastery_school="Storm")) == (True, "the app setting")
+
+
 def test_an_unpinned_deck_is_the_default():
     """A deck saved before this existed must not start setting anyone's school."""
     assert DeckData().apply_archmastery is None

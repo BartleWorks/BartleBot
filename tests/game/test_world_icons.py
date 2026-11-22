@@ -20,7 +20,7 @@ from bartlebot.game.art_extraction import (
     WORLD_TEXTURES,
     top_left_quadrant,
 )
-from bartlebot.game.card_art import DUNGEON_ICON, world_icon_name
+from bartlebot.game.bot_art import DUNGEON_ICON, world_icon_name
 from bartlebot.game.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
 
 

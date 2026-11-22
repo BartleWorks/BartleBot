@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.pills.tag_pill import TagChip
 from PyQt6.QtCore import QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent, QIcon
 from PyQt6.QtWidgets import QDialog, QLabel, QMessageBox
@@ -21,7 +22,6 @@ from bartlebot.controller import documents
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.dialogs import new_bot_dialog
 from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
-from bartlebot.gui.widgets.pills.tag_pill import TagChip
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 
@@ -473,7 +473,7 @@ def test_a_typed_file_name_is_never_replaced_by_the_display_name(dialog):
 
 def test_a_dialog_opened_after_an_extraction_wears_the_new_art(qapp, store, bots_dir):
     """Built afresh on each open, so it needs no art_changed connection (#239)."""
-    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+    from bartleby.qt.testing.extracted_art import write_extracted_art  # noqa: PLC0415
 
     assert not NewBotDialog(starting_points(store), bots_dir).cards[1].has_icon
 

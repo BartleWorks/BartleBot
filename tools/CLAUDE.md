@@ -86,7 +86,8 @@ It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedIma
 PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
 18,007 templates share 1,308 images. `katsuba` and `Pillow` are runtime dependencies for
 exactly this, and nothing else at run time reads a WAD or decodes a texture.
-`bartlebot/game/card_art.py` is the read side.
+Core's `bartleby/runtime/game/card_art.py` is the read side, for BartleBuddy too, which draws
+what this extracts; the keys only BartleBot draws are `bartlebot/game/bot_art.py`'s.
 
 The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,

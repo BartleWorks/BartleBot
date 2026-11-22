@@ -381,7 +381,8 @@ async def test_the_target_player_is_never_asked_to_teleport_to_itself():
 
 async def test_players_whose_zones_never_turn_readable_are_not_together(monkeypatch):
     """All None is one set of zones, and says nothing: it names no zone they share (#282)."""
-    monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 0.2)
+    # The port has to land inside it: under load, 0.2 s was too short for that, and the node failed there.
+    monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 1.0)
     sim = _friend_sim()
     clients = [sim.player(_HOUSE, _AT_FRIEND), sim.player(_HOUSE, _AT_FRIEND)]
     for c in clients:

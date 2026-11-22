@@ -31,6 +31,8 @@ from bartleby.qt.widgets.cards.start_card import StartCard
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary, tag_icon
+from bartleby.qt.widgets.pills.source_pill import source_pill
 from bartleby.runtime.combat.strategy_tags import SOURCE
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -47,8 +49,6 @@ from PyQt6.QtWidgets import (
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.content.templates.template_gallery import GalleryEntry
 from bartlebot.gui.context_help import set_help_topic
-from bartlebot.gui.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary, tag_icon
-from bartlebot.gui.widgets.pills.source_pill import source_pill
 
 #: Two columns, as New Bot's gallery has.
 _GALLERY_COLUMNS = 2
