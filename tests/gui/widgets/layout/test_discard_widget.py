@@ -9,14 +9,13 @@ since Stage 6 of #167, with its own tests; this is the case that found the bug.
 """
 
 import pytest
+from bartleby.qt.widgets.cards import card_art_tile
+from bartleby.qt.widgets.cards.card_art_tile import CardArtStrip
+from bartleby.runtime.combat.deck_content import deck_groups
 from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
-
-from bartlebot.combat.deck_content import deck_groups
-from bartlebot.gui.widgets.cards import card_art_tile
-from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 
 
 class _WindowShowSpy(QObject):

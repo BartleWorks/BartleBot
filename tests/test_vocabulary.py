@@ -28,7 +28,6 @@ COMBAT_MODULES = sorted(
         *(PACKAGE / "gui" / "combat_strategies").glob("*.py"),
         PACKAGE / "gui" / "sidebar" / "combat_tab.py",
         PACKAGE / "gui" / "sidebar" / "strategy_panel.py",
-        PACKAGE / "gui" / "widgets" / "cards" / "strategy_card.py",
         PACKAGE / "gui" / "widgets" / "pills" / "tag_pill.py",
         PACKAGE / "nodes" / "combat_runner.py",
         PACKAGE / "content" / "share_export.py",

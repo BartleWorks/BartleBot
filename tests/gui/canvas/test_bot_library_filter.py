@@ -16,7 +16,7 @@ from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
 from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard, _BotMeta, _read_bot_meta, filter_bot_metas
-from bartlebot.gui.widgets.pickers.tag_picker import group_accent
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY
 
 
 def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None = None, **kw) -> _BotMeta:
@@ -212,7 +212,7 @@ def test_a_tag_no_bot_carries_yields_nothing():
 # The panel, where category and filters compose
 #
 # A QWidget, so only the composition is checked here — the same latitude
-# tests/gui/widgets/pickers/test_tag_picker.py takes for the picker button.
+# core's tests/qt/widgets/pickers/test_tag_picker.py takes for the picker button.
 # ---------------------------------------------------------------------------
 
 
@@ -341,8 +341,9 @@ def _write_bot(folder: Path, name: str) -> None:
 
 @pytest.fixture
 def library(tmp_path, monkeypatch):
+    from bartleby.runtime.game import card_art  # noqa: PLC0415
+
     from bartlebot.content import bot_roots  # noqa: PLC0415
-    from bartlebot.game import card_art  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     # The user's folder alone: the shipped bots would add every world the repo has.
@@ -395,9 +396,8 @@ def test_with_no_art_extracted_no_row_has_an_icon(qapp, library):
 
 
 def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_path):
+    from bartleby.runtime.game import card_art  # noqa: PLC0415
     from PyQt6.QtGui import QColor, QPixmap  # noqa: PLC0415
-
-    from bartlebot.game import card_art  # noqa: PLC0415
 
     icons = {"badge_all": "badge_all.png", "badge_4dungeons": "badge_4dungeons.png"}
     card_art.icons_dir().mkdir(parents=True, exist_ok=True)
@@ -605,8 +605,8 @@ def test_a_tag_pill_is_colored_by_its_group(qapp):
     """
     styles = _pill_styles(_BotCard(JADE))
 
-    assert group_accent("Rewards") in styles
-    assert group_accent("Activities") in styles
+    assert BOT_VOCABULARY.accent("Gear") in styles
+    assert BOT_VOCABULARY.accent("Boss") in styles
 
 
 def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
@@ -727,15 +727,14 @@ def _rows_with_icons(panel: BotLibraryPanel) -> set[str]:
 
 
 def _pills(panel: BotLibraryPanel) -> list:
-    from bartlebot.gui.widgets.pills.tag_pill import TagPill  # noqa: PLC0415
+    from bartleby.qt.widgets.pills.tag_pill import TagPill  # noqa: PLC0415
 
     return [pill for card in _cards(panel) for pill in card.findChildren(TagPill)]
 
 
 def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qapp, library):
     from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
-
-    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+    from bartleby.qt.testing.extracted_art import write_extracted_art  # noqa: PLC0415
 
     _tagged_bot(library / "31_four_dungeons", "Gold Run", "Gold")
     panel = BotLibraryPanel()
@@ -756,8 +755,7 @@ def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qap
 
 def test_a_library_hidden_behind_an_open_bot_relists_when_next_shown(qapp, library):
     from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
-
-    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+    from bartleby.qt.testing.extracted_art import write_extracted_art  # noqa: PLC0415
 
     panel = BotLibraryPanel()
     panel.show()

@@ -24,6 +24,7 @@ from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.pickers.player_picker import pick_player
 from PyQt6.QtCore import QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
@@ -46,7 +47,6 @@ from bartlebot.gui.canvas.node_cards import PageFoldBar, TitleEdit, ToFillLabel,
 from bartlebot.gui.canvas.param_form import DynamicParamForm, write_show_descriptions
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
-from bartlebot.gui.widgets.pickers.player_picker import pick_player
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION
 from bartlebot.nodes.registry import (
     NODE_CATEGORIES,

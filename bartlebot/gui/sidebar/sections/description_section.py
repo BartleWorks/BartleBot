@@ -43,13 +43,13 @@ from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.content import bot_summary
-from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

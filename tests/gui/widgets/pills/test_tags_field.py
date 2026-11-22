@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 from bartleby.qt.art_signal import announce_art_changed
+from bartleby.qt.testing.extracted_art import write_extracted_art
+from bartleby.qt.widgets.pills.tag_pill import TagChip, TagPill
 
-from bartlebot.gui.widgets.pills.tag_pill import TagChip, TagPill
 from bartlebot.gui.widgets.pills.tags_field import TagsField
-from tests.extracted_art import write_extracted_art
 
 
 @pytest.mark.parametrize(("editable", "kind"), [(True, TagChip), (False, TagPill)])

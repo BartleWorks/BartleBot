@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 
 import pytest
+from bartleby.qt.widgets.pills.tag_pill import TagPill
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from bartlebot.bot.schema import SubgraphDefinition
@@ -30,8 +31,7 @@ from bartlebot.content.subgraphs.subgraphs import config_to_definition, definiti
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard, _BotMeta, filter_bot_metas
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, subgraph_key
-from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
-from bartlebot.gui.widgets.pills.tag_pill import TagPill
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.paths import project_root
 from tests.content.subgraphs.test_subgraphs import SYNC_ID, sync_players_definition
 

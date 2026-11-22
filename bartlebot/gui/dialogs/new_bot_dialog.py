@@ -28,10 +28,14 @@ from pathlib import Path
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.cards.card_art_tile import art_icon
 from bartleby.qt.widgets.cards.start_card import StartCard
+from bartleby.qt.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow
+from bartleby.qt.widgets.pickers.tag_picker import tag_icon
+from bartleby.qt.widgets.pills.source_pill import source_pill
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -58,12 +62,8 @@ from bartlebot.content.new_bot import (
     library_folders,
     unique_file_name,
 )
-from bartlebot.game import card_art
+from bartlebot.game import bot_art
 from bartlebot.gui.context_help import set_help_topic
-from bartlebot.gui.widgets.cards.card_art_tile import art_icon
-from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.pickers.tag_picker import tag_icon
-from bartlebot.gui.widgets.pills.source_pill import source_pill
 from bartlebot.gui.widgets.pills.tags_field import TagsField
 
 _BLANK_NAME = "Blank bot"
@@ -133,7 +133,7 @@ class FolderPicker(PickerButton):
 
 def _badge_icon(folder: str) -> QIcon | None:
     badge = folder_badge(folder)
-    path = card_art.badge_icon_path(badge) if badge is not None else None
+    path = bot_art.badge_icon_path(badge) if badge is not None else None
     return art_icon(path) if path is not None else None
 
 

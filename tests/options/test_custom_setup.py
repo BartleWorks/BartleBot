@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.runtime.game import card_art
 
-from bartlebot.game import card_art
 from bartlebot.options.custom_setup import (
     ART_ANSWERED_KEY,
     EXTRACT_ART_KEY,

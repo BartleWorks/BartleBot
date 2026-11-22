@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt.combat.deck_link import DeckClientLink
 from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage
 from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartleby.qt.logo import install_app_icon, refresh_taskbar_icon
@@ -33,7 +34,6 @@ from bartlebot.controller.templates import Templates
 from bartlebot.game import zone_names
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode
-from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.debug.game_hang_trace import GameHangTracer
 from bartlebot.gui.debug.stall_trace import StallTracer
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer

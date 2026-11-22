@@ -57,8 +57,10 @@ from typing import TYPE_CHECKING
 
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import game_keys
+from bartleby.runtime.combat import deck_content
 from bartleby.runtime.combat.card_kinds import classify_effects
 from bartleby.runtime.game.key_bindings import GameAction
+from bartleby.runtime.game.spell_schools import PIP_SCHOOLS
 from bartleby.runtime.paths import ARCHMASTERY_GAUGE_PATH, DECK_CONFIGURATION_PATH, archmastery_school_path
 from bartleby.runtime.timing import (
     ARCHMASTERY_ATTEMPTS,
@@ -1531,14 +1533,8 @@ async def read_archmastery_school(client) -> str | None:
 ARCHMASTERY_APP_SETTING = "default_apply_archmastery"
 ARCHMASTERY_APP_FALLBACK = False
 
-#: The seven schools an archmastery pip can be pointed at, and so the only
-#: SC_* icons the selector has.  school_to_str also holds Sun, Moon, Star,
-#: Shadow and the non-combat schools, which have no icon -- walking the window
-#: tree for each of those was nine fruitless full-tree searches per apply.
-PIP_SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
 
-
-def _app_default_apply_archmastery() -> bool:
+def app_default_apply_archmastery() -> bool:
     """The user's app-level answer, or the shipped fallback if unreadable."""
     try:
         from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
@@ -1552,22 +1548,13 @@ def _app_default_apply_archmastery() -> bool:
 def resolve_apply_archmastery(deck: DeckData, app_default: bool | None = None) -> tuple[bool, str]:
     """Whether this apply should set the school, and which level decided.
 
-    The one place the three-state value collapses to a bool -- everything
-    downstream sees a plain True/False, which is what keeps the rest of this
-    module testable without touching SettingsManager.  ``app_default`` is for
-    tests and for callers that have already read the settings; when it is None
-    the settings are consulted, but only if the deck has no opinion.
-
-    A deck with no recorded school never opts in whatever the setting says:
-    there is nothing to set, and "apply the school" cannot mean "clear it".
+    Core's rule (``deck_content.resolve_apply_archmastery``), with BartleBot's app
+    setting as the level below the deck.  ``app_default`` is for tests and for
+    callers that have already read the settings; when it is None they are read here.
     """
-    if not deck.archmastery_school:
-        return False, "no school saved with this deck"
-    if isinstance(deck.apply_archmastery, bool):
-        return deck.apply_archmastery, "this deck"
     if app_default is None:
-        app_default = _app_default_apply_archmastery()
-    return bool(app_default), "the app setting"
+        app_default = app_default_apply_archmastery()
+    return deck_content.resolve_apply_archmastery(deck, app_default)
 
 
 def archmastery_menu_is_open(rects: list) -> bool:
@@ -1772,6 +1759,8 @@ async def _resolve_icons(client) -> list:
     from bartlebot.nodes.node_helpers import _get_window_from_path  # noqa: PLC0415
 
     found = []
+    # Only the seven with a mark in the selector: walking the window tree for every school
+    # in school_to_str was nine fruitless full-tree searches per apply.
     for name in PIP_SCHOOLS:
         window = await _safe(
             _get_window_from_path(client.root_window, archmastery_school_path(name)),

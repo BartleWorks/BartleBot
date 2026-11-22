@@ -25,13 +25,14 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.shared.store_files import pill_text
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.content import bot_delete, bot_fork, bot_roots, new_bot
 from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
-from bartlebot.content.store_roots import Origin, dev_mode, pill_text
+from bartlebot.content.store_roots import Origin, dev_mode
 from bartlebot.content.subgraphs.subgraph_signature import signature_changes
 from bartlebot.content.subgraphs.subgraph_signature import warning_text as signature_warning_text
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, bots_linking, count_subgraph_uses

@@ -3,14 +3,14 @@
 Run from setup's Game art page, from Settings › General › Game art, and from the command
 line by ``tools/extract_card_art.py``; all three call :func:`extract_art` (epic #215,
 Stage 7). It reads only the user's own game install and writes only under
-:func:`~bartlebot.game.card_art.art_dir`, ``%APPDATA%/Bartleby/BartleBot/art``.
+:func:`~bartleby.runtime.game.card_art.own_art_dir`, ``%APPDATA%/Bartleby/BartleBot/art``.
 
 WHY THE ART IS EXTRACTED, AND NEVER SHIPPED
     Nothing extracted may ever become a tracked file: the repo goes public with the
     first beta release and a committed game texture carries the same exposure as committed player data
     (see "No game assets, either" in the root ``CLAUDE.md``). Writing into
     ``%APPDATA%/Bartleby/BartleBot/art`` puts the output somewhere the repo cannot
-    reach even by accident. ``bartlebot/game/card_art.py`` is the read side, and treats
+    reach even by accident. Core's ``bartleby/runtime/game/card_art.py`` is the read side, for every product, and treats
     absent art as the ordinary case: a user can decline it, and an extraction can fail.
 
 WHERE THE ART COMES FROM
@@ -55,6 +55,18 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
 
+from bartleby.runtime.game import card_art
+from bartleby.runtime.game.card_art import (
+    ARCHMASTERY_ICON,
+    ICONS_DIRNAME,
+    INDEX_FILENAME,
+    SPELLS_DIRNAME,
+    UNIVERSAL_ICON,
+    duel_slot_icon_name,
+    own_art_dir,
+    school_icon_name,
+    tag_icon_name,
+)
 from bartleby.runtime.game.spell_schools import SCHOOL_ORDER
 from bartleby.shared.game_install import find_install
 from bartleby.shared.preferences import PreferenceStore
@@ -62,22 +74,13 @@ from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
 from PIL import Image
 
-from bartlebot.game import badge_categories, card_art
-from bartlebot.game.card_art import (
-    ARCHMASTERY_ICON,
+from bartlebot.game import badge_categories
+from bartlebot.game.bot_art import (
     DUNGEON_ICON,
-    ICONS_DIRNAME,
-    INDEX_FILENAME,
     RECENT_ICON,
-    SPELLS_DIRNAME,
-    UNIVERSAL_ICON,
-    art_dir,
     badge_icon_name,
     drop_icon_name,
-    duel_slot_icon_name,
     pin_icon_name,
-    school_icon_name,
-    tag_icon_name,
     world_icon_name,
 )
 from bartlebot.game.worlds import DUNGEON_WORLDS
@@ -293,7 +296,7 @@ TAG_TEXTURES: dict[str, str] = {
 #: sheets.
 #:
 #: Sun, Star and Moon are also real schools. These are *not* those medallions -- see
-#: :func:`~bartlebot.game.card_art.duel_slot_icon_name` for why the slot number is the key.
+#: :func:`~bartleby.runtime.game.card_art.duel_slot_icon_name` for why the slot number is the key.
 DUEL_SLOT_TEXTURES: dict[int, str] = {
     1: "GUI/Art/Art_Target_Sun.dds",
     2: "GUI/Art/Art_Target_Eye.dds",
@@ -779,7 +782,7 @@ def extract_art(
     With *dry_run*, nothing is written and the result counts what would be.
     """
     game_dir = Path(game_dir)
-    out_dir = Path(out_dir) if out_dir is not None else art_dir()
+    out_dir = Path(out_dir) if out_dir is not None else own_art_dir()
     report = progress if progress is not None else _quiet
     stop = cancelled if cancelled is not None else _never
     if not (game_dir / "Root.wad").is_file():

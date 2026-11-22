@@ -16,11 +16,12 @@ from pathlib import Path
 import pytest
 from bartleby.qt.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog, SetupMode
 from bartleby.qt.settings.rows import SettingRow
+from bartleby.runtime.game import card_art
 from bartleby.shared.game_install import set_install_dir
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.game import art_extraction, card_art
+from bartlebot.game import art_extraction
 from bartlebot.game.art_extraction import ExtractionError
 from bartlebot.gui.dialogs.first_run_dialog import GameArtPage, OptionsPage, RealmAndDelayPage
 from bartlebot.gui.settings.bot_tab import BotTab

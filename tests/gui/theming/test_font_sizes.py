@@ -26,17 +26,18 @@ def test_a_widget_pinned_to_a_height_still_fits_its_text(qapp) -> None:
     """
     from bartleby.qt.widgets.pills.pill import ActionPill, NeutralPill
     from bartleby.qt.widgets.pills.player_badge import PlayerBadge
+    from bartleby.qt.widgets.pills.player_pills import PlayerSlotPill
+    from bartleby.qt.widgets.pills.tag_pill import TagPill
 
     from bartlebot.gui.canvas.node_browser_dialog import _Chip
-    from bartlebot.gui.widgets.pills.player_pills import PlayerSlotPill
-    from bartlebot.gui.widgets.pills.tag_pill import TagPill
+    from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY
 
     widgets = {
         "PlayerBadge": PlayerBadge(1),
         "PlayerSlotPill": PlayerSlotPill(1),
         "NeutralPill": NeutralPill("v1.0"),
         "ActionPill": ActionPill("Defeat the second Lost Soul", "state_1"),
-        "TagPill": TagPill("Boss"),
+        "TagPill": TagPill("Boss", vocabulary=BOT_VOCABULARY),
         "_Chip": _Chip("FAILURE", "#333333", "#ffffff"),
     }
     short = {

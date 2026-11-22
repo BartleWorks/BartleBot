@@ -15,6 +15,7 @@ from bartleby.qt.app.logging_setup import session_log_dir
 from bartleby.qt.app.ui_state import UiState
 from bartleby.runtime.clients import wizwalker_cache
 from bartleby.runtime.combat import dsl_check_cache
+from bartleby.runtime.game import card_art
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 from bartleby.shared.vendor import vendor_dir
@@ -27,7 +28,7 @@ from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import is_inside, resolve_bot_strategy_roots, resolve_roots, resolve_shared_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import templates_dir
-from bartlebot.game import card_art, wiki_browser
+from bartlebot.game import wiki_browser
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.updates.feed import staging_dir
@@ -44,7 +45,7 @@ def _default_write_paths() -> dict[str, Path]:
         "autosaves": SettingsManager.autosave_dir(),
         "settings": SettingsManager.instance().settings_path,
         "ui state": UiState().path,
-        "game art": card_art.art_dir(),
+        "game art": card_art.own_art_dir(),
         "wiki window profile": wiki_browser.profile_dir(),
         "accounts": vendor_dir(),
         "shared preferences": PreferenceStore().path,

@@ -10,11 +10,12 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.runtime.game import card_art
 from PIL import Image
 from PyQt6.QtWidgets import QTreeWidget
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.game import card_art
+from bartlebot.game import bot_art
 from bartlebot.game.art_extraction import (
     DROP_ICON_SOURCES,
     DROP_TEXTURES,
@@ -23,7 +24,7 @@ from bartlebot.game.art_extraction import (
     PIN_TEXTURES,
     STATE_SHEET_ICONS,
 )
-from bartlebot.game.card_art import drop_icon_name, pin_icon_name
+from bartlebot.game.bot_art import drop_icon_name, pin_icon_name
 from bartlebot.game.wiki_drops import PIN_KINDS, pin_kind
 from bartlebot.nodes.utility import quicksell
 
@@ -130,9 +131,9 @@ def _extract(*keys: str) -> None:
 def test_a_drop_icon_resolves_only_when_extracted(art_home):
     _extract("drop_hats", pin_icon_name("sword"))
 
-    assert card_art.drop_icon_path("Hats") == card_art.icons_dir() / "drop_hats.png"
-    assert card_art.drop_icon_path("Pins", "Balance Crushing Pin (60)") is not None
-    assert card_art.drop_icon_path("Robes") is None
+    assert bot_art.drop_icon_path("Hats") == card_art.icons_dir() / "drop_hats.png"
+    assert bot_art.drop_icon_path("Pins", "Balance Crushing Pin (60)") is not None
+    assert bot_art.drop_icon_path("Robes") is None
 
 
 def test_no_icon_for_an_uncategorized_drop(qapp, art_home):

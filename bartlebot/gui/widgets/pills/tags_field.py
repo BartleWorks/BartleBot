@@ -13,12 +13,14 @@ from __future__ import annotations
 from bartleby.qt.art_signal import follow_art
 from bartleby.qt.sidebar.sidebar_section import value_label
 from bartleby.qt.widgets.layout.flow_layout import flow_container
+from bartleby.qt.widgets.pickers.tag_picker import TagPickerButton, TagVocabulary
+from bartleby.qt.widgets.pills.tag_pill import TagChip, TagPill
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
 from bartlebot.content.bot_tags import REWARDS
-from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, TagPickerButton, TagVocabulary
-from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagChip, TagPill
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY
+from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill
 
 _PLACEHOLDER = "—"
 

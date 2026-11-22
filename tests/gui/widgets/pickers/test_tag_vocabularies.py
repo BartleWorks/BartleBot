@@ -1,125 +1,51 @@
-"""Tests for the bot-tag picker shared by the bot header and the library panel."""
+"""Tests for BartleBot's tag vocabularies, and the Tags field that edits a bot's.
 
-from dataclasses import replace
+The picker, pills and chips themselves are core's, tested there.
+"""
 
 from bartleby.qt.widgets.pickers.picker_popup import _RowWidget
-from bartleby.runtime.combat.strategy_tags import STRATEGY_TAG_GROUPS
-from PyQt6.QtCore import QEvent
+from bartleby.qt.widgets.pickers.tag_picker import (
+    tag_sections,
+)
+from bartleby.qt.widgets.pills.tag_pill import TagChip, TagPill
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.bot.schema import BotConfig
-from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS
+from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group
 from bartlebot.gui.canvas.bot_header import BotHeader
-from bartlebot.gui.widgets.pickers.tag_picker import (
-    BOT_VOCABULARY,
-    STRATEGY_VOCABULARY,
-    TagPickerButton,
-    count_label,
-    group_accent,
-    tag_group,
-    tag_sections,
-)
-from bartlebot.gui.widgets.pills.tag_pill import TagChip, TagPill
-from tests.picker_helpers import pick
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY
 
 # ---------------------------------------------------------------------------
-# Section building (pure)
+# The vocabularies
 # ---------------------------------------------------------------------------
+
+
+def test_the_bot_vocabulary_is_the_bot_tags():
+    assert BOT_VOCABULARY.tags == BOT_TAGS
 
 
 def test_sections_mirror_the_vocabulary():
-    sections = tag_sections()
+    sections = tag_sections(BOT_VOCABULARY)
 
     assert [title for title, _ in sections] == list(TAG_GROUPS)
     assert [r.key for _, rows in sections for r in rows] == list(BOT_TAGS)
 
 
-def test_rows_carry_no_description():
-    """Names say enough; a second line doubled the row height and read as an underline."""
-    assert all(not r.description for _, rows in tag_sections() for r in rows)
-
-
-def test_counts_are_omitted_when_not_supplied():
-    """The editor has no library to count, and '0' there would be a lie."""
-    assert all(r.meta == "" for _, rows in tag_sections() for r in rows)
-
-
 def test_counts_carry_their_unit():
     """A bare "49" beside a name reads as ambiguous until you work out what it counts."""
-    rows = {r.key: r.meta for _, rows in tag_sections({"Gear": 49}) for r in rows}
+    rows = {r.key: r.meta for _, rows in tag_sections(BOT_VOCABULARY, {"Gear": 49}) for r in rows}
 
     assert rows["Gear"] == "49 bots"
 
 
-def test_a_count_of_one_is_singular():
-    assert count_label(1) == "1 bot"
-    assert count_label(0) == "0 bots"
-
-
-def test_a_tag_with_no_bots_is_listed_but_dimmed():
-    """A missing row reads as a bug; a dimmed "0 bots" is an answer."""
-    rows = {r.key: r for _, rows in tag_sections({"Gear": 49}) for r in rows}
-
-    assert rows["Mounts"].meta == "0 bots"
-    assert rows["Mounts"].dim
-    assert not rows["Gear"].dim
-
-
-def test_nothing_is_dimmed_when_counts_are_unknown():
-    """The editor has no counts, so nothing there is "empty"."""
-    assert not any(r.dim for _, rows in tag_sections() for r in rows)
-
-
 def test_the_two_groups_get_different_dots():
-    assert group_accent("Rewards") != group_accent("Activities")
+    assert BOT_VOCABULARY.accent("Gear") != BOT_VOCABULARY.accent("Boss")
 
 
 def test_tag_group_finds_the_owning_group():
     assert tag_group("Gear") == "Rewards"
     assert tag_group("Dungeon") == "Activities"
     assert tag_group("Nonsense") == ""
-
-
-# ---------------------------------------------------------------------------
-# The button
-# ---------------------------------------------------------------------------
-
-
-def test_tags_come_back_in_vocabulary_order_not_click_order(qapp):
-    btn = TagPickerButton()
-    btn._open()
-
-    btn._popup._on_row_toggled("Dungeon", True)
-    btn._popup._on_row_toggled("Gear", True)
-
-    assert btn.tags() == ["Gear", "Dungeon"]
-    btn._popup.close()
-
-
-def test_the_popup_offers_every_tag(qapp):
-    btn = TagPickerButton()
-    btn._open()
-
-    assert len(btn._popup.findChildren(_RowWidget)) == len(BOT_TAGS)
-    btn._popup.close()
-
-
-def test_constructing_the_button_does_not_recurse(qapp):
-    """This widget styles itself, and setStyleSheet feeds StyleChange back in.
-    Without the re-entrancy guard the app died at startup with no traceback at
-    all — a 0xC0000409 stack overflow inside window construction."""
-    btn = TagPickerButton(placeholder="Filter by tag")
-
-    assert btn.text() == "Filter by tag"
-
-
-def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):
-    btn = TagPickerButton()
-    btn.setStyleSheet("")
-
-    qapp.sendEvent(btn, QEvent(QEvent.Type.StyleChange))
-
-    assert "QToolButton" in btn.styleSheet()
 
 
 # ---------------------------------------------------------------------------
@@ -180,53 +106,6 @@ def test_the_editor_offers_no_counts(qapp):
 
     assert all(w._row.meta == "" for w in picker._popup.findChildren(_RowWidget))
     picker._popup.close()
-
-
-# ---------------------------------------------------------------------------
-# One button per group
-# ---------------------------------------------------------------------------
-
-
-def test_a_grouped_button_offers_only_its_own_group(qapp):
-    btn = TagPickerButton(group="Activities")
-    btn._open()
-
-    assert len(btn._popup.findChildren(_RowWidget)) == len(TAG_GROUPS["Activities"])
-    btn._popup.close()
-
-
-def test_a_grouped_button_keeps_its_group_name_when_nothing_is_selected(qapp):
-    """The name is the only thing advertising the vocabulary to someone who has
-    not opened the popup, so it must not be replaced by a placeholder dash."""
-    assert TagPickerButton(group="Rewards", placeholder="Rewards").text() == "Rewards"
-
-
-def test_a_grouped_button_counts_its_selection_rather_than_listing_it(qapp):
-    btn = TagPickerButton(group="Rewards", placeholder="Rewards")
-    btn._open()
-
-    btn._popup._on_row_toggled("Gear", True)
-    btn._popup._on_row_toggled("Jewels", True)
-
-    assert btn.text() == "Rewards (2)"
-    btn._popup.close()
-
-
-def test_an_ungrouped_button_still_lists_its_selection(qapp):
-    """The library's ungrouped picker names what is selected rather than counting."""
-    btn = TagPickerButton()
-    btn._open()
-
-    btn._popup._on_row_toggled("Gear", True)
-
-    assert btn.text() == "Gear"
-    btn._popup.close()
-
-
-def test_tag_sections_for_a_group_drops_the_others():
-    sections = tag_sections(group="Activities")
-
-    assert [name for name, _ in sections] == ["Activities"]
 
 
 # ---------------------------------------------------------------------------
@@ -343,60 +222,5 @@ def test_a_chip_is_colored_by_its_group(qapp):
     field, _section = _field(["Gear", "Boss"], editable=True)
     styles = " ".join(c.styleSheet() for c in field.findChildren(TagChip))
 
-    assert group_accent("Rewards") in styles
-    assert group_accent("Activities") in styles
-
-
-# ---------------------------------------------------------------------------
-# The vocabulary is a parameter (#125)
-# ---------------------------------------------------------------------------
-
-
-def test_the_default_vocabulary_is_the_bot_tags():
-    assert BOT_VOCABULARY.tags == BOT_TAGS
-    assert tag_sections() == tag_sections(vocabulary=BOT_VOCABULARY)
-
-
-def test_sections_follow_the_vocabulary_they_are_given():
-    sections = tag_sections(vocabulary=STRATEGY_VOCABULARY)
-    assert [name for name, _rows in sections] == list(STRATEGY_TAG_GROUPS)
-
-
-def test_counts_use_the_vocabularys_noun():
-    vocab = replace(STRATEGY_VOCABULARY, noun=("preset", "presets"))
-    [(_name, rows)] = tag_sections({"Hitter": 1, "Healer": 2}, group="Role", vocabulary=vocab)
-    assert [r.meta for r in rows] == ["1 preset", "0 presets", "2 presets", "0 presets"]
-
-
-def test_a_picker_returns_tags_in_its_own_vocabularys_order(qapp):
-    btn = TagPickerButton(title="Role", group="Role", vocabulary=STRATEGY_VOCABULARY)
-    pick(btn, "Healer", "Hitter")
-    assert btn.tags() == ["Hitter", "Healer"]
-
-
-def test_a_strategy_chip_and_pill_take_their_color_from_the_strategy_vocabulary(qapp):
-    chip = TagChip("Custom", vocabulary=STRATEGY_VOCABULARY)
-    pill = TagPill("Hitter", vocabulary=STRATEGY_VOCABULARY)
-    assert STRATEGY_VOCABULARY.accent("Custom") in chip.styleSheet()
-    assert STRATEGY_VOCABULARY.accent("Hitter") in pill.styleSheet()
-    assert STRATEGY_VOCABULARY.accent("Custom") != STRATEGY_VOCABULARY.accent("Hitter")
-
-
-def test_new_art_rebuilds_the_rows_keeping_their_counts(qapp):
-    """The rows hold their medallions, so art extracted after the button was made needs new rows (#239)."""
-    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
-
-    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
-
-    button = TagPickerButton(counts={"Gold": 3}, group="Rewards")
-
-    def gold_row():
-        return next(r for _title, rows in button._sections for r in rows if r.key == "Gold")
-
-    assert gold_row().icon is None
-
-    write_extracted_art(icons=["tag_gold"])
-    announce_art_changed()
-
-    assert gold_row().icon is not None
-    assert gold_row().meta == "3 bots"
+    assert BOT_VOCABULARY.accent("Gear") in styles
+    assert BOT_VOCABULARY.accent("Boss") in styles

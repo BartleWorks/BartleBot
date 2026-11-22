@@ -18,6 +18,7 @@ patched — both sections take one — so nothing here touches the real
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.widgets.inputs.growing_text_edit import GrowingTextEdit
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -39,7 +40,6 @@ from bartlebot.bot.schema import (
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
 from bartlebot.gui.sidebar.strategy_panel import LOCKED
-from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import (
     OPTION_TYPES,
     BoolChoice,

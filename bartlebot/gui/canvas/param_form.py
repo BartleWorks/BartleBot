@@ -28,6 +28,7 @@ from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.pickers.player_picker import pick_player, picker_label
 from bartleby.qt.widgets.pills.pill import NeutralChip
 from PyQt6.QtCore import QEvent, QLocale, QRectF, QSize, QStringListModel, Qt, pyqtSignal
 from PyQt6.QtGui import (
@@ -69,7 +70,6 @@ from bartlebot.gui.canvas.variable_rows import AssignmentsField, parse_rows
 from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget
-from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
 from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation

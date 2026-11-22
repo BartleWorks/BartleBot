@@ -46,7 +46,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.content.bot_tags import suggested_tags
-from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
+from bartlebot.gui.widgets.pickers.tag_vocabularies import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.pills.tags_field import TagsField
 
 if TYPE_CHECKING:

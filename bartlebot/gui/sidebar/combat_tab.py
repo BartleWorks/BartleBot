@@ -87,6 +87,8 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from bartleby.qt.art_signal import follow_art
+from bartleby.qt.combat.deck_link import DeckClientLink
+from bartleby.qt.combat.dialog import NONE_LABEL, NONE_TOOLTIP, FlowStep
 from bartleby.qt.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.theming.account_accent import account_accent
@@ -94,8 +96,12 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.cards.add_card import AddCard
+from bartleby.qt.widgets.cards.archmastery_badge import ArchmasteryBadge
+from bartleby.qt.widgets.cards.card_art_tile import CardArtStrip
 from bartleby.qt.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
+from bartleby.qt.widgets.cards.deck_card_list import DeckCardList
 from bartleby.qt.widgets.labels.elided_label import ElidedLabel
+from bartleby.qt.widgets.labels.step_heading import Step
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.drag_reorder import DragReorder
 from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
@@ -103,6 +109,13 @@ from bartleby.qt.widgets.pickers.picker_popup import PickerRow, Section
 from bartleby.qt.widgets.pills.pill import AccentPill, WarningPill
 from bartleby.qt.widgets.pills.player_badge import PlayerBadge
 from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.combat.deck_content import (
+    APPLY_DECK,
+    ARCHMASTERY_MODES,
+    IMPORT_DECK,
+    archmastery_note,
+    deck_groups,
+)
 from bartleby.runtime.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
@@ -133,7 +146,6 @@ from bartlebot.combat.combat_resolution import (
     defaults_in_use,
     describe_source,
 )
-from bartlebot.combat.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
 from bartlebot.combat.flee_marks import FledFight, FleeMarks, fled_on_default, fled_text, fled_tooltip
@@ -149,14 +161,7 @@ from bartlebot.combat.strategy_store import (
 )
 from bartlebot.content import bot_roots
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
-from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.combat_strategies.dialog import (
-    NONE_LABEL,
-    NONE_TOOLTIP,
-    CombatStrategyDialog,
-    DialogMode,
-    FlowStep,
-)
+from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.dialogs.choose_fights_dialog import TITLE as ADD_FLOW_TITLE
 from bartlebot.gui.dialogs.choose_fights_dialog import ChooseFightsDialog, FightsAnswer
 from bartlebot.gui.sidebar.strategy_panel import (
@@ -171,10 +176,6 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
-from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
-from bartlebot.gui.widgets.labels.step_heading import Step
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
@@ -1474,7 +1475,7 @@ class CombatTab(QWidget):
 
         ``None`` (the default) means nobody has installed one, which is the normal state
         in tests and in a session with nothing running: the dialog's player pills simply
-        go uncolored. See gui/widgets/pills/player_pills.py for why that degrades cleanly
+        go uncolored. See core's qt/widgets/pills/player_pills.py for why that degrades cleanly
         rather than falling back to a color.
 
         The tab's own player pills and deck stripes ask the same source, on a timer while

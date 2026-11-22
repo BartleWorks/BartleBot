@@ -16,6 +16,7 @@ tag picking also depend on, for one caller.
 from __future__ import annotations
 
 from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.cards.strategy_card import StrategyCard
 from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.runtime.combat.strategy_summary import StrategySummary
@@ -29,7 +30,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat.bot_combat_strategy import summarize_bot
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 
 NONE_LABEL = "(no Bot Combat Strategy)"
 

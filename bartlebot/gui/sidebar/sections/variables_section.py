@@ -40,6 +40,7 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
+from bartleby.qt.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.layout.discard import discard_widget
@@ -62,7 +63,6 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
 from bartlebot.gui.context_help import set_help_topic
-from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import TYPE_LABELS
 from bartlebot.gui.widgets.inputs.variable_widgets import VariableValueField
 

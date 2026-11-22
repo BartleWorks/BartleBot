@@ -13,13 +13,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
+from bartleby.qt.widgets.cards.card_art_tile import art_icon
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot.game import card_art, scales, worlds
-from bartlebot.gui.widgets.cards.card_art_tile import art_icon
+from bartlebot.game import bot_art, scales, worlds
 
 PLACEHOLDER = "Choose a Scales of Knowledge…"
 POPUP_WIDTH = 420
@@ -54,7 +54,7 @@ def world_icon_resolver(table: Mapping[str, scales.Scales]) -> Callable[[str], Q
         world = titles.get(title)
         if world is None:
             return None
-        path = card_art.world_icon_path(world)
+        path = bot_art.world_icon_path(world)
         return None if path is None else art_icon(path)
 
     return resolve

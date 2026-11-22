@@ -29,10 +29,10 @@ from bartleby.qt.dialogs.first_run_dialog import (
 from bartleby.qt.settings.rows import SettingsForm
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.game import card_art
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QVBoxLayout, QWidget
 
-from bartlebot.game import card_art
 from bartlebot.gui import window_panes
 from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row

@@ -10,6 +10,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.combat.assignment_card import strategy_menu_entries
+from bartleby.qt.combat.dialog import FAVORITES_HEADING, LIBRARY_HEADING
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.runtime.combat.strategy_workset import StrategyWorkingSet
 from bartleby.shared.strategy_library import StrategyKind
@@ -27,12 +29,9 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.content import store_roots
-from bartlebot.gui.combat_strategies.assignment_card import strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     BOT_STRATEGY_EMPTY_NOTE,
     CREATE_BOT_STRATEGY_TEXT,
-    FAVORITES_HEADING,
-    LIBRARY_HEADING,
     NO_BOT_STRATEGY_NOTE,
     THIS_BOT_SECTION,
     CombatStrategyDialog,
@@ -142,7 +141,7 @@ def test_pick_shows_a_deck_read_only(qapp, roots):
 
 
 def test_the_player_editor_is_read_only_when_it_is_not_editable(qapp):
-    from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor  # noqa: PLC0415
+    from bartleby.qt.combat.player_editor import PlayerStrategyEditor  # noqa: PLC0415
 
     editor = PlayerStrategyEditor()
     editor.set_editable(False)
@@ -252,7 +251,7 @@ def test_the_empty_bot_strategy_note_wraps_when_the_column_narrows(qapp, roots):
     dlg.show()
     qapp.processEvents()
 
-    item, row = page._note_item, page._note_widget
+    item, row = page._notes[THIS_BOT_SECTION]
     wide = item.sizeHint().height()
     assert wide == row.heightForWidth(row.width())
 
@@ -269,7 +268,7 @@ def test_a_bot_with_no_bot_strategy_is_offered_one(qapp, roots):
     page = dlg.page(DUEL)
 
     assert page.note_text() == NO_BOT_STRATEGY_NOTE
-    buttons = [b.text() for b in page._note_widget.findChildren(ActionButton)]
+    buttons = [b.text() for b in page._notes[THIS_BOT_SECTION][1].findChildren(ActionButton)]
     assert buttons == [CREATE_BOT_STRATEGY_TEXT]
     assert not page.new_button.isEnabled()
 
@@ -279,7 +278,7 @@ def test_pick_mentions_a_missing_bot_strategy_but_offers_nothing(qapp, roots):
     page = dlg.page(DUEL)
 
     assert page.note_text() == NO_BOT_STRATEGY_NOTE
-    assert page._note_widget.findChildren(ActionButton) == []
+    assert page._notes[THIS_BOT_SECTION][1].findChildren(ActionButton) == []
 
 
 def test_create_one_makes_a_bot_strategy_that_cancel_discards(qapp, roots):
