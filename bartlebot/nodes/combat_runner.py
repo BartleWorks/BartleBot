@@ -20,7 +20,7 @@ from bartleby.runtime.timing import (
     COMBAT_TP_RETRY_INTERVAL,
     POLL_INTERVAL,
 )
-from bartleby.shared.combat_defaults import LAST_RESORT_DSL
+from bartleby.shared.combat_defaults import LAST_RESORT_DSL, slot_dsls
 
 from bartlebot.game import drop_detection
 
@@ -86,26 +86,17 @@ def resolve_combat(
     logger.debug("resolve_combat: %s", res.source_label)
     dcs = res.duel
 
-    # Collect the DSL strings for assignments that link a player strategy.
-    # Assignments with DSL of their own need no lookup.
-    pcs_map: dict[str, str] = {}
-    for pcs_id in dcs.linked_pcs_ids():
-        if pcs_id not in pcs_map:
-            pcs = res.lookup.player(pcs_id)
-            if pcs is not None:
-                pcs_map[pcs_id] = pcs.dsl
-            else:
-                logger.warning(
-                    "resolve_combat: failed to load PlayerCombatStrategy %s — affected players use built-in default",
-                    pcs_id,
-                )
-                pcs_map[pcs_id] = LAST_RESORT_DSL
+    def player(pcs_id: str):
+        pcs = res.lookup.player(pcs_id)
+        if pcs is None:
+            logger.warning(
+                "resolve_combat: failed to load PlayerCombatStrategy %s — affected players use built-in default",
+                pcs_id,
+            )
+        return pcs
 
-    # Build per-client DSL list (1-based player numbers → 0-based client indices).
-    per_client_dsl: list[str] = []
-    for client_idx in range(num_clients):
-        dsl = dcs.resolve_dsl_for_player(client_idx + 1, pcs_map)
-        per_client_dsl.append(dsl if dsl else LAST_RESORT_DSL)
+    # 1-based player numbers, P1 first, as the clients are indexed from 0.
+    per_client_dsl = slot_dsls(dcs, player, num_clients)
 
     combat_order: list[int] = dcs.combat_order if dcs.combat_order is not None else []
 
