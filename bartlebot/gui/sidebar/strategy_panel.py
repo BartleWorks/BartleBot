@@ -18,7 +18,7 @@ opening anything -- which is the whole point of a Run-mode surface.
 
 A strategy whose DSL does not parse says so on its own name, in ``THEME.error``, the
 same way ``StrategyCard`` does in the picker. Both render from one
-:class:`~bartlebot.combat.strategy_summary.StrategySummary`, so the card in the tab and the
+:class:`~bartleby.runtime.combat.strategy_summary.StrategySummary`, so the card in the tab and the
 card in the list cannot describe the same strategy differently.
 
 WHAT IT NO LONGER CARRIES
@@ -142,6 +142,7 @@ from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.layout.flow_layout import FlowLayout
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, Section
 from bartleby.qt.widgets.pills.pill import AccentPill, ActionPill, NeutralPill, WarningPill
+from bartleby.runtime.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
@@ -153,15 +154,13 @@ from bartlebot.combat.combat_resolution import (
     defaults_text,
 )
 from bartlebot.combat.flee_marks import FledFight, fled_fight_tooltip, fled_pill_text, fled_text, fled_tooltip
-from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow
 
 if TYPE_CHECKING:
+    from bartleby.runtime.combat.strategy_summary import StrategySummary
     from bartleby.shared.combat_defaults import DefaultDuel
     from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-
-    from bartlebot.combat.strategy_summary import StrategySummary
 
 #: What the *default* binding falls through to when it is unset: the user's Solo or Team
 #: default, or the recommended one (epic #201). The card shows the duel that answers, with

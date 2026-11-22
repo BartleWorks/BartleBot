@@ -21,16 +21,22 @@ The snapshots, all in `bartlebot/game/data/`, and their tools:
 | snapshot | tool | regenerate when |
 |---|---|---|
 | `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
-| `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
-| `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 | `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
 | `data/entity_names.json` | `dump_entity_names.py` | an NPC, mob or world object is added or renamed |
+| `data/reagent_nodes.json` | `dump_reagent_nodes.py` | a reagent node is added or renamed; `entity_names.json` cannot hold them, having no display name to join on |
 
 Three more are bartleby-core's, in `bartleby/runtime/game/data/`, with their tools in core's
 `tools/`: `name_tables.json` (`dump_name_tables.py`), `dialog_captions.json`
 (`dump_dialog_captions.py`) and `realm_names.json` (`dump_realm_names.py`).
-| `data/reagent_nodes.json` | `dump_reagent_nodes.py` | a reagent node is added or renamed; `entity_names.json` cannot hold them, having no display name to join on |
+
+Two more are core's but written by tools here, since they read BartleBot's type dumps. Each
+writes the core checkout beside this one, `../bartleby-core`, never the copy in `.venv`:
+
+| snapshot | tool | regenerate when |
+|---|---|---|
+| `spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
+| `spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 
 `entity_names.json` is the one snapshot taken to *avoid* a library call rather than to
 replace a probe. WizWalker's `ClientObject.display_name()` answers the same question, but it

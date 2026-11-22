@@ -6,7 +6,7 @@ Two kinds of underline: a parse error, in ``error``, and a spell name no card ha
 Two classes, because the DSL is edited in two widgets of different Qt types —
 ``DslPlainTextEdit`` for the Player Strategies tab and ``DslGrowingTextEdit`` for an
 assignment card — and both get everything from ``_DslEditMixin``. What each word *is*
-comes from :mod:`bartlebot.combat.dsl_syntax`; this module only draws and handles keys.
+comes from :mod:`bartleby.runtime.combat.dsl_syntax`; this module only draws and handles keys.
 
 Completion follows Qt's own "Custom Completer" recipe, and its one non-obvious rule
 is why this is a subclass rather than an event filter. While the popup is open it
@@ -30,12 +30,12 @@ import logging
 import re
 
 from bartleby.qt.theming.theme import THEME
+from bartleby.runtime.combat import dsl_syntax
 from bartleby.runtime.combat.dsl import DslError, DslWarning
 from PyQt6.QtCore import QEvent, QStringListModel, Qt, QTimer
 from PyQt6.QtGui import QKeyEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument
 from PyQt6.QtWidgets import QCompleter, QPlainTextEdit, QWidget
 
-from bartlebot.combat import dsl_syntax
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 
 logger = logging.getLogger(__name__)

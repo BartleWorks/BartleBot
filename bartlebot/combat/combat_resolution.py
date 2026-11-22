@@ -188,10 +188,10 @@ def ranked_officials(
     run never depends on it.
 
     *candidates* defaults to the shipped ones for the bot, read as they ship: a user's copy
-    of one is the user's, and only ever their pick (``strategy_store.list_shipped``).
+    of one is the user's, and only ever their pick (``strategy_store.list_shipped_bot_strategies``).
     """
     if candidates is None:
-        shipped = strategy_store.list_shipped(strategy_store.StrategyKind.BOT, root, user_root)
+        shipped = strategy_store.list_shipped_bot_strategies(root, user_root)
         candidates = [bcs for bcs in shipped if bcs.bot_id == bot_config.id]
     fights = fight_ids(bot_config)
     ranked: list[tuple[int, BotCombatStrategy]] = []

@@ -34,7 +34,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from bartleby.runtime.game import spell_names
+from bartleby.runtime.game import spell_names, spell_schools
 
 REPO = Path(__file__).resolve().parents[2]
 DATA = REPO / "bartlebot" / "game" / "data"
@@ -51,7 +51,7 @@ ROOT_WAD_TOOLS = (
 )
 ZONE_WAD_TOOLS = ("entity_names", "reagent_nodes", "zone_names")
 #: Snapshots a tool here writes that live in core, and the file each is diffed against.
-CORE_SNAPSHOTS = {"spell_names.json": spell_names.NAMES_PATH}
+CORE_SNAPSHOTS = {"spell_names.json": spell_names.NAMES_PATH, "spell_schools.json": spell_schools.SCHOOLS_PATH}
 
 #: Top-level fields that change on every run and say nothing about the game.
 STAMPS = {"_comment", "generated", "source", "skipped", "errors"}

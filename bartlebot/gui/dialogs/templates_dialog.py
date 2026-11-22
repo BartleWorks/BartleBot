@@ -31,6 +31,7 @@ from bartleby.qt.widgets.cards.start_card import StartCard
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.runtime.combat.strategy_tags import SOURCE
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -43,7 +44,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.content.templates.template_gallery import GalleryEntry
 from bartlebot.gui.context_help import set_help_topic

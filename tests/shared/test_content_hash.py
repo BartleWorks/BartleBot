@@ -10,8 +10,10 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.runtime.combat.strategy_workset import StrategyWorkingSet
 from bartleby.shared.content_hash import HISTORY_CAP, content_sha256, next_history, official_updated, record_save
 from bartleby.shared.share_file import shareable_content
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import (
     DeckData,
     DeckPreset,
@@ -22,8 +24,8 @@ from bartleby.shared.strategy_models import (
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_owner import load_working_set
 from bartlebot.combat.strategy_store import (
-    StrategyKind,
     fingerprint,
     load_bot_strategy,
     load_duel_strategy,
@@ -31,7 +33,6 @@ from bartlebot.combat.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import Origin, pill_text
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
@@ -370,7 +371,7 @@ def _reship(duel: DuelCombatStrategy, shipped: Path) -> None:
 
 
 def _workset(shipped: Path, user: Path) -> StrategyWorkingSet:
-    return StrategyWorkingSet.from_store(root=shipped, user_root=user)
+    return load_working_set(root=shipped, user_root=user)
 
 
 def test_a_strategy_override_whose_official_one_changed_says_so(tmp_path):

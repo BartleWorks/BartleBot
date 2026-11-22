@@ -55,6 +55,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
 
+from bartleby.runtime.game.spell_schools import SCHOOL_ORDER
 from bartleby.shared.game_install import find_install
 from bartleby.shared.preferences import PreferenceStore
 from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
@@ -79,7 +80,6 @@ from bartlebot.game.card_art import (
     tag_icon_name,
     world_icon_name,
 )
-from bartlebot.game.spell_schools import SCHOOL_ORDER
 from bartlebot.game.worlds import DUNGEON_WORLDS
 
 logger = logging.getLogger(__name__)

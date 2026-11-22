@@ -62,6 +62,7 @@ from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.runtime.combat.dsl import DslError, dsl_error, dsl_warning_text, dsl_warnings
+from bartleby.runtime.combat.dsl_syntax import DSL_HELP
 from bartleby.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -72,7 +73,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton

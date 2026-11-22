@@ -8,7 +8,7 @@ already selected a different strategy in the list.
 
 What replaced it is a boundary rather than a better timer: the strategy handed
 to :meth:`load` is a working copy out of
-:class:`~bartlebot.combat.strategy_workset.StrategyWorkingSet`, so this editor writes
+:class:`~bartleby.runtime.combat.strategy_workset.StrategyWorkingSet`, so this editor writes
 through to it on every edit and nothing reaches disk until the dialog is saved.
 ``changed`` is emitted for whoever wants to redraw a card, and carries nothing —
 there is no longer a delay across which the selection could have moved.
@@ -22,6 +22,7 @@ from __future__ import annotations
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
 from bartleby.runtime.combat.dsl import DslError, dsl_error, dsl_warning_text, dsl_warnings
+from bartleby.runtime.combat.dsl_syntax import DSL_HELP
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -31,7 +32,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.widgets.inputs.dsl_edit import DslPlainTextEdit
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton

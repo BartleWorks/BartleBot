@@ -52,9 +52,13 @@ def test_every_tool_it_runs_is_one_of_bartlebots_and_writes_a_shipped_file():
         assert shipped.is_file(), name
 
 
-def test_spell_names_are_diffed_against_cores_snapshot():
-    """Their dumper is BartleBot's, for its type dumps, but the snapshot is core's (BartleBuddy #31)."""
-    from bartleby.runtime.game import spell_names
+def test_spell_names_and_schools_are_diffed_against_cores_snapshots():
+    """Their dumpers are BartleBot's, for its type dumps, but the snapshots are core's (BartleBuddy #31)."""
+    from bartleby.runtime.game import spell_names, spell_schools
 
-    assert snapshots.CORE_SNAPSHOTS == {"spell_names.json": spell_names.NAMES_PATH}
+    assert snapshots.CORE_SNAPSHOTS == {
+        "spell_names.json": spell_names.NAMES_PATH,
+        "spell_schools.json": spell_schools.SCHOOLS_PATH,
+    }
     assert not (snapshots.DATA / "spell_names.json").exists()
+    assert not (snapshots.DATA / "spell_schools.json").exists()

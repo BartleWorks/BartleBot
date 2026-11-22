@@ -104,6 +104,7 @@ from bartleby.qt.widgets.pills.pill import AccentPill, WarningPill
 from bartleby.qt.widgets.pills.player_badge import PlayerBadge
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.timing import PLAYER_COLOR_REFRESH_INTERVAL
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -116,8 +117,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.bot_combat_strategy import StrategyLookup, duplicate_bot_strategy, read_bot_names
+from bartlebot.combat.bot_combat_strategy import StrategyLookup, duplicate_bot_strategy, read_bot_names, summarize_bot
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_owner import bot_strategy_of, load_working_set
 from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -137,17 +139,14 @@ from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
 from bartlebot.combat.flee_marks import FledFight, FleeMarks, fled_on_default, fled_text, fled_tooltip
 from bartlebot.combat.strategy_store import (
     Origin,
-    StrategyKind,
     delete_bot_strategy,
     list_bot_strategies,
     list_duel_strategies,
     list_player_strategies,
     load_bot_strategy,
-    origin_of,
+    origin_of_bot_strategy,
     save_bot_strategy,
 )
-from bartlebot.combat.strategy_summary import summarize_bot
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
@@ -1553,7 +1552,7 @@ class CombatTab(QWidget):
         picked, and picking it on the user's behalf would make it level 1, the user's,
         without the user doing anything.
         """
-        return [b for b in self._all_bcs if origin_of(StrategyKind.BOT, b.id) is not Origin.SHIPPED]
+        return [b for b in self._all_bcs if origin_of_bot_strategy(b.id) is not Origin.SHIPPED]
 
     def _set_bindings(self, assignments: list[StateAssignment]) -> None:
         """Bind every fight from a strategy file's *assignments*, whose order is the cards'.
@@ -1682,7 +1681,7 @@ class CombatTab(QWidget):
         *flow*, *start_new* and *start_from* are the add flow's (#272), passed through.
         """
         library_only = mode is DialogMode.LIBRARY or self._config is None
-        ws = StrategyWorkingSet.from_store(
+        ws = load_working_set(
             bot_strategy_id=None if library_only or self._bcs is None else self._bcs.id,
             bot_id=None if library_only else self._config.id,
         )
@@ -1708,7 +1707,7 @@ class CombatTab(QWidget):
         if not accepted:
             self.refresh_strategy_data()
             return None
-        made = ws.bot_strategy
+        made = bot_strategy_of(ws)
         if self._config is not None and made is not None and (self._bcs is None or made.id != self._bcs.id):
             # A bot with no Bot Combat Strategy had one made in the dialog: it becomes the active one.
             SettingsManager.instance().set_active_strategy(self._config.id, made.id)

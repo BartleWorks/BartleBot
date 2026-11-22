@@ -27,7 +27,10 @@ otherwise it would depend on one user's setup for one bot. The dialog's assignme
 enforces that, and :func:`library_links_to_own` finds a violation that got in some
 other way, such as a hand-edited file.
 
-Qt-free, like :mod:`bartlebot.combat.strategy_summary` and :mod:`bartlebot.combat.combat_warnings`.
+Its summary, :func:`summarize_bot`, is here too: core's summaries cover the library's
+kinds, and a Bot Combat Strategy is BartleBot's alone.
+
+Qt-free, like :mod:`bartleby.runtime.combat.strategy_summary` and :mod:`bartlebot.combat.combat_warnings`.
 """
 
 from __future__ import annotations
@@ -38,6 +41,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.runtime.combat.strategy_summary import Health, HealthStatus, StrategySummary
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.combat import strategy_store
@@ -218,3 +222,24 @@ def read_bot_names(*bots_dirs: str | Path) -> dict[str, str]:
         if isinstance(data, dict) and isinstance(data.get("id"), str):
             names[data["id"]] = data.get("name") or path.stem
     return names
+
+
+#: A Bot Combat Strategy's facet with no fight overridden: its default covers every fight,
+#: or it has no default either.
+DEFAULT_ONLY = "Default strategy only"
+NOTHING_ASSIGNED = "Nothing assigned"
+
+
+def summarize_bot(bcs: BotCombatStrategy) -> StrategySummary:
+    """Summarize a Bot Combat Strategy: how many fights it overrides.
+
+    With no override, the facet says whether its default covers every fight or it
+    assigns nothing at all, so every fight falls to the Default Duel Strategies.
+    """
+    n = sum(len(a.fights) for a in bcs.state_assignments)
+    if n:
+        facets = [f"{n} state override{'s' if n != 1 else ''}"]
+    else:
+        facets = [DEFAULT_ONLY if bcs.default_strategy_id else NOTHING_ASSIGNED]
+    health = Health(HealthStatus.OK if (bcs.default_strategy_id or bcs.state_assignments) else HealthStatus.EMPTY)
+    return StrategySummary(name=bcs.name, description=bcs.description, facets=facets, health=health)

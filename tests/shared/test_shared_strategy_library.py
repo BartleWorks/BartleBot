@@ -10,7 +10,7 @@ from __future__ import annotations
 from bartleby.shared import official_set
 from bartleby.shared.official_set import InstallKey
 from bartleby.shared.strategy_library import (
-    LibraryKind,
+    StrategyKind,
 )
 from bartleby.shared.vendor import product_dir, vendor_dir
 
@@ -18,7 +18,7 @@ from bartlebot.content.store_roots import DEV_ENV_VAR, resolve_shared_roots
 from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
-PLAYER = LibraryKind.PLAYER
+PLAYER = StrategyKind.PLAYER
 
 
 # ---------------------------------------------------------------------------

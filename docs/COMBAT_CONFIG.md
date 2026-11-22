@@ -40,9 +40,9 @@ The writing rule, for every surface:
 - **The full name appears once per surface**: in a banner, a menu item or a section heading.
 - **After that, a surface uses the level's word alone** (Duel, Player) or the item's name. "In 'Solo' only", under a heading that already says which Bot Combat Strategy, not "In the Bot Combat Strategy 'Solo' only".
 - **Two full names never share a sentence**, and there is no third form, such as "bot strategy".
-- **Strategies owned by one Bot Combat Strategy are This bot's.** Their pill and their Source filter value both say **This bot**, from one constant, `strategy_tags.THIS_BOT_SOURCE`.
+- **Strategies owned by one Bot Combat Strategy are This bot's.** Their pill and their Source filter value both say **This bot**, from one constant, `bot_strategy_owner.THIS_BOT_SOURCE`, which is also the `source` core's working set reads off the owner.
 
-In code, a `BotCombatStrategy` is a `bot_strategy` (or `bcs`), the strategies inside it are its *own* (`own_duel`, `own_items`, `is_own_entry`, `OWN_KINDS`), and the modules are `combat/bot_strategy_models.py` and `combat/bot_combat_strategy.py`. No file format changed: no field of any combat model carries the word.
+In code, a `BotCombatStrategy` is a `bot_strategy` (or `bcs`), the strategies inside it are its *own* (`own_duel`, `own_items`, `is_own_entry`, `OWN_KINDS`), and the modules are `combat/bot_strategy_models.py`, `combat/bot_combat_strategy.py` and `combat/bot_strategy_owner.py`. Core's working set, which BartleBuddy shares, calls it an *owner* (`ws.owner`, `create(..., own=True)`, `create_owner`); `bot_strategy_of(ws)` is the Bot Combat Strategy behind it. No file format changed: no field of any combat model carries the word.
 
 `DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. A `StateAssignment` and the Bot Combat Strategy's `default_strategy_id` only ever *link* one, by id, and an unlinked one falls back a level. There is no inline duel config. `StateAssignment.duel_config` and `BotCombatStrategy.default_duel_config` were removed in #118 rather than migrated, because none existed and the editor for them was already gone. The models do not forbid extra fields, so a stray old file still loads, with those fields ignored.
 
@@ -169,7 +169,7 @@ Two things fall out of the tabs being pages of one working set:
 
 Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `currentItemChanged`, and repopulating emits it again — one keystroke in a filter box used to reload the editor and send the DSL caret back to 0. Reselect *inside* the blocked-signals region, and detach the editor only when the entry is actually gone from the working set, never when it is merely filtered out of view.
 
-**Tags, filters and favorites (#125).** A bar across the top of each tab carries facet pickers, the search box and, below them, the selected values as removable chips — the bot library's shape. The vocabulary is `bartlebot/combat/strategy_tags.py`, laid out like `bot_tags.py`: tags OR within a group and AND across groups.
+**Tags, filters and favorites (#125).** A bar across the top of each tab carries facet pickers, the search box and, below them, the selected values as removable chips — the bot library's shape. The vocabulary is core's `bartleby/runtime/combat/strategy_tags.py`, laid out like `bot_tags.py`: tags OR within a group and AND across groups.
 
 - **Source** (Built-in / Built-in (modified) / Custom) is derived from `StrategyWorkingSet.status`, never stored, and its words are the source pills'. A tab with a This bot section adds **This bot**, for the bot's own entries, the same word their pill says, from the same constant. Which Bot Combat Strategy is the section heading's job, not the pill's: a pill of its name repeated the heading and was the one pill wide enough to push a card past its column. **Role** (Hitter, Support, Healer, Solo) is stored, in `tags`, on Player Strategies and Deck Presets only. A duel is a whole team, so it has no role.
 - **Works with school X** (Duel and Player tabs): a Player Strategy whose `schools` is empty or contains X, or a duel with a player slot that accepts X. A slot no assignment covers falls back to the built-in default, so it accepts every school. Several schools OR.
@@ -655,19 +655,21 @@ follow it by.
 |---|---|
 | `shared/strategy_models.py` | player strategies, duel strategies and decks, as Pydantic models |
 | `combat/bot_strategy_models.py` | the Bot Combat Strategy (`BotCombatStrategy`) and its fight assignments |
-| `combat/strategy_store.py` | the two roots, load/save/delete per kind, `Origin`, `unique_name` |
-| `combat/strategy_workset.py` | the Save/Cancel boundary |
-| `combat/strategy_summary.py` | every display string, derived once |
+| `combat/strategy_store.py` | the two roots, load/save/delete per kind, `Origin`; a Bot Combat Strategy's own `origin_of_bot_strategy` and `list_shipped_bot_strategies` |
+| core's `runtime/combat/strategy_workset.py` | the Save/Cancel boundary, over the library and an optional owner (`StrategyOwner`) |
+| `combat/bot_strategy_owner.py` | the Bot Combat Strategy as that owner (`BotStrategyOwner`), and `load_working_set`, how BartleBot opens one |
+| core's `runtime/combat/strategy_summary.py` | every display string, derived once |
+| core's `runtime/combat/strategy_tags.py`, `dsl_syntax.py`, `slot_order.py`, `card_kinds.py` | the tag vocabulary and its filter rule, the DSL's vocabulary, slots left to chance, a spell's broad kind |
 | `combat/combat_grouping.py`, `combat/combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
 | `combat/combat_resolution.py` | the four levels a fight's duel strategy comes from |
 | `combat/flee_marks.py` | the session's fights fled on a default, which of them still run one, and the marks' words |
 | `shared/combat_defaults.py`, `shared/first_run.py` | the shipped default ids, levels 3 and 4, and what the first-run question stores |
 | `combat/fight_keys.py` | which stored fight belongs to which combat state |
-| `combat/bot_combat_strategy.py` | the own-then-library lookup, what one of a bot's own duels takes with it, and duplicating a Bot Combat Strategy |
+| `combat/bot_combat_strategy.py` | the own-then-library lookup, what one of a bot's own duels takes with it, duplicating a Bot Combat Strategy, and its summary (`summarize_bot`) |
 
-All of these are Qt-free and need no `QApplication`. That is deliberate and worth keeping: the boundary, the precedence, the filter rule and the warnings are all testable without a widget, which is why the Qt tests over them are small enough to stay fast.
+All of these are Qt-free and need no `QApplication`. The core ones moved there for BartleBuddy, which edits the same library and has no Bot Combat Strategy, so its working set has no owner (BartleBuddy #31, Stage 5); core's `docs/ARCHITECTURE.md` has the cut. That is deliberate and worth keeping: the boundary, the precedence, the filter rule and the warnings are all testable without a widget, which is why the Qt tests over them are small enough to stay fast.
 
-**Every display string comes from `strategy_summary`.** A surface that formats a player list or a health badge its own way is how the formatting drifted last time; `format_players`, `summarize_duel`, `summarize_player`, `summarize_bot` and `summarize_deck` are the whole vocabulary.
+**Every display string comes from core's `strategy_summary`, and a Bot Combat Strategy's from `summarize_bot`.** A surface that formats a player list or a health badge its own way is how the formatting drifted last time; `format_players`, `summarize_duel`, `summarize_player`, `summarize_deck` and `summarize_bot` are the whole vocabulary.
 
 ## Two things this is built to survive
 

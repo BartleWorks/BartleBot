@@ -78,8 +78,8 @@ from bartleby.shared.share_match import (
     update_message,
     version_is_newer,
 )
-from bartleby.shared.store_files import Origin, load_in
-from bartleby.shared.strategy_library import LibraryKind
+from bartleby.shared.store_files import Origin, load_in, unique_name
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from pydantic import BaseModel, ValidationError
 
@@ -87,7 +87,6 @@ from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy, read_bot_names
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.combat.strategy_store import StrategyKind, unique_name
 from bartlebot.content import bot_roots
 from bartlebot.content.new_bot import file_stem, library_folders, unique_file_name
 from bartlebot.content.share_export import (
@@ -137,15 +136,9 @@ MODELS: dict[str, type[BaseModel]] = {
 ORDER: tuple[str, ...] = (PLAYER_STRATEGY, DUEL_STRATEGY, SUBGRAPH, BOT, BOT_COMBAT_STRATEGY, DECK)
 
 _LIBRARY_KINDS = {
-    PLAYER_STRATEGY: LibraryKind.PLAYER,
-    DUEL_STRATEGY: LibraryKind.DUEL,
-    DECK: LibraryKind.DECK,
-}
-_STRATEGY_KINDS = {
     PLAYER_STRATEGY: StrategyKind.PLAYER,
     DUEL_STRATEGY: StrategyKind.DUEL,
     DECK: StrategyKind.DECK,
-    BOT_COMBAT_STRATEGY: StrategyKind.BOT,
 }
 
 #: What a kind is called in the plural.
@@ -358,8 +351,8 @@ def holding(sources: Sources, kind: str, item_id: str) -> Holding | None:
             logger.warning("Could not read %s to match an import against it", found.path, exc_info=True)
             return None
         return Holding(bot, Origin.SHIPPED if found.shipped else Origin.USER, path=found.path)
-    origin = sources.strategy_origin(_STRATEGY_KINDS[kind], item_id)
     if kind == BOT_COMBAT_STRATEGY:
+        origin = sources.bot_strategy_origin(item_id)
         shipped, user = _bcs_dirs(sources)
         item = load_in(user, item_id, BotCombatStrategy.load) or load_in(shipped, item_id, BotCombatStrategy.load)
         return None if item is None else Holding(item, origin)
@@ -371,6 +364,7 @@ def holding(sources: Sources, kind: str, item_id: str) -> Holding | None:
     except Exception:
         logger.warning("Could not read the %s %s to match an import against it", NOUNS[kind], item_id, exc_info=True)
         return None
+    origin = sources.strategy_origin(_LIBRARY_KINDS[kind], item_id)
     return Holding(entry.item, origin, fingerprint=entry.fingerprint, read_only=entry.read_only)
 
 
@@ -445,7 +439,7 @@ def bots_affected(sources: Sources, kind: str, item_id: str) -> list[str]:
         bot_ids = {b.bot_id for b in bot_strategies if item_id in _bot_strategy_links(b)}
     else:
         shipped, user = _shared_roots(sources)
-        duels = strategy_library.entries(shipped, user, LibraryKind.DUEL).values()
+        duels = strategy_library.entries(shipped, user, StrategyKind.DUEL).values()
         linking = {e.item.id for e in duels if item_id in e.item.linked_pcs_ids()}  # type: ignore[attr-defined]
         bot_ids = {
             b.bot_id

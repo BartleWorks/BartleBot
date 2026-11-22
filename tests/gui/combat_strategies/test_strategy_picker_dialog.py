@@ -17,11 +17,11 @@ layer beneath it are shared by both surfaces.
 
 from __future__ import annotations
 
+from bartleby.runtime.combat.strategy_summary import HealthStatus, summarize_duel
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 from PyQt6.QtCore import Qt
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.combat.strategy_summary import HealthStatus, summarize_duel
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 

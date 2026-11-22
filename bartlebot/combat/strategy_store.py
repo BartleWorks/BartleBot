@@ -32,18 +32,19 @@ module had two roots. Pass ``user_root`` explicitly to exercise the shadowing
 behavior. With both omitted, the real shipped/user roots are used.
 
 ``Origin`` is re-exported here because every combat surface imports it from this module.
+Which kind a library item is, :class:`~bartleby.shared.strategy_library.StrategyKind`, is
+core's; a Bot Combat Strategy is no kind of it, so its own functions here take no kind
+(:func:`origin_of_bot_strategy`, :func:`list_shipped_bot_strategies`).
 """
 
 from __future__ import annotations
 
 import logging
-import re
-from enum import Enum
 from pathlib import Path
 
 from bartleby.shared import strategy_library as library
 from bartleby.shared.store_files import record_save_in
-from bartleby.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
+from bartleby.shared.strategy_library import ChangedOnDisk, Entry, NewerFormat, StrategyKind
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -67,7 +68,6 @@ __all__ = [
     "Entry",
     "NewerFormat",
     "Origin",
-    "StrategyKind",
     "delete_bot_strategy",
     "delete_deck_preset",
     "delete_duel_strategy",
@@ -81,59 +81,18 @@ __all__ = [
     "list_duel_strategies",
     "list_player_strategies",
     "list_shipped",
+    "list_shipped_bot_strategies",
     "load_bot_strategy",
     "load_deck_preset",
     "load_duel_strategy",
     "load_player_strategy",
     "origin_of",
+    "origin_of_bot_strategy",
     "save_bot_strategy",
     "save_deck_preset",
     "save_duel_strategy",
     "save_player_strategy",
-    "unique_name",
 ]
-
-
-class StrategyKind(Enum):
-    """Which of the four stores an id lives in.
-
-    Only needed by the functions that answer a question *about* a file rather
-    than reading or writing one — :func:`origin_of` and the callers that want
-    one code path across kinds. The read/write API stays four explicit function
-    families, which is what nearly every caller wants.
-    """
-
-    PLAYER = "player"
-    DUEL = "duel"
-    BOT = "bot"
-    DECK = "deck"
-
-
-#: ``base (2)``, ``base (3)`` — the suffix :func:`unique_name` adds and strips.
-_COPY_SUFFIX = re.compile(r"^(?P<stem>.*?)\s*\((?P<n>\d+)\)$")
-
-
-def unique_name(base: str, existing_names) -> str:
-    """``base``, or the first free ``base (2)``, ``base (3)``, … .
-
-    One naming rule for Duplicate and ``+ New`` across all four strategy kinds,
-    so a copy of a copy reads as ``Storm AoE (3)`` rather than
-    ``Storm AoE copy copy``. A ``base`` that already carries a suffix is counted
-    from its stem for that reason — duplicating ``Storm AoE (2)`` gives
-    ``Storm AoE (3)``, not ``Storm AoE (2) (2)``.
-
-    ``existing_names`` is any iterable of names; comparison is exact, since these
-    are user-visible labels and two names differing only in case are two names.
-    """
-    taken = set(existing_names)
-    if base not in taken:
-        return base
-    match = _COPY_SUFFIX.match(base)
-    stem = match.group("stem") if match else base
-    n = int(match.group("n")) + 1 if match else 2
-    while f"{stem} ({n})" in taken:
-        n += 1
-    return f"{stem} ({n})"
 
 
 _roots = resolve_roots
@@ -153,7 +112,7 @@ def library_entries(
 ) -> dict[str, Entry]:
     """Every ``kind`` entry in the shared library, by id, each with the fingerprint a save needs."""
     shipped, user = _shared_roots(root, user_root)
-    return library.entries(shipped, user, _LIBRARY_KINDS[kind])
+    return library.entries(shipped, user, kind)
 
 
 def load_library_entry(
@@ -161,7 +120,7 @@ def load_library_entry(
 ) -> Entry:
     """``uuid`` as it is on disk now, with its fingerprint. Raises ``FileNotFoundError`` if no root has it."""
     shipped, user = _shared_roots(root, user_root)
-    return library.load(shipped, user, _LIBRARY_KINDS[kind], uuid)
+    return library.load(shipped, user, kind, uuid)
 
 
 def fingerprint(
@@ -169,25 +128,25 @@ def fingerprint(
 ) -> str | None:
     """The fingerprint ``uuid`` would load with now; see :mod:`bartleby.shared.strategy_library`."""
     _, user = _shared_roots(root, user_root)
-    return library.fingerprint(user, _LIBRARY_KINDS[kind], uuid)
+    return library.fingerprint(user, kind, uuid)
 
 
-def _list(kind: LibraryKind, root, user_root) -> list:
+def _list(kind: StrategyKind, root, user_root) -> list:
     shipped, user = _shared_roots(root, user_root)
     return [e.item for e in library.entries(shipped, user, kind).values()]
 
 
-def _load(kind: LibraryKind, uuid: str, root, user_root):
+def _load(kind: StrategyKind, uuid: str, root, user_root):
     shipped, user = _shared_roots(root, user_root)
     return library.load(shipped, user, kind, uuid).item
 
 
-def _save(kind: LibraryKind, item, root, user_root, expected: str | None) -> str:
+def _save(kind: StrategyKind, item, root, user_root, expected: str | None) -> str:
     shipped, user = _shared_roots(root, user_root)
     return library.save(user, kind, item, expected=expected, shipped=shipped)
 
 
-def _delete(kind: LibraryKind, uuid: str, root, user_root, expected: str | None) -> None:
+def _delete(kind: StrategyKind, uuid: str, root, user_root, expected: str | None) -> None:
     _, user = _shared_roots(root, user_root)
     library.delete(user, kind, uuid, expected=expected)
 
@@ -195,13 +154,13 @@ def _delete(kind: LibraryKind, uuid: str, root, user_root, expected: str | None)
 def list_player_strategies(
     root: str | Path | None = None, user_root: str | Path | None = None
 ) -> list[PlayerCombatStrategy]:
-    return _list(LibraryKind.PLAYER, root, user_root)
+    return _list(StrategyKind.PLAYER, root, user_root)
 
 
 def load_player_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> PlayerCombatStrategy:
-    return _load(LibraryKind.PLAYER, uuid, root, user_root)
+    return _load(StrategyKind.PLAYER, uuid, root, user_root)
 
 
 def save_player_strategy(
@@ -212,25 +171,25 @@ def save_player_strategy(
     expected: str | None = None,
 ) -> str:
     """Write ``s`` to the user root and return its new fingerprint, if nothing changed it since ``expected``."""
-    return _save(LibraryKind.PLAYER, s, root, user_root, expected)
+    return _save(StrategyKind.PLAYER, s, root, user_root, expected)
 
 
 def delete_player_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None, *, expected: str | None = None
 ) -> None:
-    _delete(LibraryKind.PLAYER, uuid, root, user_root, expected)
+    _delete(StrategyKind.PLAYER, uuid, root, user_root, expected)
 
 
 def list_duel_strategies(
     root: str | Path | None = None, user_root: str | Path | None = None
 ) -> list[DuelCombatStrategy]:
-    return _list(LibraryKind.DUEL, root, user_root)
+    return _list(StrategyKind.DUEL, root, user_root)
 
 
 def load_duel_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> DuelCombatStrategy:
-    return _load(LibraryKind.DUEL, uuid, root, user_root)
+    return _load(StrategyKind.DUEL, uuid, root, user_root)
 
 
 def save_duel_strategy(
@@ -241,21 +200,21 @@ def save_duel_strategy(
     expected: str | None = None,
 ) -> str:
     """Write ``s`` to the user root and return its new fingerprint, if nothing changed it since ``expected``."""
-    return _save(LibraryKind.DUEL, s, root, user_root, expected)
+    return _save(StrategyKind.DUEL, s, root, user_root, expected)
 
 
 def delete_duel_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None, *, expected: str | None = None
 ) -> None:
-    _delete(LibraryKind.DUEL, uuid, root, user_root, expected)
+    _delete(StrategyKind.DUEL, uuid, root, user_root, expected)
 
 
 def list_deck_presets(root: str | Path | None = None, user_root: str | Path | None = None) -> list[DeckPreset]:
-    return _list(LibraryKind.DECK, root, user_root)
+    return _list(StrategyKind.DECK, root, user_root)
 
 
 def load_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> DeckPreset:
-    return _load(LibraryKind.DECK, uuid, root, user_root)
+    return _load(StrategyKind.DECK, uuid, root, user_root)
 
 
 def save_deck_preset(
@@ -266,13 +225,13 @@ def save_deck_preset(
     expected: str | None = None,
 ) -> str:
     """Write ``preset`` to the user root and return its new fingerprint, if nothing changed it since ``expected``."""
-    return _save(LibraryKind.DECK, preset, root, user_root, expected)
+    return _save(StrategyKind.DECK, preset, root, user_root, expected)
 
 
 def delete_deck_preset(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None, *, expected: str | None = None
 ) -> None:
-    _delete(LibraryKind.DECK, uuid, root, user_root, expected)
+    _delete(StrategyKind.DECK, uuid, root, user_root, expected)
 
 
 # ---------------------------------------------------------------------------
@@ -355,29 +314,11 @@ def rekey_bot_strategy_states(
 # Where a file actually lives
 # ---------------------------------------------------------------------------
 
-_LIBRARY_KINDS = {
-    StrategyKind.PLAYER: LibraryKind.PLAYER,
-    StrategyKind.DUEL: LibraryKind.DUEL,
-    StrategyKind.DECK: LibraryKind.DECK,
-}
-
-_KIND_DIRS = {
-    StrategyKind.PLAYER: lambda root: library.kind_dir(root, LibraryKind.PLAYER),
-    StrategyKind.DUEL: lambda root: library.kind_dir(root, LibraryKind.DUEL),
-    StrategyKind.BOT: _bot_strategy_dir,
-    StrategyKind.DECK: lambda root: library.kind_dir(root, LibraryKind.DECK),
-}
-
-
-def _roots_for(kind: StrategyKind, root, user_root) -> tuple[Path, Path]:
-    """The roots ``kind`` is stored under: BartleBot's own for a Bot Combat Strategy, else the shared library's."""
-    return _bot_roots(root, user_root) if kind is StrategyKind.BOT else _shared_roots(root, user_root)
-
 
 def origin_of(
     kind: StrategyKind, uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> Origin:
-    """Which root(s) hold ``uuid`` — see :class:`Origin`.
+    """Which root(s) hold library item ``uuid`` — see :class:`Origin`.
 
     The one place a surface can ask whether removing a strategy deletes it or
     merely reverts it, without reaching for the paths itself. Returns
@@ -385,33 +326,39 @@ def origin_of(
     single-root sandbox a test passes as ``root`` alone), since nothing is
     shipped in that arrangement and everything written is the user's.
     """
-    shipped, user = _roots_for(kind, root, user_root)
-    return origin_in(_KIND_DIRS[kind], uuid, shipped, user)
+    shipped, user = _shared_roots(root, user_root)
+    return library.origin(shipped, user, kind, uuid)
 
 
-_LOADERS = {
-    StrategyKind.PLAYER: PlayerCombatStrategy.load,
-    StrategyKind.DUEL: DuelCombatStrategy.load,
-    StrategyKind.BOT: BotCombatStrategy.load,
-    StrategyKind.DECK: DeckPreset.load,
-}
+def origin_of_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> Origin:
+    """Which root(s) hold Bot Combat Strategy ``uuid``, as :func:`origin_of` answers for a library item."""
+    shipped, user = _bot_roots(root, user_root)
+    return origin_in(_bot_strategy_dir, uuid, shipped, user)
 
 
 def list_shipped(kind: StrategyKind, root: str | Path | None = None, user_root: str | Path | None = None) -> list:
-    """Every ``kind`` entry as it ships, ignoring any user copy that shadows it.
+    """Every library ``kind`` entry as it ships, ignoring any user copy that shadows it.
 
     What "revert to default" restores, and what a working set compares an entry
     against to say whether it is still the built-in one. Empty when the two roots
     are one directory — developer mode, or a single-root test sandbox — since
     nothing is shipped in that arrangement (see :func:`origin_of`).
     """
-    shipped, user = _roots_for(kind, root, user_root)
+    shipped, user = _shared_roots(root, user_root)
+    return library.shipped_items(shipped, user, kind)
+
+
+def list_shipped_bot_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[BotCombatStrategy]:
+    """Every Bot Combat Strategy as it ships, ignoring any user copy, as :func:`list_shipped` does."""
+    shipped, user = _bot_roots(root, user_root)
     if shipped == user:
         return []
     items = []
-    for path in index_dir(_KIND_DIRS[kind](shipped)).values():
+    for path in index_dir(_bot_strategy_dir(shipped)).values():
         try:
-            items.append(_LOADERS[kind](path))
+            items.append(BotCombatStrategy.load(path))
         except Exception:
             logger.warning("Skipping unloadable %s", path, exc_info=True)
     return items

@@ -41,10 +41,10 @@ from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPool
 from concurrent.futures.process import BrokenProcessPool
 
 from bartleby.runtime.combat.dsl import DslCheck, check_dsl_uncached, known_dsl_check, store_dsl_check
+from bartleby.runtime.combat.strategy_summary import Validate
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
 from bartlebot.combat.dsl_check_worker import exit_with_parent
-from bartlebot.combat.strategy_summary import Validate
 
 logger = logging.getLogger(__name__)
 

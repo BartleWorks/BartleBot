@@ -10,12 +10,13 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.combat.strategy_store import StrategyKind, load_bot_strategy, save_bot_strategy, save_duel_strategy
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.combat.bot_strategy_owner import load_working_set
+from bartlebot.combat.strategy_store import load_bot_strategy, save_bot_strategy, save_duel_strategy
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import NEW_NAMES, CombatStrategyDialog, DialogMode, FlowStep
 from bartlebot.gui.widgets.labels.step_heading import Step
@@ -46,7 +47,7 @@ def _setup(roots):
     save_duel_strategy(library, shipped, user)
     bcs = BotCombatStrategy(name="Solo", bot_id="bot-1")
     save_bot_strategy(bcs, shipped, user)
-    ws = StrategyWorkingSet.from_store(root=shipped, user_root=user, bot_strategy_id=bcs.id, bot_id="bot-1")
+    ws = load_working_set(root=shipped, user_root=user, bot_strategy_id=bcs.id, bot_id="bot-1")
     return ws, bcs, library
 
 

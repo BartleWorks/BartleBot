@@ -23,10 +23,11 @@ from functools import lru_cache
 from bartleby.qt.art_signal import follow_art
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
+from bartleby.runtime.combat.strategy_tags import ROLE, SOURCE, tag_groups
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.combat.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
+from bartlebot.combat.bot_strategy_owner import THIS_BOT_SOURCE
 from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
@@ -118,7 +119,7 @@ BOT_VOCABULARY = TagVocabulary(TAG_GROUPS, GROUP_ACCENT)
 #: blue-gray, a muted tone no school wears: a role is not a school, and the purple it had
 #: was Storm's. The noun is replaced per tab — duels, strategies, presets.
 STRATEGY_VOCABULARY = TagVocabulary(
-    STRATEGY_TAG_GROUPS,
+    tag_groups(THIS_BOT_SOURCE),
     {SOURCE: "pill_neutral_bg", ROLE: "chip_neutral_bg"},
     ("strategy", "strategies"),
 )

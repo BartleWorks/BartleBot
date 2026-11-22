@@ -19,7 +19,7 @@ go to the log and never to a dialog (``docs/COMBAT_CONFIG.md``, "Before a run").
 
 A slot-order notice is the third kind: a duel the run reaches whose player strategy aims
 at a slot, ``ally(last)`` or ``ally(0)``, while the duel has no combat order to fix who is
-in it (:mod:`bartlebot.combat.slot_order`). It runs, so it is no fault, but it may not do
+in it (:mod:`bartleby.runtime.combat.slot_order`). It runs, so it is no fault, but it may not do
 what its author meant, so it is logged as a warning.
 
 The DSL check is the reason this runs before the bot starts. A syntax error otherwise
@@ -32,6 +32,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from bartleby.runtime.combat.dsl import validate_dsl
+from bartleby.runtime.combat.strategy_summary import format_players as _format_players
+from bartleby.runtime.combat.strategy_summary import slot_order_warning
 from bartleby.shared.strategy_models import DuelConfig
 
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
@@ -45,8 +47,6 @@ from bartlebot.combat.combat_resolution import (
     missing_pick_text,
 )
 from bartlebot.combat.fight_keys import bind, exposed_combat_states
-from bartlebot.combat.strategy_summary import format_players as _format_players
-from bartlebot.combat.strategy_summary import slot_order_warning
 
 if TYPE_CHECKING:
     from pathlib import Path

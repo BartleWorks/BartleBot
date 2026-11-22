@@ -9,12 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, QMimeData, QPoint, QPointF, Qt, QUrl
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QDialog, QLineEdit, QMessageBox
 
-from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.content import bot_roots, share_export, share_import
 from bartlebot.content.share_export import BOT, SUBGRAPH
 from bartlebot.content.share_import import Action

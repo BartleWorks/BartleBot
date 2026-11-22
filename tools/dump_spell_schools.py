@@ -1,4 +1,9 @@
-"""Regenerate bartlebot/game/data/spell_schools.json from the game's Root.wad.
+"""Regenerate bartleby-core's runtime/game/data/spell_schools.json from the game's Root.wad.
+
+The snapshot is core's (``bartleby.runtime.game.spell_schools``), read by both products, and
+this tool stays here because it reads BartleBot's wiztype dumps. It writes the core checkout
+beside this one, ``../bartleby-core``, never the copy of core installed in ``.venv``, which uv
+links from its cache; ``--out`` puts it anywhere else.
 
 A saved deck holds template names and counts, so the only way to group a deck's
 cards by school -- which is how the game's own deck window lists them -- is to carry
@@ -22,7 +27,7 @@ THE 41 NAMES THAT APPEAR TWICE
     this tool has to pick one. It keeps the real school, because a card in a combat
     deck is never the castle-magic copy. ``CastleMagic``, ``Cantrips``,
     ``Gardening``, ``Fishing`` and ``WhirlyBurly`` are all kept out of the order this
-    way; see ``bartlebot/game/spell_schools.py``.
+    way; see core's ``bartleby/runtime/game/spell_schools.py``.
 
 USAGE
     uv run python tools/dump_spell_schools.py
@@ -42,13 +47,24 @@ from katsuba.wad import Archive
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartleby.runtime.game.spell_schools import SCHOOL_ORDER  # noqa: E402
+
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
-from bartlebot.game.spell_schools import SCHOOL_ORDER, SCHOOLS_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
 # The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
 DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, Path(__file__).resolve().parent)
 SPELLS_GLOB = "Spells/**/*.xml"
+#: The snapshot in the core checkout beside this repo (bartleby-core's docs/UPSTREAM.md, the repos' layout).
+CORE_SNAPSHOT = (
+    Path(__file__).resolve().parents[2]
+    / "bartleby-core"
+    / "bartleby"
+    / "runtime"
+    / "game"
+    / "data"
+    / "spell_schools.json"
+)
 
 
 def _decode(value) -> str | None:
@@ -113,7 +129,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--wad", type=Path, default=DEFAULT_WAD, help="path to Root.wad")
     ap.add_argument("--types", type=Path, default=DEFAULT_TYPES, help="path to a wiztype types JSON dump")
-    ap.add_argument("--out", type=Path, default=SCHOOLS_PATH, help="where to write the snapshot")
+    ap.add_argument("--out", type=Path, default=CORE_SNAPSHOT, help="where to write the snapshot")
     args = ap.parse_args()
 
     if not args.wad.exists():
@@ -121,6 +137,9 @@ def main() -> int:
         return 1
     if not args.types.exists():
         print(f"types JSON not found at {args.types}; pass --types")
+        return 1
+    if args.out == CORE_SNAPSHOT and not CORE_SNAPSHOT.parent.is_dir():
+        print(f"no bartleby-core checkout at {CORE_SNAPSHOT.parents[4]}; pass --out")
         return 1
 
     snapshot = build_snapshot(args.wad, args.types)

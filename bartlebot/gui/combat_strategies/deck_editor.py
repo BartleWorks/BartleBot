@@ -22,7 +22,7 @@ shared *About* section — see
 Like its siblings in this package, it writes through to the working copy it was
 handed and never touches disk; the 500ms rename debounce it inherited from the
 Strategy Library window is gone with the rest of the autosaves. See
-:mod:`bartlebot.combat.strategy_workset`.
+:mod:`bartleby.runtime.combat.strategy_workset`.
 
 No scroll area of its own, either. The page around this one scrolls, and a nested
 scroll area inside it is the thing ``dialog.py`` says it never wants: two bars for one

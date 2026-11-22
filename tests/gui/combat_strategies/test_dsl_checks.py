@@ -15,10 +15,11 @@ from concurrent.futures.process import BrokenProcessPool
 import pytest
 from bartleby.runtime.combat import dsl as combat_runner
 from bartleby.runtime.combat.dsl import dsl_check, known_dsl_check
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import PlayerCombatStrategy
 
-from bartlebot.combat.strategy_store import StrategyKind, save_player_strategy
-from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.combat.bot_strategy_owner import load_working_set
+from bartlebot.combat.strategy_store import save_player_strategy
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies import dsl_checks
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog
@@ -224,7 +225,7 @@ def test_the_strategy_dialog_opens_without_parsing_and_marks_a_broken_card_after
     save_player_strategy(broken, shipped)
     save_player_strategy(fine, shipped)
 
-    dlg = CombatStrategyDialog(StrategyWorkingSet.from_store(root=shipped, user_root=user), kind=StrategyKind.PLAYER)
+    dlg = CombatStrategyDialog(load_working_set(root=shipped, user_root=user), kind=StrategyKind.PLAYER)
     page = dlg.page(StrategyKind.PLAYER)
 
     assert _on_gui_thread(parses) == [], "drawing the list parsed nothing on the GUI thread"
@@ -238,7 +239,7 @@ def test_typing_in_the_dsl_box_never_parses_on_the_gui_thread(qtbot, roots, pars
     pcs = PlayerCombatStrategy(name="Blade", dsl=_VALID)
     save_player_strategy(pcs, shipped)
     dlg = CombatStrategyDialog(
-        StrategyWorkingSet.from_store(root=shipped, user_root=user), kind=StrategyKind.PLAYER, current_id=pcs.id
+        load_working_set(root=shipped, user_root=user), kind=StrategyKind.PLAYER, current_id=pcs.id
     )
     page = dlg.page(StrategyKind.PLAYER)
     editor = page.editor

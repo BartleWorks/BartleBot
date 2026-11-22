@@ -57,12 +57,12 @@ from bartleby.shared.share_file import (
     shareable_deck_data,
 )
 from bartleby.shared.store_files import Origin, slugify
+from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import declared_id
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
@@ -160,6 +160,9 @@ class Sources:
 
     def strategy_origin(self, kind: StrategyKind, item_id: str) -> Origin:
         return strategy_store.origin_of(kind, item_id, self.strategy_root, self.strategy_user_root)
+
+    def bot_strategy_origin(self, item_id: str) -> Origin:
+        return strategy_store.origin_of_bot_strategy(item_id, self.strategy_root, self.strategy_user_root)
 
     def library(self, kind: StrategyKind, item_id: str):
         """A library duel strategy, player strategy or deck, and its origin."""
@@ -276,7 +279,7 @@ def _collect_bot_strategy(
 ) -> None:
     """Add ``bcs``, the library strategies it and its own duels link, and, with ``follow_bot``, its bot."""
     shaped = shareable_bot_strategy(bcs, include_decks=include_decks)
-    origin = _in_hand(sources.strategy_origin(StrategyKind.BOT, bcs.id))
+    origin = _in_hand(sources.bot_strategy_origin(bcs.id))
     if not collector.add(BOT_COMBAT_STRATEGY, shaped, origin):
         return
     own_duels = {d.id for d in bcs.duel_strategies}
