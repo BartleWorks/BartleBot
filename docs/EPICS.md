@@ -479,9 +479,9 @@ https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
 | 3 | BartleBuddy #33 | Auto-combat in BartleBuddy | landed |
 | 4 | #331 | the team's order told to wizsprinter, and the followers joining in it | landed |
 | 5 | #332 | the strategy layer moves to core | landed |
-| 6 | #333 | the Combat Strategies window moves to core | planned |
+| 6 | #333 | the Combat Strategies window moves to core | landed |
 | 7 | #334 | mob and boss duels | planned |
-| 8 | core #22 | equipping a deck by its name | planned |
+| 8 | core #22 | equipping a deck by its name | landed |
 | 9 | BartleBuddy #34 | deck sets, and Boss decks | planned |
 
 BartleBuddy's `docs/COMBAT.md`, from Stage 3, is the feature as built. The game's rules it rests
