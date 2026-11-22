@@ -6,8 +6,8 @@ For each fight, with ``n`` clients connected:
 2. **The bot's Official** Bot Combat Strategy: the shipped one whose duels fit ``n`` for
    the most of the bot's fights.
 3. **The user's default**: their Solo or Team Duel Strategy, in ``preferences.json``.
-4. **The shipped default**: Default Solo Duel or Default Team Duel, and for an ambient
-   fight, one no node started, Default Team Duel (Everyone Attacks) in place of the latter.
+4. **The shipped default**: Default Solo Duel or Default Team Duel, for a fight a node
+   started and an ambient one, which no node started, alike.
 
 A Bot Combat Strategy covers a fight with the duel assigned to it, or with its own default
 duel when the fight has no assignment; only one with neither falls through. The user's
@@ -225,7 +225,7 @@ class CombatResolver:
 
     *pick* is the id of the user's Bot Combat Strategy for the bot, or None. *prefs* is
     where the user's defaults are read; None reads the vendor-wide ``preferences.json``.
-    *ambient* resolves fights no node started, which changes only the shipped Team default.
+    *ambient* resolves fights no node started, which changes only what the label says.
     """
 
     def __init__(
@@ -350,7 +350,7 @@ class CombatResolver:
     def _defaults(self) -> DefaultDuel:
         if self._default is None:
             prefs = self._prefs if self._prefs is not None else PreferenceStore()
-            self._default = default_duel(self._clients, prefs, self._library.duel, ambient=self._ambient)
+            self._default = default_duel(self._clients, prefs, self._library.duel)
         return self._default
 
 

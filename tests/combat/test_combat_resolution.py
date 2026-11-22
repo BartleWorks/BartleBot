@@ -117,13 +117,14 @@ def test_no_key_stored_means_the_shipped_default(roots, prefs, clients, duel_id,
     assert res.source_label.endswith(f"(the shipped {size} default; this bot has no Bot Combat Strategy)")
 
 
-def test_an_ambient_fight_says_which_shipped_default_it_fell_to(roots, prefs):
+def test_an_ambient_fight_falls_to_default_team_duel_and_says_it_is_ambient(roots, prefs):
+    """Its team sits in whatever order it arrives, but wizsprinter counts by the duel's order (#331)."""
     res = CombatResolver(_bot(), 2, None, prefs=prefs, root=roots[0], user_root=roots[1], ambient=True).fight(None)
 
     assert res.level is Level.SHIPPED_DEFAULT
-    assert res.duel.id == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
+    assert res.duel.id == SHIPPED_TEAM_DUEL_ID
     assert res.source_label == (
-        "duel strategy 'Default Team Duel (Everyone Attacks)'"
+        "duel strategy 'Default Team Duel'"
         " (the shipped Team default for an ambient fight; this bot has no Bot Combat Strategy)"
     )
 

@@ -819,3 +819,24 @@ async def test_a_won_fight_reports_no_flee():
 
     assert getattr(machine, "fights_fled", []) == []
     assert not _log_lines(machine, "on a default")
+
+
+async def test_the_fights_combat_order_goes_to_the_runner():
+    """wizsprinter counts ally(last) through the duel's order, should a seat have come out of it."""
+    from bartleby.runtime.combat.fight import FightEnd, FightResult
+
+    clients = [FakeClient(), FakeClient()]
+    for client in clients:
+        client.find_closest_mob.return_value = FakeEntity()
+        client.in_battle.return_value = True
+    fought = AsyncMock(return_value=FightResult(FightEnd.FINISHED, []))
+
+    with (
+        patch.object(hc, "run_fight", fought),
+        _patch_resolve_combat([2, 1]),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        assert await hc.run(FakeMachine(), clients, _DEFAULT_PARAMS) == "SUCCESS"
+
+    assert fought.await_args.kwargs["order"] == [2, 1]

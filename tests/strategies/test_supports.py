@@ -105,6 +105,22 @@ async def test_a_mob_fight_after_round_1_blades_p1_before_a_mass_trap():
     assert turn == Turn("Storm Blade", "P1")
 
 
+@pytest.mark.parametrize(("order", "bladed"), [(None, "P2"), (("P3", "P2", "P1"), "P1")])
+async def test_a_support_blades_the_duels_p1_wherever_p1_sat(order, bladed):
+    """P1 walked in first, as a fight no node started can seat it. Counted by the seats,
+    `ally(last)` is P2; counted in the duel's order, as the runner hands it over, it is P1 (#331)."""
+    fight = Fight(
+        team=[Wizard("P1"), Wizard("P3"), Wizard("P2")],
+        me="P3",
+        enemies=[MOB, MOB],
+        hand=[STORM_BLADE, MASS_HEX, SIRENS],
+        round=2,
+        team_order=order,
+    )
+
+    assert await cast(support_dsl(), fight) == Turn("Storm Blade", bladed)
+
+
 async def test_a_mob_fight_after_round_1_casts_a_mass_trap_with_no_blade():
     turn = await cast(support_dsl(), as_p2(MASS_HEX, SIRENS, enemies=[MOB, MOB], round=3))
 

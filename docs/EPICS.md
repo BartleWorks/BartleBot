@@ -475,9 +475,9 @@ https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
 | stage | issue | what | status |
 |---|---|---|---|
 | 1 | BartleBuddy #32 | measure in game what the plan assumes (BartleBuddy's `tools/probe_combat_facts.py`) | landed |
-| 2 | #330 | the fight runner moves to core | planned |
-| 3 | BartleBuddy #33 | Auto-combat in BartleBuddy | planned |
-| 4 | #331 | the team's order told to wizsprinter, and a following hitter joining last | planned |
+| 2 | #330 | the fight runner moves to core | landed |
+| 3 | BartleBuddy #33 | Auto-combat in BartleBuddy | landed |
+| 4 | #331 | the team's order told to wizsprinter, and the followers joining in it | landed |
 | 5 | #332 | the strategy layer moves to core | planned |
 | 6 | #333 | the Combat Strategies window moves to core | planned |
 | 7 | #334 | mob and boss duels | planned |

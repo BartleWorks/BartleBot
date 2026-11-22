@@ -217,15 +217,19 @@ since a user's link to it would then point at nothing. Before then a Bot Combat 
 still linking one gets that fault before a run, and its card reads "(missing strategy)";
 nothing relinks it for the user.
 
-**An ambient fight's Team default is Everyone Attacks.** In a fight no node started
-(`docs/AMBIENT_COMBAT.md`), players fill the slots in whatever order they arrive: the
-one pulled in first, then helpers as their teleports and ports land. Default Team Duel's
-combat order is what puts P1 in the last slot, so there Default Support's blade on
-`ally(last)` would land on whoever joined last. Most ambient fights are a stray mob, which
-every player hitting ends quickly. So `default_duel(..., ambient=True)` answers level 4
-from `SHIPPED_AMBIENT_DUEL_IDS`, and the label says "the shipped Team default for an
-ambient fight". Levels 1 to 3 are unchanged: a duel the user chose still runs, `ally(last)`
-and all.
+**An ambient fight gets the same defaults** (BartleBuddy #31, Stage 4). In a fight no node
+started (`docs/AMBIENT_COMBAT.md`), players fill the seats in whatever order they arrive:
+the one pulled in first, then helpers as their teleports and ports land. wizsprinter counts
+`ally(last)` by seat, so until Stage 4 Default Support's blade would have landed on whoever
+joined last, and an ambient fight ran Everyone Attacks instead. Now core's runner hands
+wizsprinter the duel's combat order, as player numbers turned into the players' ids each
+round (`CombatRun(order=)`, wizsprinter's `team_order`), and `ally(-N)` counts through it.
+So `ally(last)` is P1 however the team sat, and an ambient fight runs Default Team Duel at
+level 4, its label saying "the shipped Team default for an ambient fight". What the order
+can't fix is the casting order, which is still the seats': a P1 that sat first casts before
+its supports, so their blades wait on it for its next hit. A node's fight walks its players
+in in combat order (`handle_combat`), so there the seats and the order agree; `run_fight`
+gets the order too, for a seat that came out of it.
 
 **What a support does** (#218, Stages 3 and 6). A support never spends a buff meant for
 the hitter, and Default Support does nothing else: it never heals or shields. Combat
@@ -403,7 +407,7 @@ and `resolve_combat()` in `bartlebot/nodes/combat_runner.py` wraps it, returning
 | 1 | `PICK` | the user's Bot Combat Strategy for this bot (`SettingsManager.get_active_strategy`) | the fight's assignment, else its own default |
 | 2 | `OFFICIAL` | the bot's shipped Bot Combat Strategies | the one whose duels fit the team for the most of the bot's fights (`official_strategy_for`) |
 | 3 | `YOUR_DEFAULT` | the user's Solo or Team default, in `preferences.json` | the duel stored under `combat.default_duel.solo` or `.team` |
-| 4 | `SHIPPED_DEFAULT` | the shipped defaults | Default Solo Duel for one client, Default Team Duel for two or more (Everyone Attacks in an ambient fight) |
+| 4 | `SHIPPED_DEFAULT` | the shipped defaults | Default Solo Duel for one client, Default Team Duel for two or more, an ambient fight's included |
 
 - **A duel fits *n* clients when `min_players` ≤ *n* ≤ `max_players`** (`DuelConfig.accepts`).
   At levels 2 to 4 a duel that doesn't fit falls to the next level, and the reason is

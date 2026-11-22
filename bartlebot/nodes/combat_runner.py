@@ -57,7 +57,7 @@ def resolve_combat(
     user's Bot Combat Strategy for the bot, the bot's Official one, the user's Solo or Team
     default, the shipped default. ``use_default_strategy`` is the node's param: True runs the
     bot's default fight, False the fight on ``machine.state``. ``ambient`` is a fight no node
-    started, whose shipped Team default is Everyone Attacks.
+    started, which the label says.
 
     Each 1-based player slot gets its assignment's DSL, or the linked player strategy's.
     A slot with none, or whose player strategy cannot be read, gets ``LAST_RESORT_DSL``,

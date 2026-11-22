@@ -155,10 +155,26 @@ async def test_a_lone_fighter_fights_at_once_then_goes_to_the_hub_and_recovery(f
     assert machine.state == "recover"
 
 
+async def test_the_duels_combat_order_goes_to_the_runner(fast, combat):
+    """The players sit in whatever order they arrive; wizsprinter is handed the duel's to count by."""
+    combat.resolve.return_value = (["dsl-0", "dsl-1"], [2, 1], "test strategy", None)
+    helper, fighter = _client(), _client()
+    see_each_other(helper, fighter)
+    fighter.in_battle.return_value = True
+    helper.in_battle.return_value = True
+    orders = []
+    combat.fights.on_start = lambda _client, watch: orders.append(watch.order)
+    machine = BotMachine(clients=[helper, fighter], config=_config(), node_registry={})
+
+    await _session(machine, combat)
+
+    assert orders and set(orders) == {(2, 1)}
+
+
 async def test_the_strategy_is_resolved_per_slot_and_drops_are_credited_to_it(fast, combat):
     """Resolving for only the battling clients would hand slot 1 the strategy for slot 0.
 
-    It is resolved as an ambient fight, which nothing lines up in combat order."""
+    It is resolved as an ambient fight, whose players sit in whatever order they arrive."""
     elsewhere, fighter = _client(), _client()
     see_each_other(elsewhere)
     see_each_other(fighter)
