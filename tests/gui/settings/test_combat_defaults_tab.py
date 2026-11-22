@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import pytest
 from bartleby.qt.app.logging_setup import TURN_TRACE_LOGGER
+from bartleby.qt.combat.duel_card import CHOSEN_NOTE
 from bartleby.shared.combat_defaults import (
     PREFERENCE_KEYS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
@@ -27,7 +28,6 @@ from bartleby.shared.strategy_models import DuelCombatStrategy
 from bartlebot.combat.strategy_store import save_duel_strategy
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.settings.combat_defaults_tab import (
-    CHOSEN_NOTE,
     RECOMMENDED_NOTE,
     CombatDefaultsTab,
 )
