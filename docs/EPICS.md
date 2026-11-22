@@ -478,7 +478,7 @@ https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
 | 2 | #330 | the fight runner moves to core | landed |
 | 3 | BartleBuddy #33 | Auto-combat in BartleBuddy | landed |
 | 4 | #331 | the team's order told to wizsprinter, and the followers joining in it | landed |
-| 5 | #332 | the strategy layer moves to core | planned |
+| 5 | #332 | the strategy layer moves to core | landed |
 | 6 | #333 | the Combat Strategies window moves to core | planned |
 | 7 | #334 | mob and boss duels | planned |
 | 8 | core #22 | equipping a deck by its name | planned |
