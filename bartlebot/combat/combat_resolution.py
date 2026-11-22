@@ -36,8 +36,8 @@ from bartleby.shared.combat_defaults import (
     DefaultDuel,
     DefaultSource,
     TeamSize,
+    choice_notes,
     default_duel,
-    players_text,
     shortfall_text,
     team_size,
 )
@@ -503,16 +503,6 @@ def defaults_text(answers: Iterable[DefaultDuel]) -> str:
     return " · ".join(parts)
 
 
-#: The team sizes each default answers for.
-SIZE_RANGE = {TeamSize.SOLO: (1,), TeamSize.TEAM: (2, 3, 4)}
-
-
-def _counts_text(counts: list[int]) -> str:
-    """``2``, ``2 or 3``, ``2, 3 or 4``."""
-    words = [str(n) for n in counts]
-    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} or {words[-1]}"
-
-
 def default_choice_notes(
     size: TeamSize,
     duel_id: str | None,
@@ -520,34 +510,9 @@ def default_choice_notes(
     root: str | Path | None = None,
     user_root: str | Path | None = None,
 ) -> list[str]:
-    """What is wrong with choosing *duel_id* as the *size* default, in the user's words; empty when nothing is.
-
-    None is the recommended one, which is never checked: it was written for its size. A
-    choice that is gone, or does not fit some of the sizes it answers for, leaves those to
-    the recommended one at run time, as :func:`~bartleby.shared.combat_defaults.default_duel`
-    does. A player strategy it links that is gone runs the built-in DSL in that slot.
-    """
-    if not duel_id:
-        return []
+    """What is wrong with choosing *duel_id* as the *size* default: core's ``choice_notes``, on BartleBot's library."""
     lookup = StrategyLookup(None, root=root, user_root=user_root)
-    duel = lookup.duel(duel_id)
-    if duel is None:
-        return ["It is no longer in the library, so the recommended one is used."]
-    notes = []
-    unfit = [n for n in SIZE_RANGE[size] if not duel.accepts(n)]
-    if unfit:
-        noun = "client" if unfit == [1] else "clients"
-        notes.append(
-            f"It takes {players_text(duel)}, so with {_counts_text(unfit)} {noun} connected the recommended one is used."
-        )
-    missing = [
-        a.player_combat_strategy_id
-        for a in duel.player_assignments
-        if a.player_combat_strategy_id and lookup.player(a.player_combat_strategy_id) is None
-    ]
-    if missing:
-        notes.append("It links a player strategy that is missing, so those players fight with the built-in DSL.")
-    return notes
+    return choice_notes(size, duel_id, lookup.duel, lookup.player)
 
 
 def describe_source(

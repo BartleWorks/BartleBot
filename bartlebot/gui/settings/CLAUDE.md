@@ -122,11 +122,12 @@ fight with nothing tailored to it runs, with one client connected or with two to
 Bot tab's rows are the app-setting level of an option, but they live in the vendor-wide
 `preferences.json`, not `settings.json`, because BartleBuddy fights with the same two.
 
-- **Two cards, not rows.** Each is a `DefaultDuelCard` in a `SettingCard`: Solo or Team,
-  one line saying when it answers, the duel in use drawn as the combat dialog's
-  `StrategyCard` (with its source pill), and a note under it. A duel's summary is what
-  the user is choosing between, and a 210px control slot cannot hold one.
-  `SettingsForm.add_card` places a card that is not built from rows.
+- **Two cards, not rows.** Each is a `DefaultDuelCard`, core's `DuelCard`
+  (`bartleby.qt.combat.duel_card`, which BartleBuddy's Settings › Combat is built from too) with
+  BartleBot's words, library and dialog: Solo or Team, one line saying when it answers, the duel
+  in use drawn as the combat dialog's `StrategyCard` (with its source pill), and a note under it.
+  A duel's summary is what the user is choosing between, and a 210px control slot cannot hold
+  one. `SettingsForm.add_card` places a card that is not built from rows.
 - **Change…** opens `CombatStrategyDialog` in Pick mode on the library alone, with the
   Team size filter preset to one or two (`team_size=`) as a chip the user can remove.
   **Use recommended** goes back to the shipped duel.
@@ -141,7 +142,8 @@ Bot tab's rows are the app-setting level of an option, but they live in the vend
   not a preference, since it is about this app's log. Off by default, as it adds a few
   kilobytes a round for each client; developer mode records it either way. OK applies it
   at once, with no restart.
-- **The note says what a run will do with an odd choice** (`default_choice_notes`): one
+- **The note says what a run will do with an odd choice** (`default_choice_notes`, core's
+  `choice_notes` on BartleBot's library): one
   gone from the library, one that does not fit every size it answers for (a Team default
   for four, run with two), or one linking a player strategy that is gone. Each falls back
   at run time exactly as the note says, with nothing written.
