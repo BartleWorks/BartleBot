@@ -102,6 +102,11 @@ def _edge_to(canvas, source: str, dest: str) -> EdgeItem:
 # ---------------------------------------------------------------------------
 
 
+# A known flake (no issue, by decision): its worker died once under -n auto, of heap corruption
+# (0xc0000374) in core's widget_lifetime.py teardown, and it passes alone. The cause is not
+# known, so nothing says only this test can hit it. See core's tests/CLAUDE.md, "Known flakes
+# are marked".
+@pytest.mark.flaky(reruns=2)
 def test_every_conditioned_edge_shows_its_condition_and_no_other_edge_does(canvas):
     canvas.setup(_switch_bot())
     for edge, models in _edges(canvas):
