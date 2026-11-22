@@ -188,7 +188,7 @@ def school_icon_name(school: str) -> str:
     """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
 
     Case-folded because the deck's value comes from wizwalker's school table and the
-    extractor's from :data:`~bartlebot.game.spell_schools.SCHOOL_ORDER`; keying on the exact
+    extractor's from :data:`~bartleby.runtime.game.spell_schools.SCHOOL_ORDER`; keying on the exact
     casing would make the two agree only by luck.
     """
     return f"school_{school.casefold()}"
