@@ -72,14 +72,14 @@ uv run --group site zensical serve -f site/zensical.toml   # preview the site
 | `bot/` | the FSM: the machine, the bot file schema, ambient combat, the health monitor, variables |
 | `nodes/` | the node library, grouped by kind |
 | `game/` | read-only facts about the game: zones, worlds, spells, scales, stat caps, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
-| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, which duel strategy a fight runs (`combat_resolution`) and the pre-run check. The shipped default ids and the last-resort DSL are core's `bartleby.shared.combat_defaults` |
+| `combat/` | reading and building decks, the strategy store, Bot Combat Strategies, fight keys, which duel strategy a fight runs (`combat_resolution`) and the pre-run check. The shipped default ids and the last-resort DSL are core's `bartleby.shared.combat_defaults` |
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
 | `clients/` | game clients at run time: the client manager, recovery and relog, porting, the run's pre-checks, the authoring tools |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
 | `controller/` | the flows `AppController` wires together, each taking what it needs explicitly: the open document and everything done to it, the definition stack and autosave (`documents`), File › Templates… and a draft's Release (`templates`), Export and Import of share files (`sharing`), deck import and apply (`decks`), the run from its checks to its machine callbacks (`run`), and the template store's roots both share (`template_roots`) |
 | `packaging/` | the app as a product and a packaged build: BartleBot's `Product` for core (`product.py`), `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
 | `updates/` | the update check: the feed, its signature and the trusted keys, and staging an update for Velopack (`docs/INSTALLER.md`) |
-| `gui/` | everything Qt. Dialogs in `dialogs/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |
+| `gui/` | everything Qt. Dialogs in `dialogs/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `inputs/`, `pickers/`, `pills/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, the Combat Strategies window as BartleBot subclasses core's) |
 
 What every Bartleby product shares is bartleby-core's, imported, never copied
 (`tests/test_family_guards.py` fails on a copy); core's `docs/ARCHITECTURE.md` has what.
@@ -148,15 +148,15 @@ instead, as `friend_name` was — see "When no bot should ever store a value" in
 
 ### Game art is extracted, never shipped
 
-Art has no checked-in snapshot and never gets one — not the spell card art,
-and not the school and archmastery icons beside it. The app extracts all of it on the
-user's own machine, from their game install, with `bartlebot/game/art_extraction.py`: on
-setup's last page, from Settings › General › Game art, or by `tools/extract_card_art.py`,
-the command line over the same function. It writes into
-`%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
-add` cannot reach it — and its tests use a made-up install (`tests/art_fixture.py`), never
-the game's files. `bartlebot/game/card_art.py` is the read side. `tools/CLAUDE.md` has the
-extraction details, core's `bartleby/qt/CLAUDE.md` the fallback rules.
+Art has no checked-in snapshot and never gets one — not the spell card art, and not the
+school and archmastery icons beside it. The app extracts all of it on the user's own machine,
+from their game install, with `bartlebot/game/art_extraction.py`: on setup's last page, from
+Settings › General › Game art, or by `tools/extract_card_art.py`, the command line over the
+same function. It writes into `%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely,
+so an accidental `git add` cannot reach it — and its tests use a made-up install
+(`tests/art_fixture.py`), never the game's files. Core's `bartleby/runtime/game/card_art.py`
+is the read side, and `bartlebot/game/bot_art.py` the keys only BartleBot draws.
+`tools/CLAUDE.md` has the extraction details, core's `bartleby/qt/CLAUDE.md` the fallback rules.
 
 ### Restricted zones (PvP)
 
