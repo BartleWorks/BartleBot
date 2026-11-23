@@ -482,7 +482,7 @@ https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
 | 6 | #333 | the Combat Strategies window moves to core | landed |
 | 7 | #334 | mob and boss duels, and the duel card in core | landed |
 | 8 | core #22 | equipping a deck by its name | landed |
-| 9 | BartleBuddy #34 | deck sets, and Boss decks | planned |
+| 9 | BartleBuddy #34 | deck sets, and Boss decks | landed |
 
 BartleBuddy's `docs/COMBAT.md`, from Stage 3, is the feature as built. The game's rules it rests
 on are core's `docs/WIZARD101.md`, *Decks and the backpack* and *Seats and casting order*.
