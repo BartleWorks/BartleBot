@@ -42,3 +42,29 @@ run loop's, so a write from a per-client coroutine under `gather`, or from a tas
 spawns, raises `VariableWriteRefused` -- and a node that writes from its own task is still
 wrong: the value would change with nothing on the canvas to say so. A node that needs to
 remember something for a later branch returns a value and lets an edge route on it.
+
+## Moving a client
+
+**A node moves a client inside a zone by walking it, through `walking.walk_clients`**
+(`bartlebot/nodes/walking.py`), never by writing its position. The server undoes a long
+written teleport, and the rule every stage of #322 keeps is that no teleport is longer than
+`HOP_MAX` and nothing but `walking.hop` writes a position (Stage 7). Until then
+`teleport_to_coordinates`, `pick_up` (Stage 5), and the Ride's, potions', level scaling's and
+the Skeleton Key unlocker's own moves (Stage 6) still teleport; nothing new may join them.
+
+- **Through the shared helpers where one fits**: `clear_stale_prompt`, `reach_prompt`,
+  `take_turns` and `enter_zone.fire_trigger` walk. A node that calls one of them, or
+  `walk_clients` itself, declares `walking.AVOID_MOBS_OPTION` in its `required_bot_options`.
+- **A walk that fails ends the node there**, logged with where it ended (the zone, both
+  points, and the closed gate in the way). It is never retried the same way, and never
+  replaced by a teleport: a wall a walk met is still there.
+- **A walk that ran into a fight is not the node's failure.** `walk_clients` waits for
+  ambient combat to preempt the node (`FIGHT_PREEMPT_WAIT`), which fights it out and runs
+  the node again. A node never handles that fight itself.
+- **A walk arrives within `walking.ARRIVED_WITHIN` (50) of its goal, not on it.** A check of
+  "is the client at the point" uses that margin, as Mark Location's does; one of a few units
+  sends the client walking again every pass.
+- **Tests walk on `walk_double`** (`tests/conftest.py`): each walk is recorded on
+  `FakeClient.walk_to`, and `moves(client)` lists teleports and walks together in order for
+  a node that still does both. `tests/nodes/test_walking.py` walks core's `SimClient` for
+  real.

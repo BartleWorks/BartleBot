@@ -335,6 +335,22 @@ safety dialog stops offering the app-setting field while it is there, because ed
 a value the run will ignore is worse than not offering it. The dialog withholds that
 field for the same reason when a per-bot override is winning.
 
+## Avoid Mobs: how a walk treats the mobs
+
+`Avoid Mobs` (`nodes/walking.py`, `AVOID_MOBS_OPTION`) is a `bool`, on by default, that
+every node that walks declares (Stage 4 of #322): Interact, Interact Menu, Enter Zone, Enter
+Zone via Object, Enter Dungeon, Open Skeleton Key Door, Handle Level Scaling, Handle Potions,
+Mark Location and Sync in Zone. On, a walk plans around the zone's patrols and watches the
+live mobs, waiting for one in the way or stepping around it (core's `RouteWalker`, `avoid` and
+`watch_mobs` both); off, it takes the shortest way and watches nothing, so it fights whatever it
+meets, which ambient combat then takes over.
+
+It resolves through the four levels, with the app setting `default_avoid_mobs` (Settings ›
+Bot › Avoid mobs) under the declaration. It is **not** user-owned: whether to fight through a
+dungeon's trash is the user's taste most of the time, but an author whose dungeon can't be
+crossed without a fight may say so, as Refill Potions lets an author speak for a dungeon that
+needs no potions. So it is drawn on both Options and Option Values, in the General card.
+
 ## An option type may be node-only
 
 `bool` / `int` / `float` / `str` / `str_list` / `player_list` are what the Add Option

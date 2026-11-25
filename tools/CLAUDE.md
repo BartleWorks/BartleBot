@@ -207,6 +207,21 @@ output silently hides whatever sorts last. Both happened here.
 Follow the same split for any new asset work: a *name* or an *id* can be snapshotted
 into `bartlebot/game/data/`, a *texture, model or sound* goes to the machine-local cache.
 
+### Walks the shipped bots ask for: `check_bot_routes.py`
+
+`uv run --no-sync python tools/check_bot_routes.py [--jobs N] [bot ...]` plans every walk the
+shipped bots make, composed with their subgraphs, on the zone maps core ships, and writes a
+report to `logs/check_bot_routes/`. A walk is a pair of points: a node's Reset XYZ and its
+other points, and the last point of one node and the first of the next along an edge, while
+nothing between changed the zone or moved the wizard (`KEEPS_PLACE` lists the nodes that
+don't; a port, a zone change or any other node loses track). It lists the pairs with no route,
+those whose only way crosses a gate (with the `Crossing` a Teleport to XYZ past it would need:
+Stage 7 of #322 places those from this list), those over `LONG_WALK` (60 s) at a wizard's own
+speed, and the gates crossed that have a way around. Run it after a map release or a change to a
+shipped bot's points. The first run in a fresh cache builds the walking copies it needs.
+It sees nothing of the walk from a zone's arrival point to its first node, since where the
+game puts a wizard on arrival isn't in the bot.
+
 ### Zone connectivity: `tools/zone_graph/`
 
 Which zones connect, where gates and arrival points sit, and the hub/spiral-door zone
