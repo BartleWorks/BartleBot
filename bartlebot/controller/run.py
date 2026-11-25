@@ -31,7 +31,7 @@ from bartlebot.clients import recovery_readiness, run_probe
 from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_run
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.content.store_roots import dev_mode
-from bartlebot.game import restricted_zones
+from bartlebot.game import restricted_zones, walking_maps
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.options import option_values, player_realms
 from bartlebot.settings_manager import SettingsManager
@@ -113,6 +113,8 @@ class Run:
         if not self._documents.recompose_before_run():
             return
         if not self._check_restricted_zones():
+            return
+        if not self._check_walking_maps():
             return
         if not self._check_player_realms():
             return
@@ -226,6 +228,28 @@ class Run:
             "automate:\n\n"
             f"{restricted_zones.describe_found(found)}\n\n"
             f"{restricted_zones.PVE_ONLY_TEXT}",
+        )
+        return False
+
+    def _check_walking_maps(self) -> bool:
+        """Refuse to run a bot naming a zone with no walking map. Returns whether to proceed.
+
+        It tells rather than asks, as the restricted-zone check does: every move in a zone
+        walks, so a run would fail at the first node there. The canvas warns about the same
+        zones on load (``game/walking_maps.py``).
+        """
+        if self._documents.loaded_config is None:
+            return True
+        found = walking_maps.unmapped_zones(self._documents.loaded_config.states)
+        if not found:
+            return True
+        logger.warning("Refusing to run: bot names %d zone(s) with no walking map", len(found))
+        QMessageBox.critical(
+            self._window,
+            "No Walking Map",
+            "This bot can't be run. It names zones with no walking map:\n\n"
+            f"{walking_maps.describe_found(found)}\n\n"
+            f"{walking_maps.NO_MAP_TEXT}",
         )
         return False
 
