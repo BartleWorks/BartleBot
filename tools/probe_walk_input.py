@@ -10,7 +10,10 @@ before they are waited for, every plan off the event loop, and no speed or posit
 
 The keys are the account's own, read from the client's memory (core's clients/game_keys).
 
---shortest walks the route that ignores patrols, which is the way to test the mob watcher.
+--shortest walks the route that ignores patrols, which is the way to test the mob watcher, and
+--no-mobs walks without it. Either way the walker reads the client's entity list for the zone's
+gates, closing each one listed before it is reached, and the probe prints the gates it closed and
+opened.
 --test-stall builds the grid without its cylinders (the trees), which makes stalls to recover
 from. --interact, on arriving, presses the interact key and reports where the game moves the
 wizard: how an interact link whose destination is only on the server is learned.
@@ -107,7 +110,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from bartleby.runtime.arbiter import Arbiter, Owner  # noqa: E402
 from bartleby.runtime.game.key_bindings import GameAction  # noqa: E402
-from bartleby.runtime.movement.walk import RouteWalker, WalkTick, client_mobs  # noqa: E402
+from bartleby.runtime.movement.walk import ClientRead, RouteWalker, WalkTick  # noqa: E402
 from probe_walk_route import (  # noqa: E402
     REPO,
     Planner,
@@ -195,18 +198,19 @@ def deviation(points: np.ndarray, route: list[tuple[float, float, float]]) -> np
     return best
 
 
-def logged_mobs(client, writer, started: float):
-    """core's client_mobs, every reading also written to the mobs CSV."""
-    read = client_mobs(client)
+class LoggedRead(ClientRead):
+    """core's ClientRead, every mob reading also written to the mobs CSV."""
 
-    async def read_and_log():
-        seen = await read()
-        t = time.monotonic() - started
+    def __init__(self, client, writer, started: float) -> None:
+        super().__init__(client)
+        self.writer, self.started = writer, started
+
+    async def mobs(self):
+        seen = await super().mobs()
+        t = time.monotonic() - self.started
         for key, name, (x, y, z) in seen:
-            writer.writerow([f"{t:.3f}", key, name, f"{x:.1f}", f"{y:.1f}", f"{z:.1f}"])
+            self.writer.writerow([f"{t:.3f}", key, name, f"{x:.1f}", f"{y:.1f}", f"{z:.1f}"])
         return seen
-
-    return read_and_log
 
 
 async def main(args: argparse.Namespace) -> int:
@@ -283,7 +287,8 @@ async def main(args: argparse.Namespace) -> int:
                 client,
                 planner,
                 avoid=not args.shortest,
-                mobs=logged_mobs(client, mob_writer, time.monotonic()),
+                watch_mobs=not args.no_mobs,
+                read=LoggedRead(client, mob_writer, time.monotonic()),
                 label=f"client {args.client}",
                 on_tick=tick,
             )
@@ -299,6 +304,13 @@ async def main(args: argparse.Namespace) -> int:
             f"{result.least_room:.0f}; {result.detours} detours; recovered from {result.recoveries} stalls; "
             f"replanned {result.replans} times; spent {result.planning:.1f}s planning"
         )
+        for what, names in (
+            ("gates the client listed, closed", result.gates_seen),
+            ("gates opened again, gone", result.gates_opened),
+            ("gates a stall closed", result.gates_closed),
+        ):
+            if names:
+                print(f"  {what}: {', '.join(names)}")
         if result.links_taken or result.links_dropped:
             print(f"  took {result.links_taken} links; dropped {result.links_dropped} that moved nobody")
         trail = np.array([p[:2] for p in result.trail]) if result.trail else np.empty((0, 2))
@@ -333,6 +345,7 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--test-stall", action="store_true", help="plan without the zone's cylinders, so the walk stalls on trees"
     )
+    ap.add_argument("--no-mobs", action="store_true", help="watch no mobs; the gates are read all the same")
     ap.add_argument(
         "--interact",
         action="store_true",
