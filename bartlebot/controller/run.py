@@ -116,6 +116,7 @@ class Run:
             return
         if not self._check_walking_maps():
             return
+        walking_maps.WARMER.prefer(walking_maps.bot_zones(self._documents.loaded_config.states))
         if not self._check_player_realms():
             return
         if not self._check_variables():

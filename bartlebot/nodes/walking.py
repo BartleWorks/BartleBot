@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 from bartleby.runtime import run_trace
 from bartleby.runtime.arbiter import LeaseLost, Owner
+from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
 from bartleby.runtime.movement.walk import ARRIVE_GOAL, RouteWalker, WalkEnd, WalkResult
 
@@ -162,6 +163,22 @@ async def walk_clients(machine, clients: Sequence, goal, *, numbers: Sequence[in
     return walked
 
 
+async def warm_lookups(client) -> None:
+    """Make a client's first fight check and key-binding read now, when it hooks, not on its
+    first walk. The first ``in_battle`` scans for the duel manager (about 0.5 s) and the first
+    key held reads the bindings; each is kept for the client's life. Core's walker makes both
+    while its first route is planned, which hides them only behind a plan longer than they
+    are. A failure is left to the walk's own call to meet."""
+    try:
+        await client.in_battle()
+    except Exception:  # noqa: BLE001 - the walk's own fight check meets it
+        logger.debug("the first fight check failed", exc_info=True)
+    try:
+        await game_keys.key_map(client)
+    except Exception:  # noqa: BLE001 - the first key held meets it
+        logger.debug("the first read of the key bindings failed", exc_info=True)
+
+
 async def walk_all(machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None) -> bool:
     """:func:`walk_clients`, and whether every walk did what was asked."""
     return all(w.ok for w in await walk_clients(machine, clients, goal, numbers=numbers))
@@ -180,4 +197,5 @@ __all__ = [
     "Walked",
     "walk_all",
     "walk_clients",
+    "warm_lookups",
 ]

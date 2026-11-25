@@ -223,3 +223,20 @@ def test_avoid_mobs_resolves_through_the_four_levels():
     assert resolve(_config(), app_value=False) is False
     assert resolve(_config(declared=True), app_value=False) is True
     assert resolve(_config(declared=True), app_value=False, override=False) is False
+
+
+async def test_a_hooked_clients_first_fight_check_and_key_read_are_made_ahead():
+    client = _client()
+    read = AsyncMock(return_value=False)
+    client.in_battle = read
+
+    await walking.warm_lookups(client)
+
+    read.assert_awaited_once()
+
+
+async def test_warming_a_client_that_cannot_be_read_raises_nothing():
+    client = _client()
+    client.in_battle = AsyncMock(side_effect=OSError("closed"))
+
+    await walking.warm_lookups(client)
