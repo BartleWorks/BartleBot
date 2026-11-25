@@ -454,7 +454,7 @@ the r815378 update's wizwalker.
 | 0 | #336 | speed boosts off in both apps, behind `SPEED_TOGGLE_ENABLED` | landed |
 | 1 | core #14 | route planning (1.1), and the shipped zone maps (1.2) | landed |
 | 2 | core #15 | walking a route in core | landed |
-| 3 | core #16 | doors in the maps | |
+| 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | 3.1 landed |
 | 4 | #323 | the run's helpers walk | |
 | 5 | #324 | fights and pickups by walking | |
 | 6 | #325 | the other movers walk | |
@@ -466,7 +466,9 @@ Core's `docs/WALKING.md` is the feature as built; the game's rules of movement a
 `docs/WIZARD101.md`, *Moving, and what the server allows*. The probes (`probe_walk_route.py`,
 `probe_walk_input.py`, `probe_walk_zones.py`, `probe_mob_paths.py`) plan with core's planner, on
 zones read by core's wad reader (its `tools/zone_files.py`, from the checkout beside this one), and
-`probe_walk_input.py` walks on core's walker (`movement/walk.py`'s `RouteWalker`). A run plans on the zone maps core ships, built by its `tools/build_zone_maps.py` from
+`probe_walk_input.py` walks on core's walker (`movement/walk.py`'s `RouteWalker`).
+`probe_gates.py` reads a zone's gates with the same reader and matches each against the
+client's entity list, for Stage 3.2's session in game. A run plans on the zone maps core ships, built by its `tools/build_zone_maps.py` from
 `zone_nav.json`, `bots/` and `subgraphs/`; `test_every_zone_on_the_map_has_a_walking_map_core_ships`
 fails on a `zone_nav.json` zone without one.
 
