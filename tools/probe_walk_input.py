@@ -108,13 +108,13 @@ HOW TO RUN
     1. Log a wizard in, standing in a zone (anywhere: the route starts where it stands).
     2. Check the plan without moving:
 
-         uv run --with numpy python tools/probe_walk_input.py --to "WC-UW T1 Exit" --dry-run
+         uv run python tools/probe_walk_input.py --to "WC-UW T1 Exit" --dry-run
 
     3. Walk it, hands off the keyboard:
 
-         uv run --with numpy python tools/probe_walk_input.py --to "WC-UW T1 Exit"
-         uv run --with numpy python tools/probe_walk_input.py --to "WC-UW T1 Exit" --shortest      # through patrols
-         uv run --with numpy python tools/probe_walk_input.py --to "WC-UW T1 Exit" --test-stall    # into trees
+         uv run python tools/probe_walk_input.py --to "WC-UW T1 Exit"
+         uv run python tools/probe_walk_input.py --to "WC-UW T1 Exit" --shortest      # through patrols
+         uv run python tools/probe_walk_input.py --to "WC-UW T1 Exit" --test-stall    # into trees
 
 Each walk writes logs/walk_route/walk-<time>.csv (time, position, yaw, waypoint, keys, what it
 chose and the room it had; no names or ids), logs/walk_route/mobs-<time>.csv (each mob's

@@ -30,15 +30,15 @@ joined by links, 63 still apart, 38 with a point off the grid. Most splits are j
 things pressed rather than stepped into (fast-travel stones, ziplines, ladders), whose
 destinations the client's files do not hold.
 
-With every link source (2026-10-27; probe_walk_route.zone_links, bartleby-core/docs/WALKING.md): volumes
+With every link source (2026-10-27; core's zone_links, bartleby-core/docs/WALKING.md): volumes
 paired by name or by zone.nav, rides' templates, stones' partners, X/X_B pairs, and zone.nav
 edges from travel objects. 295 links in 56 zones (189 volumes, 101 objects pressed, 5 rides):
 295 all on one piece, 21 joined by links, 44 still apart (135 points, from 299), 38 with a
 point off the grid.
 
 HOW TO RUN
-    uv run --with numpy python tools/probe_walk_zones.py                 # every zone
-    uv run --with numpy python tools/probe_walk_zones.py --zone WizardCity/WC_Streets/WC_Unicorn
+    uv run python tools/probe_walk_zones.py                 # every zone
+    uv run python tools/probe_walk_zones.py --zone WizardCity/WC_Streets/WC_Unicorn
 
 Writes logs/walk_route/zones/summary.json (one row per zone) and, for each zone whose
 arrival points the walk cannot join, logs/walk_route/zones/<zone>.png (a full run clears the
@@ -60,16 +60,10 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe_walk_route import (  # noqa: E402
-    REPO,
-    Grid,
-    blocking_footprints,
-    nearest_node,
-    parse_collision,
-    pieces,
-    walkable_triangles,
-    zone_links,
-)
+from bartleby.runtime.movement.collision import blocking_footprints, parse_collision, walkable_triangles  # noqa: E402
+from bartleby.runtime.movement.zone_grid import Grid, nearest_node, pieces  # noqa: E402
+from bartleby.runtime.movement.zone_links import parse_volumes, parse_zone_nav, zone_links  # noqa: E402
+from probe_walk_route import REPO, placed_objects, wad_entry  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "zone_graph"))
 
@@ -217,7 +211,20 @@ def survey(zone: str, why: list[str], deserialize: Deserializer) -> dict:
         record, named = None, {}
     points = [(name, xyz, place(grid, passable, label, *xyz)) for name, xyz in named.items()]
     on = [p for *_, p in points if p is not None]
-    links = zone_links(zone, grid, passable, label, record, named) if record is not None else []
+    links = []
+    if record is not None:
+        wad = zone_wad(zone)
+        volumes, nav = wad_entry(wad, "volumes.xml"), wad_entry(wad, "zone.nav")
+        links = zone_links(
+            zone,
+            grid,
+            passable,
+            label,
+            parse_volumes(volumes) if volumes else [],
+            placed_objects(record),
+            named,
+            parse_zone_nav(nav) if nav else None,
+        )
     joins: dict[int, set[int]] = {}
     for link in links:
         here, there = nearest_node(grid, passable, *link.source), nearest_node(grid, passable, *link.target)

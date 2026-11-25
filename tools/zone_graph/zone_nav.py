@@ -1,23 +1,10 @@
-"""Decode a zone wad's ``zone.nav``: the graph the quest arrow routes a wizard through one zone.
+"""Print a zone wad's ``zone.nav``: the graph the quest arrow routes a wizard through one zone.
 
-It is ``zonemap.nav``'s layout (zonemap_nav.py) without the name table, and with the 12 bytes
-that are zero there holding each node's position:
-
-LAYOUT (reverse-engineered)
-    u16  node_count - 1 (or so: one less than the next field in every zone seen)
-    u16  node_count
-    u16  unknown (0)
-    node_count x 14-byte node records: f32 x, y, z, then a u16 that is mostly the node's index
-             (Triton Avenue repeats one, so nothing trusts it)
-    u32  edge_count
-    edge_count x (u16 a, u16 b) node-index pairs, nearly every one stored both ways
-
-Most nodes sit on a 480-unit grid over the walkable floor, joined to their neighbors (480, or
-679 diagonally). The rest of the edges are the zone's links as the arrow sees them: Triton
-Avenue's teleport pads, Floating Mountains' ziplines, ropes, boats and mine carts elsewhere,
-each a long edge from near where the link is taken to near where it lands. An edge does not
-say what it is or which way it may be taken, and it can end a few hundred units from either.
-A ladder's or a rope's edge is short across the floor but far too steep to walk.
+The parser is core's (``bartleby.runtime.movement.zone_links.parse_zone_nav``), whose comment
+has the layout; this is its command line, and ``load``, which reads it out of a zone's wad.
+Most nodes sit on a 480-unit grid over the walkable floor; the rest of the edges are the zone's
+links as the arrow sees them, each a long edge from near where the link is taken to near where
+it lands.
 
 USAGE
     uv run python tools/zone_graph/zone_nav.py Azteca/AZ_Z10_FloatingMountains
@@ -28,53 +15,13 @@ from __future__ import annotations
 
 import argparse
 import math
-import struct
 import sys
-from dataclasses import dataclass
 
+from bartleby.runtime.movement.zone_links import LONG_EDGE, ZoneNav, parse_zone_nav
 from wad_common import zone_wad
 
-NODE_RECORD_SIZE = 14
-# Longer than two grid steps, diagonally: not a walk between neighbors.
-LONG_EDGE = 1500.0
-# Or steeper than any walk and higher than a stair: a ladder or a rope (Tyrian Gorge's rise
-# 1,100-2,100 over 200-460 across; the grid's steepest edges rise about 300 over 679).
-CLIMB = 500.0
-
-
-@dataclass
-class ZoneNav:
-    nodes: list[tuple[float, float, float]]
-    pairs: list[tuple[int, int]]
-
-    def link_edges(self, longer_than: float = LONG_EDGE) -> list[tuple[int, int]]:
-        """The edges no walk takes: spanning more than *longer_than* across the floor, or
-        climbing more than CLIMB and more steeply than 1:1."""
-        out = []
-        for a, b in self.pairs:
-            (ax, ay, az), (bx, by, bz) = self.nodes[a], self.nodes[b]
-            across, rise = math.hypot(bx - ax, by - ay), abs(bz - az)
-            if across > longer_than or rise > max(CLIMB, across):
-                out.append((a, b))
-        return out
-
-
-def parse(data: bytes) -> ZoneNav:
-    _, node_count, _ = struct.unpack_from("<HHH", data, 0)
-    off = 6
-    nodes = []
-    for _ in range(node_count):
-        nodes.append(struct.unpack_from("<fff", data, off))
-        off += NODE_RECORD_SIZE
-    (edge_count,) = struct.unpack_from("<I", data, off)
-    off += 4
-    if off + 4 * edge_count != len(data):
-        raise ValueError(f"{len(data) - off - 4 * edge_count} bytes left over after {edge_count} edges")
-    pairs = [struct.unpack_from("<HH", data, off + 4 * i) for i in range(edge_count)]
-    bad = [p for p in pairs if max(p) >= node_count]
-    if bad:
-        raise ValueError(f"{len(bad)} edges reference a node out of range, e.g. {bad[0]}")
-    return ZoneNav(nodes, pairs)
+__all__ = ["LONG_EDGE", "ZoneNav", "load", "parse"]
+parse = parse_zone_nav
 
 
 def load(wad) -> ZoneNav | None:

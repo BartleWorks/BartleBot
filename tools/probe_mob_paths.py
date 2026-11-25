@@ -26,7 +26,7 @@ mobs nearby and the paths cover the rest; build_planner now avoids both start ty
 HOW TO RUN
     1. Log a wizard in, standing in a zone with mobs (Triton Avenue has both kinds), out of
        their reach.
-    2. uv run --with numpy python tools/probe_mob_paths.py --seconds 120
+    2. uv run python tools/probe_mob_paths.py --seconds 120
 
 Writes logs/walk_route/mobpaths-<time>.csv: one row per mob read.
 """
@@ -49,7 +49,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from probe_walk_input import MobWatch  # noqa: E402
-from probe_walk_route import REPO, Deserializer, Patrol, _segments, distance_to_segments, mob_patrols  # noqa: E402
+from probe_walk_route import REPO, Deserializer, Patrol, _segments, distance_to_segments  # noqa: E402
+from probe_walk_route import mob_patrols_of as mob_patrols  # noqa: E402
 
 STOOD = 50.0
 ON_PATH = 150.0
