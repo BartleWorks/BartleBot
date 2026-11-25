@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import json
 import re
-import struct
 import sys
 from collections.abc import Iterator
 from pathlib import Path
 
+from bartleby.runtime.movement.zone_links import parse_volumes
 from katsuba.op import STATEFUL_FLAGS, LazyList, LazyObject, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
 
@@ -114,45 +114,11 @@ def display_name(record, names: dict[str, str]) -> str | None:
     return names.get(text(record["m_zoneDisplayName"]).removeprefix("WizardZone_"))
 
 
-# volumes.xml property records: a u32 size in bits, a u32 property hash, then the value. The
-# three position floats are 96-bit records with consecutive hashes.
-_FLOAT_RECORD = struct.pack("<I", 96)
-_POSITION_HASHES = (bytes.fromhex("28f8b37d"), bytes.fromhex("29f8b37d"), bytes.fromhex("2af8b37d"))
-_NAME_LOOKBACK = 200
-
-
 def volumes(data: bytes) -> list[tuple[str, tuple[float, float, float]]]:
-    """(name, position) of every volume in a zone's ``volumes.xml``.
-
-    katsuba cannot deserialize the file with our type dump, but the layout is plain enough to
-    read directly: each volume's name is a string whose first byte is its length times two,
-    and its position follows as three float records. The name is the nearest such string
-    ending before the position. Sizes and shapes are not decoded.
-    """
-    x_key = _FLOAT_RECORD + _POSITION_HASHES[0]
-    found = []
-    at = data.find(x_key)
-    while at >= 0:
-        y_at, z_at = at + 12, at + 24
-        if data[y_at + 4 : y_at + 8] == _POSITION_HASHES[1] and data[z_at + 4 : z_at + 8] == _POSITION_HASHES[2]:
-            x, y, z = (struct.unpack_from("<f", data, off + 8)[0] for off in (at, y_at, z_at))
-            found.append((_name_before(data, at), (x, y, z)))
-        at = data.find(x_key, at + 1)
-    return found
-
-
-def _name_before(data: bytes, end: int) -> str:
-    best: tuple[int, int] | None = None  # (end of string, length)
-    for p in range(end - 4, max(end - _NAME_LOOKBACK, 0), -1):
-        if data[p] & 1:
-            continue
-        length = data[p] >> 1
-        stop = p + 1 + length
-        if length < 3 or stop > end or not all(0x20 <= b <= 0x7E for b in data[p + 1 : stop]):
-            continue
-        if best is None or (stop, length) > best:
-            best = (stop, length)
-    return data[best[0] - best[1] : best[0]].decode("ascii") if best else "?"
+    """(name, position) of every volume in a zone's ``volumes.xml``. The parser is core's
+    (``bartleby.runtime.movement.zone_links.parse_volumes``), which reads each one's shape and
+    size too."""
+    return [(v.name, v.center) for v in parse_volumes(data)]
 
 
 def printable_strings(data: bytes, min_len: int = 5) -> Iterator[str]:

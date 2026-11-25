@@ -50,7 +50,11 @@ volume's name and position straight from the bytes (`zone_data.py volumes <zone>
 volume sits within tens of units of where working bots trigger it -- Olde Town's
 `Conditional Teleporter to Cyclops Lane` is 27 units from `sisyphus.json`'s coordinate -- so
 nearest-volume matching is how the zone navigation tester names the gate a walk used. The
-volume never names its destination, and sizes and shapes are not decoded.
+volume never names its destination. Its shape and size are decoded since 2026-11-24, and
+which volumes teleport is read from `triggers.xml`: both are core's
+(`bartleby.runtime.movement.zone_links`, `parse_volumes` and `teleport_volumes`), and core's
+`docs/WALKING.md`, *Exits*, has how. `wad_common.volumes` is core's parser, names and
+centers only.
 
 ## Open questions
 
@@ -68,7 +72,10 @@ volume never names its destination, and sizes and shapes are not decoded.
   (`WC_GateCommons_ToGolemCourt`, `WC-GateStreet_CyclopsLane`, `WC_Triton_TeleporterA_ToMain`),
   which is not reliable enough to join on. The actual teleport lives in `triggers.xml`,
   which katsuba cannot read with `r800294_WizardDev.json` ("failed to identify type with
-  tag"). A newer type dump may fix that; until then `zone_data.py strings` is the only view.
+  tag"), nor with `r814353_WizardDev.json` ("root object must not be null"). Its records can be
+  read by hand, though: a teleporting trigger holds a `ResTeleport` result, but that result keeps
+  no properties in the client's copy, so the destination is not there (core's
+  `docs/WALKING.md`, *Exits*).
   Others have read both files. In their dump of `KT_Selenopolis/Interiors/KT_Z04_Pyramid_Adv`,
   a trigger maps a name to its event (`Teleport_2_Sele_Lower -> Enter_TeleportVol_Teleport_2_Sele_Lower`),
   and `volumes.xml` places the volume that raises it (`TeleportVol_Teleport_2_Sele_Lower` at

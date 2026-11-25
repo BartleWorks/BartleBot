@@ -438,29 +438,45 @@ The rules every stage keeps:
 
 ## Walking routes
 
-Epic #322: every wizard moved by walking, along routes planned from each zone's own files,
-for when the server reset long written teleports. https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
+Epic #322: every wizard moved by walking, along routes planned from each zone's own files, so
+no node writes a long teleport: every move is walked, taken through the game's own links, or
+an author's Teleport to XYZ across a gate, never longer than `HOP_MAX`.
+https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
 
-**Shelved on 2026-11-16, before any stage started.** Ahmarra's live build lets long written
-teleports hold again, so the nodes' teleports work and walking is not needed to keep the
-library running. The issues stay open, out of the 0.4.0 milestone. What existed is on the
-`walking-shelf` branch of each repo, which is `master` as it stood: here the four probes
-(`probe_walk_route.py`, `probe_walk_input.py`, `probe_walk_zones.py`, `probe_mob_paths.py`),
-in core `bartleby.runtime.movement` and `docs/WALKING.md`, and in BartleBuddy the followers.
-Bringing it back is a revert of each repo's merge that removed it. The game's rules of
-movement, kept current, are core's `docs/WIZARD101.md`, *Moving*.
+**In progress. The page is kept current while the stages land.** Shelved on 2026-11-16, when
+long written teleports held again on Ahmarra's live build, and taken up again on 2026-11-24 by
+choice. Core's stages land in bartleby-core, and BartleBot pins each core release Stage 1 cuts.
 
-| stage | issue | what |
-|---|---|---|
-| 1 | core #14 | route planning and the shipped zone maps |
-| 2 | core #15 | walking a route: `RouteWalker` on a movement lease |
-| 3 | core #16 | doors and hops, the hop's limit measured |
-| 4 | #323 | the run's helpers walk |
-| 5 | #324 | fights and pickups by walking |
-| 6 | #325 | the other movers walk, and a guard that nothing else writes a position |
-| 7 | #326 | authoring for walking |
-| 8 | core #17 | verified links |
-| 9 | #327 | the bot library on live |
+| stage | issue | what | status |
+|---|---|---|---|
+| 0 | #336 | speed boosts off in both apps, behind `SPEED_TOGGLE_ENABLED` | landed |
+| 1 | core #14 | route planning (1.1), and the shipped zone maps (1.2) | 1.1 landed |
+| 2 | core #15 | walking a route in core | |
+| 3 | core #16 | doors in the maps | |
+| 4 | #323 | the run's helpers walk | |
+| 5 | #324 | fights and pickups by walking | |
+| 6 | #325 | the other movers walk | |
+| 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
+| 8 | core #17 | verified links | |
+| 9 | #327 | the bot library on live | |
+
+Core's `docs/WALKING.md` is the feature as built; the game's rules of movement are core's
+`docs/WIZARD101.md`, *Moving, and what the server allows*. The probes (`probe_walk_route.py`,
+`probe_walk_input.py`, `probe_walk_zones.py`, `probe_mob_paths.py`) plan with core's planner.
+
+The rules every stage keeps:
+
+- **No teleport is ever longer than `HOP_MAX`**, measured from where the wizard stands, and
+  nothing but `walking.hop` writes a position. `HOP_MAX` has no setting, option or override.
+- **A failed move says where, and never teleports instead.**
+- **Legitimate means only**: the movement keys, yaw writes, the game's own teleporters and
+  links, the World Gate, porting to a friend, Mark and Recall. Nothing boosts speed until the
+  user's go-ahead.
+- **Every bot file round-trips byte-identical**, but for Stage 7's one rewrite of
+  `teleport_to_coordinates`.
+- **The restricted-zone check stays complete**, and core imports neither product.
+- **No game file is committed**: tests build their zones in code, and what ships is derived.
+- **Every input goes through an arbiter lease**, and no log names a wizard or an account.
 
 ## Auto-combat
 
