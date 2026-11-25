@@ -445,7 +445,8 @@ https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
 
 **In progress. The page is kept current while the stages land.** Shelved on 2026-11-16, when
 long written teleports held again on Ahmarra's live build, and taken up again on 2026-11-24 by
-choice. Core's stages land in bartleby-core, and BartleBot pins each core release Stages 1 and 2 cut.
+choice. Core's stages land in bartleby-core, and BartleBot pins each core release Stages 1 and 2 cut, and 0.12.0, the fixes from
+reviewing them and walking the walker in game.
 
 | stage | issue | what | status |
 |---|---|---|---|

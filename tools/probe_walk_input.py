@@ -65,7 +65,12 @@ prompt (is_in_npc_range). Then Ladder 02 down, Ladder 05 up, and Ladder 01 down 
 in one route each landed 0 to 4 units off the arrival point paired, in one tick 0.06 to 0.12s
 after the press.
 
-Not yet run on core's walker in game (2026-11-25).
+On core's walker (2026-11-25): Ravenwood to the Commons, to Unicorn Way, to the Hedge Maze on
+core 0.11.2, and back on 0.12.0. Six walks of 1,370 to 45,580 units, each arriving or changing
+zone, 0 to 8 units off the route at the median and 72 at most; one stall recovered beside the
+Alchemy Clubhouse, one detour around 8 mobs, no battle. On 0.11.2 each walk stood 0.6-0.7 s at
+its first tick, for wizwalker's one-time duel-manager scan behind the first in_battle(); 0.12.0
+makes it while the first route is planned.
 
 HOW TO RUN
     1. Log a wizard in, standing in a zone (anywhere: the route starts where it stands).
@@ -168,7 +173,7 @@ async def interact_and_watch(client, lease, planner: Planner) -> None:
     nearest = sorted((math.dist(p[:2], (x, y)), name) for name, p in planner.named.items())[:2]
     print(
         f"  interact: first moved {first:.1f}s after pressing, settled at {t:.1f}s, {math.dist((x0, y0), (x, y)):.0f} "
-        f"units from where it stood ({sum(steps):.0f} travelled, {kind}), at ({x:.0f}, {y:.0f}, {z:.0f})"
+        f"units from where it stood ({sum(steps):.0f} traveled, {kind}), at ({x:.0f}, {y:.0f}, {z:.0f})"
     )
     print("  landed nearest: " + "; ".join(f"{name} ({d:.0f} away)" for d, name in nearest))
 
