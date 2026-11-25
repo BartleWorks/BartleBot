@@ -69,6 +69,7 @@ class Pair:
     start: Point
     goal: Point
     where: str  # "Node A › Node B", or one node's two params
+    step: str = ""  # the node type that walks it: the goal's node
 
 
 @dataclass
@@ -138,10 +139,10 @@ def pairs_of(config) -> set[Pair]:
         if not points or not zone:
             continue
         for (k1, p1), (k2, p2) in zip(points, points[1:]):
-            pairs.add(Pair(zone, p1, p2, f"{name[sid]}: {k1} › {k2}"))
+            pairs.add(Pair(zone, p1, p2, f"{name[sid]}: {k1} › {k2}", state.node_type))
         for from_zone, point, before in into[sid]:
             if from_zone == zone and point != points[0][1]:
-                pairs.add(Pair(zone, point, points[0][1], f"{before} › {name[sid]}"))
+                pairs.add(Pair(zone, point, points[0][1], f"{before} › {name[sid]}", state.node_type))
     return pairs
 
 
@@ -250,13 +251,13 @@ def report(findings: list[Finding], bots: int, seconds: float) -> str:
             "",
             f"## {title}",
             "",
-            "| zone | bots | walk | from | to | seconds | what |",
-            "|---|---|---|---|---|---|---|",
+            "| zone | bots | walk | step | from | to | seconds | what |",
+            "|---|---|---|---|---|---|---|---|",
         ]
         for f in rows:
             bots_text = ", ".join(f.bots[:3]) + (f" and {len(f.bots) - 3} more" if len(f.bots) > 3 else "")
             lines.append(
-                f"| {f.pair.zone} | {bots_text} | {f.pair.where} | {_fmt(f.pair.start)} | {_fmt(f.pair.goal)} "
+                f"| {f.pair.zone} | {bots_text} | {f.pair.where} | {f.pair.step} | {_fmt(f.pair.start)} | {_fmt(f.pair.goal)} "
                 f"| {f.seconds:.0f} | {what(f)} |"
             )
     return "\n".join(lines) + "\n"

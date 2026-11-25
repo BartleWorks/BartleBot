@@ -39,7 +39,7 @@ def _s(sid, node_type, **params):
 def test_a_node_walks_from_its_reset_to_its_point():
     bot = _bot([_s("a", "interact", zone=Z, interact_xyz=_xyz(100), reset_xyz=_xyz(50))], [])
 
-    assert cbr.pairs_of(bot) == {cbr.Pair(Z, (50.0, 0.0, 0.0), (100.0, 0.0, 0.0), "A: reset_xyz › interact_xyz")}
+    assert cbr.pairs_of(bot) == {cbr.Pair(Z, (50.0, 0.0, 0.0), (100.0, 0.0, 0.0), "A: reset_xyz › interact_xyz", "interact")}
 
 
 def test_the_next_node_walks_from_where_the_last_left_off_through_a_fight():
@@ -52,7 +52,7 @@ def test_the_next_node_walks_from_where_the_last_left_off_through_a_fight():
         [("a", "f"), ("f", "b")],
     )
 
-    assert cbr.Pair(Z, (100.0, 0.0, 0.0), (900.0, 0.0, 0.0), "A › B") in cbr.pairs_of(bot)
+    assert cbr.Pair(Z, (100.0, 0.0, 0.0), (900.0, 0.0, 0.0), "A › B", "teleport_to_coordinates") in cbr.pairs_of(bot)
 
 
 def test_a_zone_change_or_a_port_loses_track_of_the_wizard():
@@ -120,4 +120,4 @@ def test_the_report_counts_each_kind_and_lists_the_problems():
     text = cbr.report(findings, bots=2, seconds=1.0)
 
     assert "- No route: 1" in text and "- Clear: 1" in text
-    assert "| Test/T_Walk | w/x.json | A › B | (1, 2, 3) | (4, 5, 6) | 0 | nowhere on the floor joins the two |" in text
+    assert "| Test/T_Walk | w/x.json | A › B |  | (1, 2, 3) | (4, 5, 6) | 0 | nowhere on the floor joins the two |" in text
