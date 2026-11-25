@@ -967,3 +967,14 @@ def test_crab_alley_is_reached_through_the_stone_block():
     )
 
     assert steps[-1].kind == "object"
+
+
+def test_every_zone_on_the_map_has_a_walking_map_core_ships():
+    """A walk plans on core's shipped zone map (``bartleby.runtime.movement.zone_maps``), so a
+    zone added here needs one: rebuild core's maps with its ``tools/build_zone_maps.py``, which
+    reads this file's zones (core's ``docs/GAME_UPDATES.md``), and pin the release carrying them."""
+    from bartleby.runtime.movement import zone_maps
+
+    missing = sorted(zone for world in _shipped().worlds.values() for zone in world.zones if not zone_maps.has(zone))
+
+    assert missing == []

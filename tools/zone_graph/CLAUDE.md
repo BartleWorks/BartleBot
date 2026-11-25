@@ -6,7 +6,12 @@ exist because wizsprinter's `traversalData/` files (`zoneMap.txt`, `gates_list.t
 coordinates, player-standing positions rather than gate positions, and 14 of Wizard City's
 432 zones. The game ships the same information, complete.
 
-Run from the repo root; the scripts import `wad_common.py` from their own folder.
+Run from the repo root; the scripts import `wad_common.py` from their own folder. **The wad
+reader is core's**, `tools/zone_files.py` in the bartleby-core checkout beside this one (core's
+`docs/UPSTREAM.md`, the repos' layout): `Deserializer`, `to_plain`, `root_wad`, `zone_wad`,
+`zone_record`, `locations`, and the `ZoneReader` that turns a zone's wad into the planner's
+`ZoneFiles`, which core's zone map build uses too. `wad_common.py` re-exports them, so every
+tool here needs that checkout, and a fix to one goes in core's copy, the only one.
 
 | script | does |
 |---|---|
@@ -14,7 +19,7 @@ Run from the repo root; the scripts import `wad_common.py` from their own folder
 | `zone_data.py` | one zone's wad: `list`, `summary` (arrival points, tagged objects), `dump` to JSON, `strings`, `hubs`; `names` for every zone's English name |
 | `main_zones.py` | proposes each world's main zones for hand review (folder filter, hops from hub, interiors on the way) |
 | `compare_traversal_data.py` | scores a world's Deimos files against the game data |
-| `wad_common.py` | paths, the two katsuba serializer configs, JSON shaping, Deimos file parsing |
+| `wad_common.py` | core's wad reader with this repo's defaults (the newest type dump), display names, Deimos file parsing |
 
 Write anything these produce to `*.local.json` or the scratchpad. Nothing here is a
 snapshot yet; if one is added, it follows the `tools/CLAUDE.md` rule: a checked-in JSON
@@ -41,9 +46,10 @@ zone names in the user's language, so never key anything on the English string. 
 the zone path.
 
 `gamedata.bin` has no `BINd` prefix and only deserializes with flags `0`; the `BINd` files
-need `STATEFUL_FLAGS`. `Deserializer` in `wad_common.py` picks by prefix. Some newer zones
+need `STATEFUL_FLAGS`. Core's `Deserializer` picks by prefix. Some newer zones
 (Selenopolis, Nibbleheim Mines) ship the same record as `gamedata.xml` instead;
-`zone_data.zone_record` reads whichever is there.
+`zone_record` reads whichever is there. A template named `|Darkmoor|WorldData|ObjectData/X.xml`
+is `ObjectData/X.xml` in that world's `Darkmoor-WorldData.wad`, not in `Root.wad`.
 
 `volumes.xml` does not deserialize with our type dump, but `wad_common.volumes()` reads each
 volume's name and position straight from the bytes (`zone_data.py volumes <zone>`). A gate's
