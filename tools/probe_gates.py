@@ -21,7 +21,7 @@ AOI flag, whether a quest can remove it, the spawn requirements, the start state
 set), then the client's entity list once: every entity's template id and location, the walker's
 own cost, then the details of the ones that match a gate, the live object of the gate's template
 nearest where it is placed, within MATCH. --time-mobs also times wizsprinter's get_mobs(), the
-pass core's client_mobs makes today, for comparison.
+pass core's client_mobs made before 0.13.0, for comparison.
 
 Nothing is written to the game but wizwalker's hooks. No wizard's name or id is read: entities
 that are no gate are counted, never named.
