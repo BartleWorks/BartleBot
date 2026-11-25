@@ -21,20 +21,21 @@ def _positional_client(prompts: bool = True) -> FakeClient:
     client = FakeClient()
     state = {"at_interact": False}
 
-    async def _teleport(xyz):
+    async def _walk(xyz):
         state["at_interact"] = xyz.x == _INTERACT.x
 
     async def _in_range():
         return state["at_interact"] and prompts
 
-    client.teleport.side_effect = _teleport
+    client.walk_to.side_effect = _walk
     client.is_in_npc_range.side_effect = _in_range
     client.at_interact = state
     return client
 
 
-async def _run(clients, turn_fn, **kwargs):
+async def _run(clients, turn_fn, machine=None, **kwargs):
     return await nh.take_turns(
+        machine or FakeMachine(),
         clients,
         _INTERACT,
         _RESET,
@@ -86,7 +87,7 @@ async def test_client_is_parked_off_the_object_after_its_turn():
 
     await _run([client], lambda c: _record([], c))
 
-    assert client.teleport.call_args_list[-1].args[0].x == _RESET.x
+    assert client.walk_to.call_args_list[-1].args[0].x == _RESET.x
     assert client.at_interact["at_interact"] is False
 
 
@@ -100,7 +101,7 @@ async def test_failed_turn_is_still_parked():
     results = await _run([client], _turn)
 
     assert results == [nh.TurnResult(prompted=True, completed=False)]
-    assert client.teleport.call_args_list[-1].args[0].x == _RESET.x
+    assert client.walk_to.call_args_list[-1].args[0].x == _RESET.x
 
 
 async def test_park_after_turn_disabled_leaves_the_client_alone():
@@ -109,7 +110,7 @@ async def test_park_after_turn_disabled_leaves_the_client_alone():
 
     await _run([client], lambda c: _record([], c), park_after_turn=False)
 
-    assert client.teleport.call_args_list[-1].args[0].x == _INTERACT.x
+    assert client.walk_to.call_args_list[-1].args[0].x == _INTERACT.x
 
 
 async def test_all_clients_parked_at_reset_before_the_first_turn():
@@ -123,7 +124,7 @@ async def test_all_clients_parked_at_reset_before_the_first_turn():
 
     # First teleport for every client is the unconditional park at reset_xyz.
     for client in clients:
-        assert client.teleport.call_args_list[0].args[0].x == _RESET.x
+        assert client.walk_to.call_args_list[0].args[0].x == _RESET.x
 
 
 async def test_client_that_never_prompts_is_recorded_and_skipped():
@@ -144,7 +145,7 @@ async def test_client_that_never_prompts_is_recorded_and_skipped():
     assert results[1] == nh.TurnResult(prompted=False, completed=False)
     assert results[0].completed and results[2].completed
     # MAX_RETRIES attempts, each an interact teleport plus a reset teleport, after the park.
-    assert never.teleport.call_count == 1 + nh.MAX_RETRIES * 2
+    assert never.walk_to.call_count == 1 + nh.MAX_RETRIES * 2
 
 
 async def test_prompt_retried_after_a_reset():
@@ -207,7 +208,14 @@ async def test_the_delay_between_uses_is_paid_between_turns_only():
 
     with patch.object(nh.asyncio, "sleep", side_effect=_sleep):
         await nh.take_turns(
-            clients, _INTERACT, _RESET, safety_delay=0.01, turn_fn=_turn, poll_interval=0, object_use_delay=2.5
+            FakeMachine(),
+            clients,
+            _INTERACT,
+            _RESET,
+            safety_delay=0.01,
+            turn_fn=_turn,
+            poll_interval=0,
+            object_use_delay=2.5,
         )
 
     assert sleeps.count(2.5) == 2  # three clients, two handovers
@@ -221,7 +229,7 @@ async def test_logs_use_the_supplied_client_numbers():
     async def _turn(client) -> bool:
         return True
 
-    await _run(clients, _turn, numbers=[4], log=machine.log)
+    await _run(clients, _turn, machine, numbers=[4])
 
     assert any("Client 4" in message for message, _level in machine.logs)
     assert not any("Client 1" in message for message, _level in machine.logs)
@@ -234,16 +242,16 @@ async def test_a_client_whose_prompt_will_not_clear_at_reset_loses_its_turn():
     clients[1].is_in_npc_range.side_effect = None
     clients[1].is_in_npc_range.return_value = True
     turns: list[int] = []
-    logs: list[tuple[str, int]] = []
+    machine = FakeMachine()
 
     async def _turn(client) -> bool:
         turns.append(clients.index(client))
         return True
 
     with patch.object(nh, "PROMPT_CLEAR_SETTLE", 0):
-        results = await _run(clients, _turn, log=lambda msg, level=0: logs.append((msg, level)))
+        results = await _run(clients, _turn, machine)
 
     assert turns == [0, 2]
     assert results[1] == nh.TurnResult(prompted=False, completed=False)
-    clients[1].teleport.assert_called_once_with(_RESET)
-    assert any("Client(s) [2]: interact prompt would not clear" in msg for msg, _ in logs)
+    clients[1].walk_to.assert_called_once_with(_RESET)
+    assert any("Client(s) [2]: interact prompt would not clear" in msg for msg, _ in machine.logs)

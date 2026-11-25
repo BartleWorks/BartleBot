@@ -17,7 +17,7 @@ from bartleby.runtime.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTI
 from wizwalker import XYZ
 
 from bartlebot.game import scales, zone_names
-from bartlebot.nodes import node_helpers, zone_navigation
+from bartlebot.nodes import node_helpers, walking, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
@@ -84,7 +84,12 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
-    required_bot_options=[player_realms.SPEC, SAFETY_DELAY_OPTION, LEVEL_SCALING_PLAYERS_OPTION],
+    required_bot_options=[
+        player_realms.SPEC,
+        SAFETY_DELAY_OPTION,
+        LEVEL_SCALING_PLAYERS_OPTION,
+        walking.AVOID_MOBS_OPTION,
+    ],
     # One tick is a whole trip, and the apply step already retries every player.
     max_consecutive_retries=3,
     usage_notes=(

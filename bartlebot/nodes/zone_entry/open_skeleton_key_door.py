@@ -18,7 +18,7 @@ from bartleby.runtime.timing import (
 )
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import (
     ARRIVAL_NOTE,
     INTERACT_XYZ,
@@ -88,6 +88,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         player_realms.SPEC,
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     merges_players=True,
     max_consecutive_retries=5,

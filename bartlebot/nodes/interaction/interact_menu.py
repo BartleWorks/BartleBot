@@ -8,7 +8,7 @@ from bartleby.runtime.game.key_bindings import GameAction
 from bartleby.runtime.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, TRIGGER_TIMEOUT
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import (
     INTERACT_PLAYERS,
     INTERACT_XYZ,
@@ -108,6 +108,7 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=10,
     usage_notes=(
@@ -169,6 +170,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         numbers = [i + 1 for i in interact_indices]
         results = await node_helpers.take_turns(
+            machine,
             active_clients,
             interact,
             reset,
@@ -177,7 +179,6 @@ async def run(machine, clients: list, params: dict) -> str:
             numbers=numbers,
             poll_interval=POLL_INTERVAL,
             object_use_delay=params.get("object_use_delay"),
-            log=machine.log,
         )
         unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
         if unprompted:

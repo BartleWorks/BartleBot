@@ -17,7 +17,7 @@ from wizwalker import XYZ
 
 from bartlebot.clients import port_map
 from bartlebot.game import zone_names
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
@@ -121,6 +121,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=5,
     usage_notes=(

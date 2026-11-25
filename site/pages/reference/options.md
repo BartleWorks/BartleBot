@@ -118,6 +118,14 @@ Turn off to keep any item with "Socket Wrench" in its name.
 
 ## General { #general-card }
 
+### Avoid Mobs { #avoid-mobs }
+
+Walks plan around the mobs' patrols, and wait for or step around a mob in the way, so a walk starts no fight. Turn it off to take the shortest way and fight whatever it meets.
+
+- **Default:** On
+- **App setting:** **Settings › Bot › Avoid mobs**
+- **Added by:** [Enter Dungeon](zone-entry.md#enter-dungeon), [Enter Zone](zone-entry.md#enter-zone), [Enter Zone via Object](zone-entry.md#enter-zone-via-object), [Open Skeleton Key Door](zone-entry.md#open-skeleton-key-door), [Mark Location](teleportation.md#mark-location), [Sync in Zone](teleportation.md#sync-in-zone), [Handle Potions](combat-and-healing.md#handle-potions), [Interact](interaction.md#interact), [Interact Menu](interaction.md#interact-menu), [Handle Level Scaling](utility.md#handle-level-scaling)
+
 ### Favorite Realm { #favorite-realm }
 
 The realm Change Realm and Sync in Zone send players to. It's stored on this computer, never in the bot file, and set in Settings › Bot.

@@ -53,6 +53,7 @@ SETTING_ROWS: dict[str, str | None] = {
     # The setting exists, but neither Settings nor setup has a row for it yet.
     "Level Scaling Players": None,
     "Refill Potions": "Refill potions",
+    "Avoid Mobs": "Avoid mobs",
     "Quicksell": "Quicksell",
     "Sell Pets": "Sell pets",
     "Sell Socket Wrenches": "Sell Socket Wrenches",

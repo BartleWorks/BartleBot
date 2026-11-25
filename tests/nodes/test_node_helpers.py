@@ -709,7 +709,7 @@ async def test_reach_prompt_stands_at_reset_first_even_with_no_prompt_showing():
     reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
 
 
 async def test_reach_prompt_clears_a_stale_prompt_first():
@@ -722,7 +722,7 @@ async def test_reach_prompt_clears_a_stale_prompt_first():
     reached = await nh.reach_prompt(machine, [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
     assert any("Pre-existing interact prompt on client(s) [1]" in msg for msg, _ in machine.logs)
 
 
@@ -733,7 +733,7 @@ async def test_reach_prompt_waits_out_a_prompt_that_arrives_late_at_reset():
     reads = iter([False, True, True, False])  # node start, then at reset: late, late, gone
 
     async def _showing():
-        last = client.teleport.call_args_list[-1].args[0] if client.teleport.call_args_list else None
+        last = client.walk_to.call_args_list[-1].args[0] if client.walk_to.call_args_list else None
         if last == _SIGIL:
             return True
         return next(reads, False)
@@ -743,7 +743,7 @@ async def test_reach_prompt_waits_out_a_prompt_that_arrives_late_at_reset():
     reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.5, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
     assert next(reads, "spent") == "spent"
 
 
@@ -771,7 +771,7 @@ async def test_reach_prompt_fails_without_approaching_when_reset_never_clears(mo
     reached = await nh.reach_prompt(machine, [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0, fail_on_miss=False)
 
     assert reached is False
-    client.teleport.assert_called_once_with(_RESET)
+    client.walk_to.assert_called_once_with(_RESET)
     assert any(
         msg.startswith("FAILURE: interact prompt would not clear at reset_xyz on client(s) [1]")
         and level == logging.WARNING
@@ -783,12 +783,12 @@ async def test_reach_prompt_resets_and_retries_after_a_miss():
     client = FakeClient()
     # The prompt shows only once the client is back at the point for the second time:
     # reset, point, reset, point.
-    client.is_in_npc_range.side_effect = lambda: client.teleport.call_count >= 4
+    client.is_in_npc_range.side_effect = lambda: client.walk_to.call_count >= 4
 
     reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.05, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL, _RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL, _RESET, _SIGIL]
 
 
 async def test_reach_prompt_gives_up_after_max_retries_and_logs_the_failure():
@@ -799,7 +799,7 @@ async def test_reach_prompt_gives_up_after_max_retries_and_logs_the_failure():
 
     assert reached is False
     # The first reset, then one teleport to the point and one reset per attempt.
-    assert client.teleport.call_count == 1 + nh.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + nh.MAX_RETRIES * 2
     assert any(
         msg == f"FAILURE: interact prompt never appeared after {nh.MAX_RETRIES} attempts" and level == logging.WARNING
         for msg, level in machine.logs
@@ -817,7 +817,7 @@ async def test_reach_prompt_leaves_a_miss_to_the_caller_when_asked():
 
     assert reached is False
     assert not any(level >= logging.WARNING for _, level in machine.logs)
-    assert client.teleport.call_args_list[-1].args[0] is _SIGIL
+    assert client.walk_to.call_args_list[-1].args[0] is _SIGIL
 
 
 async def test_reach_prompt_skips_the_clear_when_the_caller_has_done_it():
@@ -829,7 +829,7 @@ async def test_reach_prompt_skips_the_clear_when_the_caller_has_done_it():
     )
 
     assert reached is True
-    client.teleport.assert_called_once_with(_SIGIL)
+    client.walk_to.assert_called_once_with(_SIGIL)
 
 
 async def test_clear_stale_prompt_labels_clients_by_the_numbers_given():
@@ -842,8 +842,8 @@ async def test_clear_stale_prompt_labels_clients_by_the_numbers_given():
 
     assert cleared is True
     assert any("client(s) [4]" in msg for msg, _ in machine.logs)
-    idle.teleport.assert_called_once_with(_RESET)
-    stale.teleport.assert_called_once_with(_RESET)
+    idle.walk_to.assert_called_once_with(_RESET)
+    stale.walk_to.assert_called_once_with(_RESET)
 
 
 async def test_clear_stale_prompt_resets_quietly_without_one():
@@ -854,7 +854,7 @@ async def test_clear_stale_prompt_resets_quietly_without_one():
     cleared = await nh.clear_stale_prompt(machine, [client], _RESET, nh.INTERACT_PROMPT, 0.01, 0)
 
     assert cleared is True
-    client.teleport.assert_called_once_with(_RESET)
+    client.walk_to.assert_called_once_with(_RESET)
     assert machine.logs == []
 
 
@@ -879,7 +879,7 @@ async def test_clear_stale_prompt_names_only_the_clients_still_showing(monkeypat
 # ---------------------------------------------------------------------------
 
 
-async def test_reach_sigil_prompt_resets_then_teleports_once_when_the_prompt_appears():
+async def test_reach_sigil_prompt_resets_then_walks_once_when_the_prompt_appears():
     client = FakeClient()
     client.zone_name.return_value = "Hub"
 
@@ -887,7 +887,7 @@ async def test_reach_sigil_prompt_resets_then_teleports_once_when_the_prompt_app
         reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
 
 
 async def test_reach_sigil_prompt_refuses_from_the_wrong_zone():
@@ -899,7 +899,7 @@ async def test_reach_sigil_prompt_refuses_from_the_wrong_zone():
     reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
 
     assert reached is False
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_reach_sigil_prompt_gives_up_after_max_retries():
@@ -910,7 +910,7 @@ async def test_reach_sigil_prompt_gives_up_after_max_retries():
 
     assert reached is False
     # The first reset, then one sigil teleport and one reset teleport per attempt.
-    assert client.teleport.call_count == 1 + nh.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + nh.MAX_RETRIES * 2
 
 
 async def test_reach_sigil_prompt_clears_a_stale_prompt_first():
@@ -927,7 +927,7 @@ async def test_reach_sigil_prompt_clears_a_stale_prompt_first():
         reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
 
     assert reached is True
-    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+    assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
 
 
 # ---------------------------------------------------------------------------

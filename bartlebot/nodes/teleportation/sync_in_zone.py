@@ -11,7 +11,7 @@ import logging
 from bartleby.runtime.game import realms
 
 from bartlebot.game import zone_names
-from bartlebot.nodes import zone_navigation
+from bartlebot.nodes import walking, zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import player_realms
@@ -76,6 +76,7 @@ NODE_SPEC = NodeSpec(
             description=FAVORITE_REALM_DESCRIPTION,
             required_unless=PARAM_KEEP_CURRENT_REALM,
         ),
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=3,
     usage_notes=(

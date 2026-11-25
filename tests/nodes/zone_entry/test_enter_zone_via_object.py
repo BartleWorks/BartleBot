@@ -40,7 +40,7 @@ async def test_wrong_from_zone_fails():
     result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_one_client_wrong_from_zone_fails():
@@ -52,8 +52,8 @@ async def test_one_client_wrong_from_zone_fails():
     result = await itz.run(FakeMachine(), [good, bad], _PARAMS)
 
     assert result == "FAILURE"
-    good.teleport.assert_not_called()
-    bad.teleport.assert_not_called()
+    good.walk_to.assert_not_called()
+    bad.walk_to.assert_not_called()
 
 
 async def test_success_single_client():
@@ -65,7 +65,7 @@ async def test_success_single_client():
 
     assert result == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one approach.
-    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [1.0, 0.0]
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -104,7 +104,7 @@ async def test_stale_prompt_cleared_before_loop():
 
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
-    first_tp, second_tp = client.teleport.call_args_list[:2]
+    first_tp, second_tp = client.walk_to.call_args_list[:2]
     assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
@@ -121,8 +121,8 @@ async def test_prompt_never_appears_fails():
     assert result == "FAILURE"
     # The first reset, then interact + reset for each attempt but the last, which stays at
     # interact_xyz so the node can press X for whoever did get the prompt.
-    assert client.teleport.call_count == itz.MAX_RETRIES * 2
-    assert client.teleport.call_args_list[-1].args[0].x == 0.0
+    assert client.walk_to.call_count == itz.MAX_RETRIES * 2
+    assert client.walk_to.call_args_list[-1].args[0].x == 0.0
     client.send_key.assert_not_called()
 
 
@@ -160,12 +160,12 @@ async def test_prompt_retry_then_success():
         if xyz.x == 1.0:  # reset_xyz has x=1.0
             reset_visited.append(True)
 
-    client.teleport.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_teleport
 
     async def npc_range():
         # Only at interact_xyz, and only once the client has been reset twice: the
         # reset every run starts with, and the one after the first miss.
-        calls = client.teleport.call_args_list
+        calls = client.walk_to.call_args_list
         return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
@@ -177,7 +177,7 @@ async def test_prompt_retry_then_success():
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 2
-    assert client.teleport.call_count == 4  # reset, interact, reset, interact
+    assert client.walk_to.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_trigger_timeout_still_reaches_recovery_aware_arrival_check():
@@ -292,7 +292,7 @@ def _sequential_client() -> FakeClient:
     async def _zone():
         return _TO_ZONE if state["gone"] else _FROM_ZONE
 
-    c.teleport.side_effect = _teleport
+    c.walk_to.side_effect = _teleport
     c.is_in_npc_range.side_effect = _in_range
     c.send_key.side_effect = _send_key
     c.zone_name.side_effect = _zone
@@ -405,7 +405,7 @@ async def test_sequential_does_not_park_a_departing_client():
 
     assert result == "SUCCESS"
     # Park at reset, then the approach to interact — and nothing after the keypress.
-    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [1.0, 0.0]
 
 
 # ---------------------------------------------------------------------------
@@ -499,4 +499,4 @@ async def test_a_prompt_that_will_not_clear_at_reset_fails_before_any_keypress()
 
     assert result == "FAILURE"
     client.send_key.assert_not_called()
-    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0]
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [1.0]

@@ -58,6 +58,7 @@ The bot stops after 3 consecutive failures on this node.
 - [Player Realms](options.md#player-realms)
 - [Safety Delay](options.md#safety-delay)
 - [Level Scaling Players](options.md#level-scaling-players)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 

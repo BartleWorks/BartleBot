@@ -864,7 +864,7 @@ async def test_a_player_who_cannot_port_travels_then_joins_the_leaders_realm(mon
     assert game.groups[-3:] == [[2], [2], [2]], "it travels the route itself"
     assert _hops(game) == [{"player": 2, "realm": "Wraith"}]
     assert read.await_args.args[1] is game.clients[0], "the realm is read from the leader's spellbook"
-    game.clients[1].teleport.assert_awaited()
+    game.clients[1].walk_to.assert_awaited()  # to stand beside the leader
 
 
 async def test_a_traveller_seen_beside_the_leader_needs_no_realm_change(monkeypatch):

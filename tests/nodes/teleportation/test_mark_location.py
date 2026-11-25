@@ -15,7 +15,7 @@ from bartleby.runtime.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_
 from wizwalker import XYZ
 
 import bartlebot.nodes.teleportation.mark_location as ml
-from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.conftest import FakeClient, FakeMachine, moves, zone_unreadable_at_first
 from tests.node_helper_patches import patch_helper
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
@@ -120,7 +120,7 @@ def _machine() -> FakeMachine:
 def _ready_client() -> FakeClient:
     """Client in the correct zone at the target XYZ."""
     c = FakeClient()
-    # body.position at target XYZ → no teleport needed before marking.
+    # body.position at target XYZ → no walk needed before marking.
     c.body.position = AsyncMock(return_value=XYZ(0.0, 0.0, 0.0))
     return c
 
@@ -151,7 +151,7 @@ async def test_wrong_zone_returns_failure():
         result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    assert moves(client) == []
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -183,8 +183,8 @@ async def test_one_client_wrong_zone_fails():
 # ---------------------------------------------------------------------------
 
 
-async def test_correct_zone_wrong_xyz_teleports_to_target():
-    """If in the correct zone but away from the mark XYZ, the client is teleported first."""
+async def test_correct_zone_wrong_xyz_walks_to_target():
+    """If in the correct zone but away from the mark XYZ, the client walks there first."""
     client = _ready_client()
     client.body.position = AsyncMock(return_value=XYZ(100.0, 0.0, 0.0))  # far from target
 
@@ -192,21 +192,22 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
         result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
-    tp_target: XYZ = client.teleport.call_args.args[0]
+    client.walk_to.assert_called_once()
+    client.teleport.assert_not_called()
+    tp_target: XYZ = client.walk_to.call_args.args[0]
     assert tp_target.x == pytest.approx(0.0)
     assert tp_target.y == pytest.approx(0.0)
 
 
-async def test_correct_zone_correct_xyz_no_teleport():
-    """No teleport when the client is already at the target XYZ."""
+async def test_correct_zone_correct_xyz_no_walk():
+    """No walk when the client is already at the target XYZ."""
     client = _ready_client()
 
     with _game({client: _Hud(client)}):
         result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_not_called()
+    assert moves(client) == []
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +240,7 @@ async def test_a_player_the_node_did_not_teleport_still_waits():
     with _game({client: _Hud(client)}):
         await ml.run(machine, [client], _PARAMS)
 
-    client.teleport.assert_not_called()
+    assert moves(client) == []
     assert any(_WAITED in msg for msg, _lvl in machine.logs)
 
 
@@ -444,7 +445,7 @@ async def test_a_spot_already_marked_this_run_is_not_marked_again():
         assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
 
     assert hud.clicks == 1
-    client.teleport.assert_not_called()
+    assert moves(client) == []
 
 
 async def test_a_mark_kept_through_a_recall_cooldown_is_not_marked_again():

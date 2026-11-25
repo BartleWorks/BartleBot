@@ -80,7 +80,7 @@ async def _delay_seen(module, params: dict) -> object:
     """
     captured: dict = {}
 
-    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+    async def _fake_take_turns(machine, clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
         captured.update(kwargs)
         return [nh.TurnResult(prompted=True, completed=True) for _ in clients]
 

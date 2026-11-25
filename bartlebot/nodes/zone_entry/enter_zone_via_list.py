@@ -207,6 +207,7 @@ async def _use_list_sequentially(
 
     numbers = list(range(1, len(clients) + 1))
     results = await node_helpers.take_turns(
+        machine,
         clients,
         interact,
         reset,
@@ -218,7 +219,6 @@ async def _use_list_sequentially(
         # The teleport takes the client out of the zone itself; parking it would aim a
         # teleport at a client that is already leaving.
         park_after_turn=False,
-        log=machine.log,
     )
     unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
 

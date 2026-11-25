@@ -9,7 +9,7 @@ from bartleby.runtime.game.key_bindings import GameAction
 from bartleby.runtime.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import (
     ARRIVAL_NOTE,
     INTERACT_XYZ,
@@ -94,6 +94,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         player_realms.SPEC,
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=10,
     usage_notes=(SEQUENTIAL_INTERACTION_NOTE + " Zone teleporters are the usual case." + "\n\n" + ARRIVAL_NOTE),
@@ -164,6 +165,7 @@ async def _trigger_sequentially(
 
     numbers = list(range(1, len(clients) + 1))
     results = await node_helpers.take_turns(
+        machine,
         clients,
         interact,
         reset,
@@ -175,7 +177,6 @@ async def _trigger_sequentially(
         # The client leaves the zone under its own power, so there is nothing to park —
         # and a teleport aimed at a client already on a loading screen goes nowhere good.
         park_after_turn=False,
-        log=machine.log,
     )
     unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
 

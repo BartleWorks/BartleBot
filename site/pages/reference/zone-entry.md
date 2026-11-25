@@ -39,6 +39,7 @@ The bot stops after 10 consecutive failures on this node.
 - [Challenge Mode](options.md#challenge-mode), while **Offers Challenge Mode** is on
 - [Team-Up](options.md#team-up), while **Offers Team-Up** is on
 - [Minimum Team Size](options.md#minimum-team-size), while **Offers Team-Up** is on
+- [Avoid Mobs](options.md#avoid-mobs)
 
 !!! warning "Shown before a run"
 
@@ -72,7 +73,7 @@ The bot stops after 10 consecutive failures on this node.
 
 ## Enter Zone { #enter-zone }
 
-Moves every player to another zone by teleporting them into the spot that triggers the zone change. Can send four players one at a time to keep them on one realm.
+Moves every player to another zone by walking them into the spot that triggers the zone change. Can send four players one at a time to keep them on one realm.
 
 The bot stops after 10 consecutive failures on this node.
 
@@ -95,6 +96,7 @@ The bot stops after 10 consecutive failures on this node.
 
 - [Player Realms](options.md#player-realms)
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 
@@ -128,6 +130,7 @@ The bot stops after 10 consecutive failures on this node.
 
 - [Player Realms](options.md#player-realms)
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 
@@ -161,6 +164,7 @@ The bot stops after 5 consecutive failures on this node.
 
 - [Player Realms](options.md#player-realms)
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 

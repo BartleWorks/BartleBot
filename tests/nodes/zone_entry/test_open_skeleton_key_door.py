@@ -12,7 +12,7 @@ import bartlebot.nodes.node_helpers as _nh
 import bartlebot.nodes.zone_entry.enter_zone as enter_zone
 import bartlebot.nodes.zone_entry.open_skeleton_key_door as door_node
 from bartlebot.bot.schema import BotConfig
-from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.conftest import FakeClient, FakeMachine, moves, zone_unreadable_at_first
 from tests.node_helper_patches import patch_helper, set_helper
 
 _PARAMS = {
@@ -62,15 +62,18 @@ class _Door:
         for index, client in enumerate(self.clients):
             client.is_in_npc_range.side_effect = self._showing(index)
             client.send_key.side_effect = self._pressed(index)
+            # The unlocker's carry-in still teleports (until Stage 6 of #322); every other move walks.
             client.teleport.side_effect = self._teleported(index)
+            client.walk_to.side_effect = self._teleported(index)
 
     def _showing(self, index: int):
         client = self.clients[index]
 
         async def _showing() -> bool:
-            if not client.teleport.call_args_list or client.zone_name.return_value != "TestZone":
+            sent = moves(client)
+            if not sent or client.zone_name.return_value != "TestZone":
                 return False
-            at_door = tuple(client.teleport.call_args_list[-1].args[0]) == _DOOR
+            at_door = sent[-1] == _DOOR
             return at_door and self.locked and self.keys[index] > 0
 
         return _showing
@@ -104,8 +107,8 @@ class _Door:
     def total_presses(self) -> int:
         return sum(self.presses(i) for i in range(len(self.clients)))
 
-    def teleports_to_trigger(self, index: int) -> int:
-        return sum(1 for call in self.clients[index].teleport.call_args_list if tuple(call.args[0]) == _TRIGGER)
+    def moves_to_trigger(self, index: int) -> int:
+        return moves(self.clients[index]).count(_TRIGGER)
 
 
 async def _run(door: _Door) -> str:
@@ -168,8 +171,7 @@ async def test_a_player_without_a_key_does_not_cost_a_retry():
     """
     door = _Door([0, 3])
     assert await _run(door) == "SUCCESS"
-    approaches = [c for c in door.clients[1].teleport.call_args_list if tuple(c.args[0]) == _DOOR]
-    assert len(approaches) == 1
+    assert moves(door.clients[1]).count(_DOOR) == 1
 
 
 async def test_a_dropped_press_is_repeated_while_the_prompt_stays():
@@ -246,7 +248,7 @@ async def test_the_others_do_not_move_until_the_unlocker_has_finished_loading():
             return False
         if loads["left"]:
             loads["left"] -= 1
-            teleports_when_landed.append(sum(door.teleports_to_trigger(i) for i in (1, 2, 3)))
+            teleports_when_landed.append(sum(door.moves_to_trigger(i) for i in (1, 2, 3)))
             return True
         return False
 
@@ -255,7 +257,7 @@ async def test_the_others_do_not_move_until_the_unlocker_has_finished_loading():
     assert await _run(door) == "SUCCESS"
     assert teleports_when_landed, "the unlocker was seen loading"
     assert set(teleports_when_landed) == {0}
-    assert all(door.teleports_to_trigger(i) >= 1 for i in (1, 2, 3))
+    assert all(door.moves_to_trigger(i) >= 1 for i in (1, 2, 3))
 
 
 @pytest.mark.parametrize("players", [1, 2, 3])
@@ -275,7 +277,7 @@ async def test_fewer_than_four_players_go_together_rather_than_after_the_unlocke
         if len(group) == 1 and group[0] is door.clients[0]:
             # The follower's trigger attempt started alongside the unlocker's.
             await asyncio.sleep(0.05)
-            entered_before_unlocker_landed.append(door.clients[1].teleport.called)
+            entered_before_unlocker_landed.append(bool(moves(door.clients[1])))
         return await real_arrival(machine, group, numbers, to_zone)
 
     with patch.object(enter_zone, "await_arrival", new=_arrival):
@@ -313,6 +315,7 @@ def _trigger_never_fires(door: _Door, index: int) -> None:
         return None
 
     door.clients[index].teleport.side_effect = _nothing
+    door.clients[index].walk_to.side_effect = _nothing
 
 
 async def test_no_teleport_lands_between_the_cutoff_and_the_carry_in(monkeypatch):
@@ -349,7 +352,7 @@ async def test_a_safety_delay_past_the_cutoff_leaves_the_unlocker_to_the_game(mo
     carrying = asyncio.create_task(_carry())
     assert await _run(door) == "SUCCESS"
     await carrying
-    assert door.teleports_to_trigger(0) == 0
+    assert door.moves_to_trigger(0) == 0
 
 
 async def test_a_carry_in_that_never_comes_gets_a_normal_try_at_the_trigger(monkeypatch):
@@ -358,7 +361,7 @@ async def test_a_carry_in_that_never_comes_gets_a_normal_try_at_the_trigger(monk
     monkeypatch.setattr(door_node, "KEY_DOOR_ENTRY_TIMEOUT", 0.05)
     door = _Door([5], safety_delay=0.0)
     assert await _run(door) == "SUCCESS"
-    assert door.teleports_to_trigger(0) >= 1
+    assert door.moves_to_trigger(0) >= 1
     assert _in_room(door)
 
 
@@ -415,7 +418,7 @@ async def test_a_player_in_neither_zone_fails_before_moving_anyone():
     door = _Door([5, 5])
     door.clients[1].zone_name.return_value = "OtherZone"
     assert await _run(door) == "FAILURE"
-    assert all(not c.teleport.called for c in door.clients)
+    assert all(moves(c) == [] for c in door.clients)
     assert door.total_presses() == 0
 
 
@@ -432,7 +435,7 @@ async def test_everyone_already_inside_is_success_with_nothing_done():
         door.carry(index)
     assert await _run(door) == "SUCCESS"
     assert door.total_presses() == 0
-    assert all(not c.teleport.called for c in door.clients)
+    assert all(moves(c) == [] for c in door.clients)
 
 
 async def test_a_rerun_with_someone_inside_sends_only_the_rest():
@@ -442,7 +445,7 @@ async def test_a_rerun_with_someone_inside_sends_only_the_rest():
     assert await _run(door) == "SUCCESS"
     assert _in_room(door)
     assert door.total_presses() == 0
-    assert not door.clients[1].teleport.called
+    assert moves(door.clients[1]) == []
 
 
 async def test_a_challenge_mode_copy_of_to_zone_counts_as_inside():
@@ -453,7 +456,7 @@ async def test_a_challenge_mode_copy_of_to_zone_counts_as_inside():
     params = {**_PARAMS, "from_zone": "Aquila/AQ_Z02_Atlantea", "to_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom"}
 
     assert await door_node.run(FakeMachine(), clients, params) == "SUCCESS"
-    assert all(not c.teleport.called for c in clients)
+    assert all(moves(c) == [] for c in clients)
 
 
 def test_every_shipped_door_has_a_stop_or_a_route_for_no_key():

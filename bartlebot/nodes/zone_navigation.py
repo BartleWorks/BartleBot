@@ -46,7 +46,7 @@ from bartleby.runtime.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL, SIGHT
 from bartlebot.clients import port_map
 from bartlebot.game import worlds, zone_lists, zone_nav
 from bartlebot.game.restricted_zones import check_zone
-from bartlebot.nodes import node_helpers, wizard_city
+from bartlebot.nodes import node_helpers, walking, wizard_city
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
 from bartlebot.nodes.utility import change_realm, realm_list, sleep
@@ -546,8 +546,10 @@ class _Trip:
         return True
 
     async def stand_beside_leader(self, clients: list) -> None:
+        """Walk *clients* to where the leader stands. A walk that fails is logged; confirm()
+        then finds the player apart from the leader and says so."""
         where = await self.leader.body.position()
-        await asyncio.gather(*(c.teleport(where) for c in clients))
+        await walking.walk_clients(machine=self.machine, clients=clients, goal=where, numbers=self.who(clients))
 
     async def confirm(self) -> Outcome:
         """Succeed only once every player is seen with the leader: one zone, realm and area."""

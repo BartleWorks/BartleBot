@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from bartleby.runtime import run_trace
+from bartleby.runtime.arbiter import Arbiter
 from bartleby.runtime.clients import sightings
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
@@ -140,6 +141,9 @@ class BotMachine:
         # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
         self._running: bool = False
         self._stop_flag = asyncio.Event()
+        # Who holds each client's input: every walk takes a movement lease on it
+        # (nodes/walking.py). One per run; nothing else in BartleBot holds one yet (#301).
+        self.arbiter = Arbiter()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
         # run()'s own task while it runs. With the node's, the only task that may write a
