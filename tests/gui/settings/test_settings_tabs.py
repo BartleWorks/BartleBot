@@ -14,6 +14,7 @@ or the older tests can see:
 
 from __future__ import annotations
 
+import json
 import re
 
 import pytest
@@ -453,3 +454,43 @@ def test_a_fresh_install_starts_with_these_on(qapp, tab_cls, title):
 
     assert row.control.isChecked()
     assert not row.is_changed
+
+
+# ---------------------------------------------------------------------------
+# Authoring: Speed switched off (Stage 0 of #322)
+# ---------------------------------------------------------------------------
+
+
+def _row_titles(tab) -> list[str]:
+    return [row.title for row in tab.findChildren(SettingRow)]
+
+
+def test_switched_off_speed_has_no_rows_on_the_authoring_tab(qapp):
+    titles = _row_titles(AuthoringTab())
+    assert "Speed multiplier" not in titles
+    assert "Speed" not in titles
+    assert "Auto-combat" in titles
+
+
+@pytest.mark.usefixtures("speed_enabled")
+def test_switched_on_speed_has_its_rows_back_on_the_authoring_tab(qapp):
+    titles = _row_titles(AuthoringTab())
+    assert "Speed multiplier" in titles
+    assert "Speed" in titles
+
+
+def test_applying_the_authoring_tab_leaves_switched_off_speed_s_saved_values_alone(qapp):
+    """The file keeps them as the user left them, for the day Speed is switched back on."""
+    sm = SettingsManager.instance()
+    sm.speed_multiplier = 1.5
+    sm.set_authoring_hotkey("toggle_speed", "F9")
+    sm.save()
+
+    tab = AuthoringTab()
+    tab.apply()
+    sm.save()
+
+    saved = json.loads(sm.settings_path.read_text(encoding="utf-8"))["authoring"]
+    assert saved["speed_multiplier"] == 1.5
+    assert saved["hotkeys"]["toggle_speed"] == "F9"
+    assert sm.authoring_hotkeys["toggle_speed"] == "F9"

@@ -20,7 +20,14 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
+from bartlebot.clients.authoring_tools import (
+    SLOT_KEYS,
+    AuthoringAction,
+    AuthoringTools,
+    shown_hotkeys,
+    slot_keys_armed,
+    source_index,
+)
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.combat.flee_marks import FleeMarks
 from bartlebot.content.store_roots import DEV_ENV_VAR, dev_mode
@@ -153,7 +160,7 @@ class AppController(QObject):
             on_change=self._refresh_authoring_bar,
         )
         self._hotkeys = GlobalHotkeys(self._on_authoring_hotkey)
-        self._hotkeys.set_bindings(SettingsManager.instance().authoring_hotkeys)
+        self._hotkeys.set_bindings(shown_hotkeys(SettingsManager.instance().authoring_hotkeys))
         self._app.installNativeEventFilter(self._hotkeys)
         # Speed-authoring's keys 1-0 (#85). A set of their own, armed apart from the rest,
         # since while registered the digits are taken from the game's chat as well.
@@ -638,7 +645,7 @@ class AppController(QObject):
             logger.info("Speed-authoring: added %s", node_type)
 
     def _apply_authoring_settings(self) -> None:
-        self._hotkeys.set_bindings(SettingsManager.instance().authoring_hotkeys)
+        self._hotkeys.set_bindings(shown_hotkeys(SettingsManager.instance().authoring_hotkeys))
         self._refresh_authoring_bar()
 
     def _refresh_authoring_bar(self) -> None:

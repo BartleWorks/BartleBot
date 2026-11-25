@@ -33,6 +33,8 @@ switches speed-authoring off too: its keys add nodes, and a run's canvas takes n
 
 Auto-combat refuses PvP exactly as a run does: ``restriction_for`` is the check the health
 monitor's watcher makes, and a hit turns auto-combat off rather than fighting the duel.
+
+Speed is switched off for now, behind :data:`SPEED_TOGGLE_ENABLED` (Stage 0 of #322).
 """
 
 from __future__ import annotations
@@ -70,6 +72,26 @@ class AuthoringAction(StrEnum):
     TOGGLE_COMBAT = "toggle_combat"
     TOGGLE_DIALOGUE = "toggle_dialogue"
     TOGGLE_SPEED_AUTHORING = "toggle_speed_authoring"
+
+
+#: Whether Speed can be switched on at all. Off until the user's go-ahead: how a boost above a
+#: wizard's own speed affects the server's snapbacks is not understood yet, so nothing in
+#: BartleBot writes one, as BartleBuddy's followers write none (``FOLLOWERS_WRITE_SPEED``).
+#: While it is False, ``set_speed(True)`` turns nothing on, and the Speed button, its hotkey
+#: and Settings › Authoring's Speed rows are left out. The saved multiplier and hotkey stay in
+#: settings.json untouched, so setting it True brings Speed back as the user left it.
+SPEED_TOGGLE_ENABLED = False
+
+
+def shown_actions() -> tuple[AuthoringAction, ...]:
+    """The actions a surface offers: every one, less Speed while it is switched off."""
+    return tuple(a for a in AuthoringAction if SPEED_TOGGLE_ENABLED or a is not AuthoringAction.TOGGLE_SPEED)
+
+
+def shown_hotkeys(bindings: dict[str, str]) -> dict[str, str]:
+    """*bindings* less the actions :func:`shown_actions` leaves out, for registering."""
+    shown = {a.value for a in shown_actions()}
+    return {action: key for action, key in bindings.items() if action in shown}
 
 
 #: What each action is called on a button and in a settings row.
@@ -230,6 +252,9 @@ class AuthoringTools:
     # ------------------------------------------------------------------
 
     async def set_speed(self, on: bool) -> None:
+        if on and not self.speed_on and not SPEED_TOGGLE_ENABLED:
+            logger.info("Speed is switched off for now: every player walks at their own speed")
+            return
         if on and not self.speed_on and self._refuse_during_run("Speed"):
             return
         await self._speed.set(on)

@@ -14,6 +14,7 @@ from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SettingsManage
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("speed_enabled")
 def test_a_binding_problem_names_the_action():
     assert binding_problems({"xyz_sync": "F1", "tp_to_focused": "F2"}) == []
     assert binding_problems({"xyz_sync": "Space"}) == [
@@ -22,6 +23,11 @@ def test_a_binding_problem_names_the_action():
     assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == [
         "Speed and XYZ sync both use F1. Choose another key for one of them."
     ]
+
+
+def test_switched_off_speed_s_key_is_never_reported_as_a_problem():
+    """Its row is hidden (Stage 0 of #322), so a problem with it could not be fixed."""
+    assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == []
 
 
 def test_the_hotkey_settings_fill_in_an_action_the_file_does_not_mention():

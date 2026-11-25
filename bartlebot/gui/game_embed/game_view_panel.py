@@ -10,7 +10,7 @@ from __future__ import annotations
 from bartleby.qt.game_embed.game_view import GameView
 from bartleby.qt.game_embed.game_view_panel import ActionBar, BarAction, GamePanel
 
-from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction
+from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction, shown_actions
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -47,6 +47,13 @@ AUTHORING_GROUPS: tuple[tuple[BarAction, ...], ...] = (
     ),
     (_action(AuthoringAction.TOGGLE_SPEED_AUTHORING, "keyboard"),),
 )
+
+
+def shown_groups() -> tuple[tuple[BarAction, ...], ...]:
+    """AUTHORING_GROUPS less what ``shown_actions`` leaves out, with any group left empty dropped."""
+    shown = {a.value for a in shown_actions()}
+    groups = (tuple(a for a in group if a.id in shown) for group in AUTHORING_GROUPS)
+    return tuple(group for group in groups if group)
 
 
 def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False) -> str:
@@ -100,7 +107,7 @@ class AuthoringBar(ActionBar):
     """
 
     def __init__(self, parent=None) -> None:
-        super().__init__(AUTHORING_GROUPS, parent)
+        super().__init__(shown_groups(), parent)
         self.show_state(
             speed_on=False,
             combat_on=False,

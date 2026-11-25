@@ -514,6 +514,18 @@ def bartlebot_product(_bartlebot_product, monkeypatch):
     return _bartlebot_product
 
 
+@pytest.fixture
+def speed_enabled(monkeypatch):
+    """Switch the authoring tools' Speed back on, as the user's go-ahead will (Stage 0 of #322).
+
+    The tests that ran Speed before it was switched off use it, so they still show that
+    setting ``SPEED_TOGGLE_ENABLED`` brings everything back as it was.
+    """
+    from bartlebot.clients import authoring_tools  # noqa: PLC0415
+
+    monkeypatch.setattr(authoring_tools, "SPEED_TOGGLE_ENABLED", True)
+
+
 @pytest.fixture(autouse=True)
 def isolated_settings(_appdata_root, monkeypatch):
     """Point the SettingsManager singleton at a per-test directory.

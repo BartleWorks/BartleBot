@@ -5,17 +5,34 @@ How the bar groups, centers and reports a press is core's (``tests/qt/game_embed
 
 from __future__ import annotations
 
+import pytest
 from bartleby.qt.theming.icon_utils import ICONS_DIR
 from bartleby.qt.widgets.buttons.icon_button import IconTint
 
 from bartlebot.clients.authoring_tools import AuthoringAction
-from bartlebot.gui.game_embed.game_view_panel import AUTHORING_GROUPS, AuthoringBar, GameViewPanel
+from bartlebot.gui.game_embed.game_view_panel import AUTHORING_GROUPS, AuthoringBar, GameViewPanel, shown_groups
 
 
 def test_the_groups_hold_every_action_once_in_bar_order():
     """Bar A, the Settings tab and the default F-keys all follow AuthoringAction's order."""
     flat = [action.id for group in AUTHORING_GROUPS for action in group]
     assert flat == [a.value for a in AuthoringAction]
+
+
+def test_switched_off_speed_has_no_button_and_its_group_keeps_the_other_toggles(qapp):
+    """Stage 0 of #322: left out rather than grayed, since a button that can't be used is noise."""
+    assert AuthoringAction.TOGGLE_SPEED.value not in AuthoringBar().action_ids
+    assert [[a.id for a in group] for group in shown_groups()] == [
+        ["xyz_sync", "tp_to_focused"],
+        ["toggle_combat", "toggle_dialogue"],
+        ["toggle_speed_authoring"],
+    ]
+
+
+@pytest.mark.usefixtures("speed_enabled")
+def test_switched_on_speed_has_its_button_back(qapp):
+    assert shown_groups() == AUTHORING_GROUPS
+    assert list(AuthoringBar().action_ids) == [a.value for a in AuthoringAction]
 
 
 def test_every_action_s_icon_is_in_core_s_set():
@@ -28,6 +45,7 @@ def test_the_panel_s_bar_is_the_authoring_bar(qapp):
     assert panel.authoring_bar is panel.action_bar
 
 
+@pytest.mark.usefixtures("speed_enabled")
 def test_a_disabled_button_says_why_and_every_button_has_a_tooltip(qapp):
     bar = AuthoringBar()
     for action in AuthoringAction:
@@ -41,6 +59,7 @@ def test_a_disabled_button_says_why_and_every_button_has_a_tooltip(qapp):
     assert "Unavailable" not in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
 
 
+@pytest.mark.usefixtures("speed_enabled")
 def test_a_toggle_that_is_on_is_drawn_in_the_accent_names_its_key_and_stays_pressable(qapp):
     bar = AuthoringBar()
     bar.show_state(
