@@ -26,6 +26,33 @@ pass core's client_mobs makes today, for comparison.
 Nothing is written to the game but wizwalker's hooks. No wizard's name or id is read: entities
 that are no gate are counted, never named.
 
+OUTCOME (2026-11-25, r815378, two wizards, one past Colossus Boulevard and one not):
+
+1. A blocker a quest removed is missing from the list. Shopping District,
+   BigGenericBlocker_CollossusGate: for the wizard who had not opened Colossus it was listed, 0
+   units from where the wad places it, under the wad's template id, its live name the template's
+   m_objectName, with CollisionBehaviorClient, RenderBehavior, ObjectStateBehavior and
+   SelectBehavior, states Idle;Alive;NotInteracting;Stationary; pushed into, that wizard stopped
+   40 units short of its footprint every time. For the wizard past it, it was in no pass of 24,
+   from 2,722 units in to 1,629, and that wizard walked through where it stands into Colossus.
+   An event's objects while it is off are not listed either: the Halloween apple tub, and Unicorn
+   Way's 22 pumpkins, as near as 146 units.
+2. States read and resolve to names (string_id or djb2 of a StateData state name): the blocker's
+   above, Triton Avenue's mill lever NotInteracting;Off, Unicorn Way's fairy cages FairyEscaped,
+   whose Interacting changed to NotInteracting as the wizard walked off. No door was seen to open,
+   so whether a listed object's collision follows its state is not known.
+3. Placed objects are listed out to about 4,400 units: Unicorn Way's four fairy cages and
+   Archmastery pedestal went in and out of the list as the wizard walked, listed out to 3,877 to
+   4,388 and dropped from 4,555 to 5,142 (150 passes, the wizard across 28,000 by 21,000 units).
+   An object exempt from AOI is listed anywhere in the zone: Triton Avenue's WC_Teleporter_Hub,
+   the decorative center of the zone's own teleporter network, in all 61 passes, out to 17,445.
+   Unicorn Way's 89 exempt gates, all Rattlebones debris a quest removes, were in no pass, as
+   near as 68 units, and none was on the street: gone, not unlisted. Entities of other kinds were
+   listed out past 10,000 units.
+
+The lean pass, every entity's template id and location, took a median 3 ms (6 at worst) for 66
+to 97 entities; get_mobs() took a median 7 ms in Triton Avenue.
+
 HOW TO RUN
     1. Log a wizard in and stand in the zone.
     2. uv run python tools/probe_gates.py                  one pass, a table nearest first
