@@ -88,7 +88,7 @@ While it records, the button reads **Stop**. Select it to stop early, and nothin
 | [Handle Combat](../../reference/combat-and-healing.md#handle-combat) | Stand near the enemy. Record takes the closest one's name. |
 
 !!! info "Speed-authoring"
-    With speed-authoring on, keys 1 to 0 in a game window add that favorites-bar slot's node and start recording it, so you can record a dungeon without leaving the game. **Settings › Authoring** turns it on, and sets the other keys that help while you record: moving every player onto the one you're playing, turning on speed, auto-combat and auto-dialogue.
+    With speed-authoring on, keys 1 to 0 in a game window add that favorites-bar slot's node and start recording it, so you can record a dungeon without leaving the game. **Settings › Authoring** turns it on, and sets the other keys that help while you record: moving every player onto the one you're playing, auto-combat and auto-dialogue.
 
 ## Look inside the game { #look-inside-the-game }
 
