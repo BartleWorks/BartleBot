@@ -1,5 +1,8 @@
 """Settings tab: Authoring (the speed multiplier, and the authoring utilities' hotkeys).
 
+While ``authoring_tools.SPEED_TOGGLE_ENABLED`` is False, Speed's multiplier and hotkey rows
+are left out, and Apply writes neither, so the saved values wait as the user left them.
+
 Its own tab, not a Canvas section: the utilities drive the clients rather than the graph,
 and not a Game tab row either, because nothing here happens to a client as it launches.
 See ``bartlebot.clients.authoring_tools`` for what the utilities do and
@@ -18,7 +21,8 @@ from bartleby.runtime.game.game_keybindings import GameBinding, read_game_keybin
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
-from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
+from bartlebot.clients import authoring_tools
+from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction, shown_actions
 from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLIER_RANGE, SettingsManager, default_for
 
 #: Each hotkey row's one line, and the longer prose behind its ``?`` (empty: none).
@@ -70,7 +74,7 @@ def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBindi
     Core's :func:`~bartleby.qt.global_hotkeys.binding_problems` over BartleBot's actions,
     in the order the tab shows them.
     """
-    labels = {action.value: ACTION_LABELS[action] for action in AuthoringAction}
+    labels = {action.value: ACTION_LABELS[action] for action in shown_actions()}
     return hotkey_problems(bindings, labels, game_bindings)
 
 
@@ -80,22 +84,24 @@ class AuthoringTab(SettingsForm):
         sm = SettingsManager.instance()
         self._game_bindings = read_game_keybindings(game_keys.known_maps())
 
-        self.add_heading("Speed")
-        self._speed_sb = QDoubleSpinBox()
-        self._speed_sb.setRange(*SPEED_MULTIPLIER_RANGE)
-        self._speed_sb.setSingleStep(0.5)
-        self._speed_sb.setDecimals(1)
-        self._speed_sb.setSuffix("×")
-        self._speed_sb.setValue(sm.speed_multiplier)
-        self.add_row(
-            SettingRow(
-                "Speed multiplier",
-                "How much faster players walk while Speed is on.",
-                self._speed_sb,
-                default=default_for("authoring", "speed_multiplier"),
-                details="Speed turns off when a bot starts. A change applies the next time Speed is turned on.",
+        self._speed_sb: QDoubleSpinBox | None = None
+        if authoring_tools.SPEED_TOGGLE_ENABLED:
+            self.add_heading("Speed")
+            self._speed_sb = QDoubleSpinBox()
+            self._speed_sb.setRange(*SPEED_MULTIPLIER_RANGE)
+            self._speed_sb.setSingleStep(0.5)
+            self._speed_sb.setDecimals(1)
+            self._speed_sb.setSuffix("×")
+            self._speed_sb.setValue(sm.speed_multiplier)
+            self.add_row(
+                SettingRow(
+                    "Speed multiplier",
+                    "How much faster players walk while Speed is on.",
+                    self._speed_sb,
+                    default=default_for("authoring", "speed_multiplier"),
+                    details="Speed turns off when a bot starts. A change applies the next time Speed is turned on.",
+                )
             )
-        )
 
         self.add_heading("Hotkeys")
         self.add_note(_HOTKEYS_NOTE)
@@ -104,7 +110,7 @@ class AuthoringTab(SettingsForm):
             self.add_note(notes)
         self._key_edits: dict[AuthoringAction, QKeySequenceEdit] = {}
         bindings = sm.authoring_hotkeys
-        for action in AuthoringAction:
+        for action in shown_actions():
             edit = QKeySequenceEdit(QKeySequence(bindings[action.value]))
             edit.setMaximumSequenceLength(1)
             edit.setClearButtonEnabled(True)
@@ -140,6 +146,7 @@ class AuthoringTab(SettingsForm):
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
-        sm.speed_multiplier = round(self._speed_sb.value(), 1)
+        if self._speed_sb is not None:
+            sm.speed_multiplier = round(self._speed_sb.value(), 1)
         for action, binding in self.bindings().items():
             sm.set_authoring_hotkey(action, binding)

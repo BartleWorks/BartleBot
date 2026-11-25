@@ -13,6 +13,8 @@ from bartlebot.clients import authoring_tools
 from bartlebot.clients.authoring_tools import (
     AuthoringAction,
     AuthoringTools,
+    shown_actions,
+    shown_hotkeys,
     source_index,
 )
 from bartlebot.game.restricted_zones import Restriction
@@ -82,6 +84,7 @@ def test_the_source_is_the_focused_window_and_falls_back_to_player_one():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("speed_enabled")
 async def test_speed_boosts_every_player_and_gives_back_their_own_speed():
     clients = [FakeClient(), FakeClient()]
     _speed_field(clients[0], 0)
@@ -97,6 +100,7 @@ async def test_speed_boosts_every_player_and_gives_back_their_own_speed():
     assert not tools.speed_on
 
 
+@pytest.mark.usefixtures("speed_enabled")
 async def test_a_released_client_gets_its_speed_back_before_it_is_unhooked():
     client = FakeClient()
     _speed_field(client, 10)
@@ -110,10 +114,63 @@ async def test_a_released_client_gets_its_speed_back_before_it_is_unhooked():
 
 
 # ---------------------------------------------------------------------------
+# Speed switched off (Stage 0 of #322)
+# ---------------------------------------------------------------------------
+
+
+def test_speed_is_switched_off_until_the_users_go_ahead():
+    assert authoring_tools.SPEED_TOGGLE_ENABLED is False
+
+
+async def test_switched_off_speed_turns_nothing_on_and_says_so(caplog):
+    client = FakeClient()
+    _speed_field(client, 0)
+    tools = _tools([client])
+    with caplog.at_level("INFO", logger=authoring_tools.__name__):
+        await tools.set_speed(True)
+    await asyncio.sleep(0.01)
+    assert not tools.speed_on
+    client.client_object.write_speed_multiplier.assert_not_awaited()
+    assert "Speed is switched off for now" in caplog.text
+
+
+async def test_switched_off_speed_is_not_written_by_the_action_or_any_lifecycle_step():
+    """The button and the hotkey both arrive as ``perform``; a run, an unhook and a quit follow."""
+    client = FakeClient()
+    _speed_field(client, 0)
+    tools = _tools([client])
+    await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
+    await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
+    await tools.suspend_for_run()
+    tools.resume_after_run()
+    await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
+    await tools.release(client)
+    await tools.shutdown()
+    await asyncio.sleep(0.01)
+    assert not tools.speed_on
+    client.client_object.write_speed_multiplier.assert_not_awaited()
+
+
+def test_switched_off_speed_is_left_out_of_the_actions_and_their_hotkeys():
+    assert AuthoringAction.TOGGLE_SPEED not in shown_actions()
+    assert [a for a in AuthoringAction if a is not AuthoringAction.TOGGLE_SPEED] == list(shown_actions())
+    assert shown_hotkeys(DEFAULT_AUTHORING_HOTKEYS) == {
+        k: v for k, v in DEFAULT_AUTHORING_HOTKEYS.items() if k != "toggle_speed"
+    }
+
+
+@pytest.mark.usefixtures("speed_enabled")
+def test_switched_on_speed_is_one_of_the_actions_and_keeps_its_hotkey():
+    assert shown_actions() == tuple(AuthoringAction)
+    assert shown_hotkeys(DEFAULT_AUTHORING_HOTKEYS) == DEFAULT_AUTHORING_HOTKEYS
+
+
+# ---------------------------------------------------------------------------
 # Runs
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("speed_enabled")
 async def test_a_run_switches_the_toggles_off_and_refuses_them_until_it_ends(monkeypatch):
     monkeypatch.setattr(authoring_tools, "restriction_for", AsyncMock(return_value=None))
     monkeypatch.setattr(authoring_tools.node_helpers, "advance_dialog_once", AsyncMock(return_value=False))
@@ -344,6 +401,7 @@ async def test_tp_does_nothing_until_the_players_name_is_known(monkeypatch):
     gather.assert_not_awaited()
 
 
+@pytest.mark.usefixtures("speed_enabled")
 async def test_a_failing_on_change_does_not_stop_a_toggle():
     client = FakeClient()
     _speed_field(client, 0)
