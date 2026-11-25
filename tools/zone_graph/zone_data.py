@@ -32,6 +32,7 @@ from wad_common import (
     GAME_DATA,
     Deserializer,
     display_name,
+    locations,
     printable_strings,
     root_wad,
     text,
@@ -39,25 +40,9 @@ from wad_common import (
     volumes,
     xyz,
     zone_display_names,
+    zone_record,
     zone_wad,
 )
-
-
-def zone_record(zone: str, deserialize: Deserializer, game_data: Path = GAME_DATA):
-    """The zone's record. Most zones ship it as gamedata.bin; some newer ones (Selenopolis,
-    Nibbleheim Mines) as gamedata.xml. Raises KeyError when the wad has neither."""
-    wad = zone_wad(zone, game_data)
-    for entry in ("gamedata.bin", "gamedata.xml"):
-        try:
-            data = bytes(wad[entry])
-        except KeyError:
-            continue
-        return deserialize(data)
-    raise KeyError(f"{zone} has no gamedata.bin or gamedata.xml")
-
-
-def locations(record) -> list[tuple[str, tuple[float, float, float]]]:
-    return [(text(loc["m_locName"]), xyz(loc["m_location"])) for loc in (record["m_locationList"] or []) if loc]
 
 
 def objects(record) -> list[tuple[str, tuple[float, float, float]]]:

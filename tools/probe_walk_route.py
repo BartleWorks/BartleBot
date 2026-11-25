@@ -46,8 +46,10 @@ that is what joins storeys by their stairs and by nothing else. The map draws on
 storey. probe_walk_input.py walked the planned route down two flights to the basement.
 
 The planner is core's since 2026-11-24 (bartleby.runtime.movement: collision, zone_grid,
-patrols, zone_links, route; core's docs/WALKING.md). This probe reads a zone's wad into core's
-ZoneFiles, plans with it, and draws the result. Core added the zone's exits: a route keeps out
+patrols, zone_links, route; core's docs/WALKING.md), and so is the reader that turns a zone's
+wad into its ZoneFiles (core's tools/zone_files.py, from the checkout beside this one). This
+probe plans from the wad with them and draws the result; a run plans from core's shipped
+maps, which tools/build_zone_maps.py there checks against the wad (--compare). Core added the zone's exits: a route keeps out
 of every volume that teleports and is not one of the zone's links, unless it starts or ends in
 one. --no-exits plans as this probe did before, to compare a route with one planned then.
 
@@ -74,7 +76,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-from bartleby.runtime.movement.collision import CYLINDER, parse_collision
 from bartleby.runtime.movement.patrols import (
     HARD,
     HARD_WEIGHT,
@@ -82,26 +83,18 @@ from bartleby.runtime.movement.patrols import (
     WEIGHT,
     Patrol,
     distance_to_segments,
-    mob_patrols,
     segments,
 )
 from bartleby.runtime.movement.route import WIZARD_SPEED, Route, ZoneFiles, ZonePlanner
 from bartleby.runtime.movement.route import build_planner as plan_zone
 from bartleby.runtime.movement.zone_grid import CELL, CLEARANCE, LEVEL_GAP, MAX_RISE, Grid, Node
-from bartleby.runtime.movement.zone_links import (
-    InteractTemplate,
-    PlacedObject,
-    parse_interact_template,
-    parse_volumes,
-    parse_zone_nav,
-    teleport_volumes,
-)
+from bartleby.runtime.movement.zone_links import PlacedObject
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "zone_graph"))
 
-from wad_common import Deserializer, parse_lang, root_wad, text, to_plain, xyz, zone_wad  # noqa: E402
-from zone_data import locations, zone_record  # noqa: E402
+from wad_common import Deserializer, reader, wad_entry  # noqa: E402, F401  (wad_entry for probe_walk_zones)
+from zone_files import ZoneReader  # noqa: E402
 
 __all__ = [
     "REPO",
@@ -128,118 +121,33 @@ _segments = segments
 
 
 # --- reading a zone's wad into core's ZoneFiles ----------------------------------------------
-
-
-def _listed(deserialize: Deserializer, wad, name: str, key: str) -> list:
-    """A list field of one of the zone's files, [] when the file, the field or its value is
-    missing: about a third of the zones a bot names have spawn files with nothing in them."""
-    try:
-        record = to_plain(deserialize(bytes(wad[name])))
-    except Exception:
-        return []
-    return [item for item in ((record or {}).get(key) or []) if item]
+#
+# The reader is core's (its tools/zone_files.py, for the zone maps tools/build_zone_maps.py
+# builds there); these are the probes' names for it, on this install and the newest dump.
 
 
 @functools.cache
-def _manifest(deserialize: Deserializer) -> dict[int, str]:
-    """Root.wad's TemplateManifest: each template id's file."""
-    manifest = to_plain(deserialize(bytes(root_wad()["TemplateManifest.xml"])))["m_serializedTemplates"]
-    return {e["m_id"]: e["m_filename"] for e in manifest}
+def _reader() -> ZoneReader:
+    return reader()
 
 
-def mob_patrols_of(zone: str, deserialize: Deserializer, starts: tuple[int, ...] = (0, 1)) -> list[Patrol]:
-    """The zone's patrols, read from its spawn files and Root.wad's templates by core's mob_patrols."""
-    wad = zone_wad(zone)
-    spawns = _listed(deserialize, wad, "spawnData.xml", "m_spawners")
-    if not spawns:
-        return []
-    paths = {p["m_id"]: p.get("m_nodeIDs") or [] for p in _listed(deserialize, wad, "pathData.xml", "m_pathList")}
-    nodes = {n["m_id"]: n["m_location"] for n in _listed(deserialize, wad, "pathNodeData.bin", "m_nodeList")}
-    filenames = _manifest(deserialize)
-    root = root_wad()
-    duelists: dict[int, tuple[str, float] | None] = {}
-
-    def duelist(template_id: int) -> tuple[str, float] | None:
-        if template_id not in duelists:
-            duelists[template_id] = None
-            if template_id in filenames:
-                template = to_plain(deserialize(bytes(root[filenames[template_id]])))
-                for b in template.get("m_behaviors") or []:
-                    if isinstance(b, dict) and b.get("m_behaviorName") == "DuelistBehavior":
-                        name = Path(filenames[template_id]).stem
-                        duelists[template_id] = (name, float(b.get("m_npcProximity") or 0.0))
-        return duelists[template_id]
-
-    return mob_patrols(spawns, paths, nodes, duelist, starts)
-
-
-@functools.cache
-def _templates() -> dict[int, InteractTemplate]:
-    """Every placed-object template that can be interacted with, by template id."""
-    root = root_wad()
-    langs: dict[str, dict[str, str]] = {}
-
-    def lang(stem: str, key: str) -> str:
-        if stem not in langs:
-            try:
-                langs[stem] = parse_lang(bytes(root[f"Locale/en-US/{stem}.lang"]))
-            except KeyError:
-                langs[stem] = {}
-        return langs[stem].get(key, "")
-
-    manifest = Deserializer()(bytes(root["TemplateManifest.xml"]))
-    out = {}
-    for entry in manifest["m_serializedTemplates"]:
-        try:
-            data = bytes(root[text(entry["m_filename"])])
-        except KeyError:
-            continue
-        template = parse_interact_template(Path(text(entry["m_filename"])).stem, data, lang)
-        if template is not None:
-            out[int(entry["m_id"])] = template
-    return out
+def mob_patrols_of(
+    zone: str, deserialize: Deserializer | None = None, starts: tuple[int, ...] = (0, 1)
+) -> list[Patrol]:
+    """The zone's patrols, read from its spawn files and the game's templates by core's reader."""
+    return _reader().mob_patrols(zone, starts)
 
 
 def placed_objects(record) -> list[PlacedObject]:
     """The zone's placed objects whose templates can be interacted with."""
-    templates = _templates()
-    out = []
-    for obj in record["m_objectList"] or []:
-        template = templates.get(int(obj["m_templateID.m_full"])) if obj else None
-        if template is not None:
-            out.append(PlacedObject(text(obj["m_zoneTag"]) or template.name, xyz(obj["m_location"]), template))
-    return out
-
-
-def wad_entry(wad, name: str) -> bytes | None:
-    """One file of a zone's wad, or None when it has none."""
-    try:
-        return bytes(wad[name])
-    except KeyError:
-        return None
+    return _reader().placed_objects(record)
 
 
 def zone_files(zone: str, deserialize: Deserializer | None = None, *, ignore_cylinders: bool = False) -> ZoneFiles:
     """Everything core's planner is built from, read out of the zone's wad. *ignore_cylinders*
     leaves every cylinder off the grid, as reading them wrong once did, so a route runs through
     the trees: a way to make a walk stall, for testing its recovery."""
-    deserialize = deserialize or Deserializer()
-    wad = zone_wad(zone)
-    solids = parse_collision(bytes(wad["collision.bcd"]))
-    if ignore_cylinders:
-        solids = [s for s in solids if s.proxy != CYLINDER]
-    record = zone_record(zone, deserialize)
-    volumes_data, triggers_data, nav_data = (wad_entry(wad, n) for n in ("volumes.xml", "triggers.xml", "zone.nav"))
-    return ZoneFiles(
-        zone,
-        solids,
-        mob_patrols_of(zone, deserialize),
-        dict(locations(record)),
-        parse_volumes(volumes_data) if volumes_data else [],
-        teleport_volumes(triggers_data) if triggers_data else frozenset(),
-        placed_objects(record),
-        parse_zone_nav(nav_data) if nav_data else None,
-    )
+    return _reader().zone_files(zone, ignore_cylinders=ignore_cylinders)
 
 
 def build_planner(
