@@ -15,7 +15,10 @@ WHAT IT CHECKS, AND THROUGH WHAT
     teleport to where it is  MovementTeleportHook and its collision jes: moves nobody
     drops off, then on       DropsToggleHook
     mouseless cursor         the user32 cave MouselessCursorMoveHook uses
-    in a duel (--in-duel)    CombatParticipant's offsets, for every participant
+    in a duel (--in-duel)    CombatParticipant's offsets, for every participant, and in the
+                             planning phase the combatant and card windows wizsprinter plays
+                             from: the client among the combatants, each card's name and
+                             whether it is castable
 
 Close BartleBot first: two sets of hooks in one client corrupt each other (``tools/README.md``,
 *On live clients*). Run it with exactly one client open, in the world, and with the wizwalker
@@ -138,9 +141,66 @@ async def run(in_duel: bool) -> int:
                     lambda p=part: _pair(p.player_health, p.max_player_health),
                     lambda v: 0 <= v[0] <= v[1] and v[1] > 0,
                 )
+            await _combat_windows(client, report)
 
     print(f"\n{'all checks passed' if not report.failed else 'failed: ' + ', '.join(report.failed)}")
     return 1 if report.failed else 0
+
+
+async def _combat_windows(client, report: Report) -> None:
+    """The combat screen's windows, which wizsprinter plays every round from.
+
+    The participant reads above go through the duel's own list, so they hold while these
+    break: r815378 moved the pointers in the card and combatant windows, every wizard
+    passed every round, and every check above still passed.
+    """
+    from wizwalker.combat import CombatHandler
+    from wizwalker.memory.memory_objects.enums import DuelPhase
+
+    print("\ncombat windows (wizwalker's CombatHandler, waiting for the planning phase)")
+    # Longer than a check's own timeout: a round's animations can run past it
+    planning = await _wait_for(lambda: _is_planning(client, DuelPhase), PLANNING_TIMEOUT)
+
+    async def _planning() -> bool:
+        return planning
+
+    await report.check("planning phase", _planning, lambda b: b is True)
+    combat = CombatHandler(client)
+    members = await report.check(
+        "combatant windows (CombatantDataControl's participant)", combat.get_members, lambda ms: bool(ms)
+    )
+    await report.check(
+        "the client among them",
+        lambda: _count_true([m.is_client for m in members or []]),
+        lambda n: n == 1,
+    )
+    cards = await report.check("hand (SpellCheckBox windows)", combat.get_cards, lambda cs: bool(cs))
+    for i, card in enumerate(cards or []):
+        await report.check(
+            f"card {i}: name, castable (SpellCheckBox's spell and grayed flag)",
+            lambda c=card: _pair(c.name, c.is_castable),
+            lambda v: bool(v[0]),
+        )
+
+
+PLANNING_TIMEOUT = 60.0
+
+
+async def _is_planning(client, phases) -> bool:
+    return await client.duel.duel_phase() == phases.planning
+
+
+async def _wait_for(predicate, timeout: float) -> bool:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while asyncio.get_running_loop().time() < deadline:
+        if await predicate():
+            return True
+        await asyncio.sleep(0.5)
+    return False
+
+
+async def _count_true(reads) -> int:
+    return sum([bool(await read()) for read in reads])
 
 
 async def _pair(a, b):
