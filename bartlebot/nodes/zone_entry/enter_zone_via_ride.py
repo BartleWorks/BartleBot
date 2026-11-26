@@ -16,17 +16,18 @@ Params, as ``step_call`` passes them:
   Dragonspyre dragon) or ``BOARD_WALK`` to walk into a gate (the Marleybone airships).
 - ``board_xyz`` -- where the interact prompt shows, or a point inside the gate's trigger.
 - ``reset_xyz`` -- optional; a spot off the prompt. When set, a player whose boarding did
-  not take is sent here and tries again, up to ``MAX_RETRIES`` times.
+  not take walks here and tries again, up to ``MAX_RETRIES`` times.
 - ``ride_zone`` -- the zone the ride loads, when it loads one (the dragon's
   ``DS_A3_FlightPath``). Empty when the ride happens in ``from_zone`` itself; required when
   walking into a gate.
 
-Once a player is aboard it is never teleported: the ride is carrying it, and a teleport
-would pull it off, so retries happen only before boarding. A ride that stays in
-``from_zone`` has no loading screen to say it was boarded, so a player counts as aboard
-once, within the Safety Delay of pressing X, it has been moved off ``board_xyz``. Players
-that do not all reach ``to_zone`` get the zone-arrival recovery (a port to one that did)
-before the step fails.
+Every move walks (``walking.walk_clients``), and only before boarding: once a player is
+aboard the ride is carrying it, and nothing here moves it again. A walk that fails ends that
+player's boarding, logged with where it ended, and is never retried the same way. A ride that
+stays in ``from_zone`` has no loading screen to say it was boarded, so a player counts as
+aboard once, within the Safety Delay of pressing X, it has been moved
+``BOARDED_DISTANCE`` off where it stood to press it. Players that do not all reach
+``to_zone`` get the zone-arrival recovery (a port to one that did) before the step fails.
 """
 
 import asyncio
@@ -50,7 +51,7 @@ from bartlebot.nodes import node_helpers, walking
 BOARD_OBJECT = "object"
 BOARD_WALK = "walk"
 BOARDED_DISTANCE = 150.0
-"""How far off Board XYZ a player must be, after X, to count as carried away by a ride that stays in its zone."""
+"""How far off where it pressed X a player must be to count as carried away by a ride that stays in its zone."""
 
 
 async def _on_its_way(client, ride_zone: str, to_zone: str) -> bool:
@@ -70,10 +71,14 @@ async def _press_x_if_prompted(client) -> None:
         await game_keys.press(client, GameAction.INTERACT, 0.1)
 
 
-async def _carried_away(client, board_xyz: XYZ) -> bool:
-    """True once the player is somewhere other than Board XYZ -- which, after X and no teleport, is the ride moving it."""
+async def _carried_away(client, stood: XYZ) -> bool:
+    """True once the player is off where it stood to press X -- which, with nothing walking it, is the ride.
+
+    Not Board XYZ itself: a walk arrives near its goal, not on it, and one to an interact point
+    inside the ride's own object stands at the object's edge.
+    """
     here = await client.body.position()
-    return math.dist((here.x, here.y, here.z), (board_xyz.x, board_xyz.y, board_xyz.z)) > BOARDED_DISTANCE
+    return math.dist((here.x, here.y, here.z), (stood.x, stood.y, stood.z)) > BOARDED_DISTANCE
 
 
 async def _board(
@@ -89,17 +94,24 @@ async def _board(
 ) -> bool:
     """Put one player on the ride. Returns True once it is aboard.
 
-    This is the only phase that teleports: to Board XYZ, and back to Reset XYZ for a retry.
+    This is the only phase that moves the player: a walk to Board XYZ, and back to Reset XYZ for
+    a retry. False at once when a walk fails.
     """
+    stood = board_xyz
 
     async def committed() -> bool:
         return await _on_its_way(client, ride_zone, to_zone)
 
     async def aboard() -> bool:
-        # A ride that stays in from_zone loads nothing on boarding. Nothing here teleports the
-        # player after X, so being moved off Board XYZ means the boat has it. Its skip prompt
-        # coming up after that is the skip phase's to press, not this one's.
-        return await committed() or (not ride_zone and await _carried_away(client, board_xyz))
+        # A ride that stays in from_zone loads nothing on boarding. Nothing here moves the
+        # player after X, so being moved off where it stood means the boat has it. Its skip
+        # prompt coming up after that is the skip phase's to press, not this one's.
+        return await committed() or (not ride_zone and await _carried_away(client, stood))
+
+    async def walk(goal: XYZ, approach: bool = False) -> bool:
+        (walked,) = await walking.walk_clients(machine, [client], goal, numbers=[number], approach=approach)
+        # A walk into the gate ends as the ride's loading screen takes the player: boarded.
+        return walked.ok or await committed()
 
     if await committed():
         return True
@@ -111,10 +123,14 @@ async def _board(
             machine.log(f"Player {number}: boarding did not take; retrying ({attempt}/{attempts})", logging.DEBUG)
         # Clear a prompt left over from somewhere else before trusting the one at Board XYZ.
         if reset and (attempt > 1 or (board == BOARD_OBJECT and await client.is_in_npc_range())):
-            await walking.teleport(client, reset)
+            if not await walk(reset):
+                return False
             if board == BOARD_OBJECT:
                 await node_helpers.poll_until(lambda: _no_prompt(client), safety_delay, POLL_INTERVAL)
-        await walking.teleport(client, board_xyz)
+        if not await walk(board_xyz, approach=board == BOARD_OBJECT):
+            return False
+        if await committed():
+            return True
 
         if board == BOARD_WALK:
             if await node_helpers.poll_until(committed, safety_delay, POLL_INTERVAL):
@@ -123,6 +139,7 @@ async def _board(
 
         if not await node_helpers.poll_until(client.is_in_npc_range, safety_delay, POLL_INTERVAL):
             continue
+        stood = await client.body.position()
         await game_keys.press(client, GameAction.INTERACT, 0.1)
         seen = await node_helpers.poll_each_until_seen(
             [client],
@@ -138,7 +155,7 @@ async def _board(
 
 
 async def _skip(machine, client, number: int, ride_zone: str, to_zone: str, safety_delay: float) -> bool:
-    """Press X on the skip prompt until the player is on its way to to_zone. Never teleports.
+    """Press X on the skip prompt until the player is on its way to to_zone. Moves nothing.
 
     Returns False if the player is still on the ride after RIDE_TIMEOUT.
     """
@@ -169,12 +186,12 @@ async def _skip(machine, client, number: int, ride_zone: str, to_zone: str, safe
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
+    APIs: client.zone_name(), walking.walk_clients(), client.is_in_npc_range(),
           game_keys.press(client, GameAction.INTERACT), client.is_loading()
 
     Flow:
       1. Verify every client is in from_zone, ride_zone or to_zone. Return FAILURE if not.
-      2. Board, per client and in parallel, for those in from_zone: teleport to board_xyz,
+      2. Board, per client and in parallel, for those in from_zone: walk to board_xyz,
          then either wait for the gate to load the ride zone, or wait for the prompt and press
          X until the client is aboard. Retry from reset_xyz up to MAX_RETRIES when it is set.
          Fail only if no client boarded; the rest are left to the arrival check.

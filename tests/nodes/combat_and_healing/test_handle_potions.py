@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+from bartleby.runtime.movement.walk import WalkEnd
 from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.combat_and_healing.handle_potions as hp
@@ -14,7 +15,7 @@ from bartlebot.clients import port_map
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_zone
 from bartlebot.options import player_realms
-from tests.conftest import FakeClient, FakeMachine, see_each_other, zone_unreadable_at_first
+from tests.conftest import FakeClient, FakeMachine, moves, see_each_other, zone_unreadable_at_first
 from tests.node_helper_patches import patch_helper, set_helper
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
@@ -872,7 +873,7 @@ async def test_close_potion_shop_gives_up_on_a_shop_that_never_closes(monkeypatc
 
 
 async def test_shop_opens_first_attempt():
-    """Teleport → NPC in range → X pressed → shop visible → True."""
+    """Walk to Hilda → NPC in range → X pressed → shop visible → True."""
     client = FakeClient()
     npc_patch = patch.object(nh, "all_in_npc_range", new=AsyncMock(return_value=True))
     shop_patch = patch_helper("is_visible_by_path", new=AsyncMock(return_value=True))
@@ -881,13 +882,14 @@ async def test_shop_opens_first_attempt():
         result = await hp._open_potion_shop(_machine(), [client])
 
     assert result is True
-    client.teleport.assert_called()
+    assert moves(client) == [tuple(hp._HILDA_XYZ)]
+    client.teleport.assert_not_called()
     x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
     assert len(x_presses) >= 1
 
 
 async def test_shop_npc_timeout_resets_and_retries():
-    """NPC prompt times out once → reset teleport → next attempt succeeds → True."""
+    """NPC prompt times out once → walk to the reset point → next attempt succeeds → True."""
     client = FakeClient()
     # Patch poll_until directly so we control exactly which calls succeed:
     #   call 1: npc range on attempt 1 → False (timeout)
@@ -899,8 +901,23 @@ async def test_shop_npc_timeout_resets_and_retries():
         result = await hp._open_potion_shop(_machine(), [client])
 
     assert result is True
-    # Hilda (attempt 1) + reset + Hilda (attempt 2) = 3 teleports.
-    assert client.teleport.call_count == 3
+    # Hilda (attempt 1), her reset point, Hilda (attempt 2): every one walked.
+    assert moves(client) == [tuple(hp._HILDA_XYZ), tuple(hp._HILDA_RESET_XYZ), tuple(hp._HILDA_XYZ)]
+    client.teleport.assert_not_called()
+
+
+async def test_a_walk_to_hilda_that_fails_ends_the_approach_without_pressing_x():
+    """A wall the walk met is still there: no retry, no X, False."""
+    client = FakeClient()
+    client.walk_to.return_value = WalkEnd.NO_ROUTE
+    npc_patch = patch.object(nh, "all_in_npc_range", new=AsyncMock(return_value=True))
+
+    with npc_patch, patch.object(hp, "POLL_INTERVAL", 0):
+        result = await hp._open_potion_shop(_machine(), [client])
+
+    assert result is False
+    assert moves(client) == [tuple(hp._HILDA_XYZ)]
+    assert not [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
 
 
 async def test_shop_window_never_opens_returns_false():

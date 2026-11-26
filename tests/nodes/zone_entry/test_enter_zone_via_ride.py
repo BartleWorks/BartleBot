@@ -2,10 +2,11 @@
 
 from unittest.mock import AsyncMock, patch
 
+from bartleby.runtime.movement.walk import WalkEnd
 from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.zone_entry.enter_zone_via_ride as ride
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, moves
 
 _FROM, _RIDE, _TO = "World/Dock", "World/Flight", "World/Island"
 _BOARD = {"x": 0.0, "y": 0.0, "z": 0.0}
@@ -16,7 +17,7 @@ _NEVER = 10**9
 class _Rider(FakeClient):
     """A player the ride moves.
 
-    On the ground it is teleported about; at Board XYZ the prompt shows (or, boarded by walking,
+    On the ground it walks about; at Board XYZ the prompt shows (or, boarded by walking,
     the gate loads the ride zone). X on the prompt boards it, and X on the ride's skip prompt
     sends it to _TO. Every zone change is two loading-screen reads, during which the old zone
     is still reported.
@@ -37,13 +38,14 @@ class _Rider(FakeClient):
         self.board, self.ride_zone, self.where, self.stage = board, ride_zone, zone, stage
         self.skip_prompt_after = skip_prompt_after  # prompt reads on the ride before the skip prompt shows
         self.ride_ends_after = ride_ends_after  # loading reads on the ride before it ends on its own
-        self.gate_misses = gate_misses  # teleports into the gate that do not fire it
+        self.gate_misses = gate_misses  # walks into the gate that do not fire it
+        self.stands_off = 0.0  # how far off its goal a walk leaves the player (an object's edge)
         self.at = None
         self.boat_moves = True  # an in-zone ride carries the player off the dock once boarded
         self.loads_left, self.pending = 0, None
         self.body.position = AsyncMock(side_effect=lambda: XYZ(self.at or 0.0, 0.0, 0.0))
         self.zone_name = AsyncMock(side_effect=lambda: self.where)
-        self.teleport = AsyncMock(side_effect=self._teleport)
+        self.walk_to = AsyncMock(side_effect=self._walk)
         self.is_in_npc_range = AsyncMock(side_effect=self._prompt)
         self.send_key = AsyncMock(side_effect=self._key)
         self.is_loading = AsyncMock(side_effect=self._loading)
@@ -51,9 +53,9 @@ class _Rider(FakeClient):
     def _load(self, zone: str) -> None:
         self.loads_left, self.pending = 2, zone
 
-    async def _teleport(self, xyz) -> None:
-        assert self.stage == "ground", "a player on the ride was teleported"
-        self.at = xyz.x
+    async def _walk(self, xyz) -> None:
+        assert self.stage == "ground", "a player on the ride was walked"
+        self.at = xyz.x + self.stands_off
         if self.board == "walk" and xyz.x == _BOARD["x"]:
             if self.gate_misses:
                 self.gate_misses -= 1
@@ -65,7 +67,7 @@ class _Rider(FakeClient):
         if self.loads_left:
             return False
         if self.stage == "ground":
-            return self.board == "object" and self.at == _BOARD["x"]
+            return self.board == "object" and self.at == _BOARD["x"] + self.stands_off
         if self.stage == "riding":
             if self.skip_prompt_after > 0:
                 self.skip_prompt_after -= 1
@@ -123,7 +125,7 @@ async def test_the_dragon_is_boarded_by_interacting_then_skipped():
     for rider in riders:
         assert rider.where == _TO
         assert rider.presses == 2  # one to board, one to skip
-        assert [call.args[0].x for call in rider.teleport.call_args_list] == [_BOARD["x"]]
+        assert [call.args[0].x for call in rider.walk_to.call_args_list] == [_BOARD["x"]]
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -151,7 +153,7 @@ async def test_a_gate_that_does_not_fire_is_retried_from_the_reset():
 
     assert await _run([rider], _params(board="walk")) == "SUCCESS"
 
-    assert [call.args[0].x for call in rider.teleport.call_args_list] == [_BOARD["x"], _RESET["x"], _BOARD["x"]]
+    assert [call.args[0].x for call in rider.walk_to.call_args_list] == [_BOARD["x"], _RESET["x"], _BOARD["x"]]
 
 
 async def test_a_boat_rides_inside_its_zone_and_the_late_skip_prompt_is_pressed_once():
@@ -171,7 +173,7 @@ async def test_an_x_that_leaves_the_player_on_the_dock_is_not_boarding():
 
     assert await _run([rider], _params(ride_zone="")) == "FAILURE"
 
-    assert [call.args[0].x for call in rider.teleport.call_args_list] == [
+    assert [call.args[0].x for call in rider.walk_to.call_args_list] == [
         _BOARD["x"],
         *[_RESET["x"], _BOARD["x"]] * (ride.MAX_RETRIES - 1),
     ]
@@ -182,7 +184,7 @@ async def test_a_player_already_on_the_ride_just_skips_it():
 
     assert await _run([rider], _params()) == "SUCCESS"
 
-    rider.teleport.assert_not_called()
+    assert moves(rider) == []
     assert rider.presses == 1
 
 
@@ -203,7 +205,7 @@ async def test_no_prompt_at_the_boarding_point_fails_after_its_retries():
 
     rider.send_key.assert_not_called()
     # Board, then reset and board again for each retry.
-    assert rider.teleport.call_count == 1 + 2 * (ride.MAX_RETRIES - 1)
+    assert rider.walk_to.call_count == 1 + 2 * (ride.MAX_RETRIES - 1)
 
 
 async def test_a_player_that_cannot_board_is_left_to_the_arrival_check():
@@ -224,7 +226,7 @@ async def test_a_player_somewhere_else_fails_before_moving():
 
     assert await _run([rider], _params()) == "FAILURE"
 
-    rider.teleport.assert_not_called()
+    assert moves(rider) == []
 
 
 async def test_a_gate_ride_without_its_ride_zone_is_refused():
@@ -232,4 +234,35 @@ async def test_a_gate_ride_without_its_ride_zone_is_refused():
 
     assert await _run([rider], _params(board="walk", ride_zone="")) == "FAILURE"
 
+    assert moves(rider) == []
+
+
+async def test_nothing_teleports_on_the_way_aboard():
+    rider = _Rider()
+
+    assert await _run([rider], _params()) == "SUCCESS"
+
     rider.teleport.assert_not_called()
+
+
+async def test_a_walk_that_fails_ends_that_players_boarding_without_a_retry():
+    """A wall the walk met is still there: the player is left to the arrival check."""
+    rider = _Rider()
+    rider.walk_to = AsyncMock(return_value=WalkEnd.NO_ROUTE)
+
+    assert await _run([rider], _params()) == "FAILURE"
+
+    assert [call.args[0].x for call in rider.walk_to.call_args_list] == [_BOARD["x"]]
+    assert rider.presses == 0
+
+
+async def test_a_player_standing_off_board_xyz_is_not_aboard_until_the_boat_moves_it():
+    """A walk to a point inside the boat stands at its edge: 200 off Board XYZ is not a ride."""
+    rider = _Rider(ride_zone="")
+    rider.stands_off = 200.0
+    rider.boat_moves = False
+
+    assert await _run([rider], _params(ride_zone="")) == "FAILURE"
+
+    # Never counted aboard, so every try walked to Board XYZ again.
+    assert [call.args[0].x for call in rider.walk_to.call_args_list].count(_BOARD["x"]) == ride.MAX_RETRIES

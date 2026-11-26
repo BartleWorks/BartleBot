@@ -49,11 +49,12 @@ remember something for a later branch returns a value and lets an edge route on 
 (`bartlebot/nodes/walking.py`), never by writing its position. The server undoes a long
 written teleport, and the rule every stage of #322 keeps is that no teleport is longer than
 `HOP_MAX` and nothing but `walking.hop` writes a position (Stage 7). Until then
-`teleport_to_coordinates`, and the Ride's, potions', level scaling's and the Skeleton Key
-unlocker's own moves (Stage 6) still write a position, and nothing new may join them. **Every
-one goes through `walking.teleport`, which refuses while `walking.TELEPORTS_ENABLED` is off**,
-as it ships until Stage 7 confirms the short radius (the user's call, 2026-11-25): the node
-fails with the move named. The suite turns it on
+`teleport_to_coordinates` is the one node that still writes a position, beside the authoring
+tools outside `nodes/`, and nothing new may join them:
+`test_teleport_to_coordinates_is_the_one_node_left_that_writes_a_position` fails on another.
+**Every one goes through `walking.teleport`, which refuses while `walking.TELEPORTS_ENABLED` is
+off**, as it ships until Stage 7 confirms the short radius (the user's call, 2026-11-25): the
+node fails with the move named. The suite turns it on
 (`teleports_enabled` in `tests/conftest.py`); `test_every_position_write_goes_through_the_guard`
 fails on a `.teleport(` or `.tp_to(` call anywhere else.
 
@@ -62,7 +63,9 @@ fails on a `.teleport(` or `.tp_to(` call anywhere else.
   `walk_clients` itself, declares `walking.AVOID_MOBS_OPTION` in its `required_bot_options`.
 - **A walk that fails ends the node there**, logged with where it ended (the zone, both
   points, and the closed gate in the way). It is never retried the same way, and never
-  replaced by a teleport: a wall a walk met is still there.
+  replaced by a teleport: a wall a walk met is still there. The one exception is a walk that
+  only hurries the game's own move: the Skeleton Key unlocker's walk into the trigger, beside
+  the carry-in the game makes anyway, is logged when it fails and the carry-in waited for.
 - **A walk that ran into a fight is not the node's failure.** `walk_clients` waits for
   ambient combat to preempt the node (`FIGHT_PREEMPT_WAIT`), which fights it out and runs
   the node again. A node never handles that fight itself.

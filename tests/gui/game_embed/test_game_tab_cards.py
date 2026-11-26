@@ -142,6 +142,9 @@ def test_clicking_an_account_card_edits_it_rather_than_launching_it(qapp, screen
     assert edited == ["one@example.com"]
 
 
+# A known flake (#338): the click edited nothing once under -n auto, and passes alone. See
+# core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 def test_clicking_a_profile_card_edits_it_rather_than_launching_it(qapp, screen, populated, monkeypatch):
     screen(_4K)
     tab = AccountsTab()

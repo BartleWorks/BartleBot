@@ -412,21 +412,32 @@ async def close_potion_shop(client) -> bool:
 
 async def _open_potion_shop(machine, clients: list) -> bool:
     """
-    Teleport clients to Hilda Brewer, wait for the interact prompt, press X,
-    and confirm the potion shop window opens on all clients.
+    Walk clients to Hilda Brewer, wait for the interact prompt, press X,
+    and confirm the potion shop window opens on all clients. A miss walks them back to
+    Hilda's reset point, out of her prompt, and tries again.
 
-    Returns True if the shop opened successfully, False after all retries are exhausted.
+    Returns True if the shop opened, False after all retries are exhausted, or at once when a
+    walk fails: it is logged with where it ended, and the same way would meet the same wall.
     """
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
+    async def _walk(goal: XYZ, approach: bool = False) -> bool:
+        if await walking.walk_all(machine, clients, goal, approach=approach):
+            return True
+        machine.log("FAILURE: a walk to or from Hilda Brewer failed", logging.WARNING)
+        return False
+
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG)
-        await asyncio.gather(*[walking.teleport(c, _HILDA_XYZ) for c in clients])
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: walking to Hilda…", logging.DEBUG)
+        if not await _walk(_HILDA_XYZ, approach=True):
+            return False
 
         if not await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL
         ):
             machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG)
-            await asyncio.gather(*[walking.teleport(c, _HILDA_RESET_XYZ) for c in clients])
+            if not await _walk(_HILDA_RESET_XYZ):
+                return False
             continue
 
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
@@ -436,7 +447,8 @@ async def _open_potion_shop(machine, clients: list) -> bool:
             return True
 
         machine.log(f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG)
-        await asyncio.gather(*[walking.teleport(c, _HILDA_RESET_XYZ) for c in clients])
+        if not await _walk(_HILDA_RESET_XYZ):
+            return False
 
     machine.log(
         f"FAILURE: potion shop never opened after {MAX_RETRIES} attempts",

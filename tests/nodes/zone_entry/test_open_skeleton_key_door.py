@@ -62,9 +62,8 @@ class _Door:
         for index, client in enumerate(self.clients):
             client.is_in_npc_range.side_effect = self._showing(index)
             client.send_key.side_effect = self._pressed(index)
-            # The unlocker's carry-in still teleports (until Stage 6 of #322); every other move walks.
-            client.teleport.side_effect = self._teleported(index)
-            client.walk_to.side_effect = self._teleported(index)
+            # Every move walks (Stage 6 of #322); a teleport is the test's to fail.
+            client.walk_to.side_effect = self._walked(index)
 
     def _showing(self, index: int):
         client = self.clients[index]
@@ -86,8 +85,8 @@ class _Door:
 
         return _pressed
 
-    def _teleported(self, index: int):
-        async def _teleported(point) -> None:
+    def _walked(self, index: int):
+        async def _walked(point) -> None:
             if (
                 tuple(point) == _TRIGGER
                 and not self.locked
@@ -95,7 +94,7 @@ class _Door:
             ):
                 self.carry(index)
 
-        return _teleported
+        return _walked
 
     def carry(self, index: int) -> None:
         self.events.append(f"P{index + 1} in")
@@ -296,15 +295,15 @@ async def test_the_unlocker_waits_safety_delay_before_it_is_moved():
         await door_press(key, *args)
 
     moved = {}
-    door_teleport = door.clients[0].teleport.side_effect
+    door_walk = door.clients[0].walk_to.side_effect
 
     async def _note_move(point):
         if tuple(point) == _TRIGGER and "at" not in moved:
             moved["at"] = asyncio.get_running_loop().time()
-        await door_teleport(point)
+        await door_walk(point)
 
     door.clients[0].send_key.side_effect = _note_press
-    door.clients[0].teleport.side_effect = _note_move
+    door.clients[0].walk_to.side_effect = _note_move
 
     assert await _run(door) == "SUCCESS"
     assert moved["at"] - pressed["at"] >= 0.09
@@ -314,37 +313,52 @@ def _trigger_never_fires(door: _Door, index: int) -> None:
     async def _nothing(_point) -> None:
         return None
 
-    door.clients[index].teleport.side_effect = _nothing
     door.clients[index].walk_to.side_effect = _nothing
 
 
-async def test_no_teleport_lands_between_the_cutoff_and_the_carry_in(monkeypatch):
-    """A teleport crossing the carry-in lands after it, and puts them back out (#284)."""
+async def test_the_unlocker_walks_into_the_trigger_once_and_is_left_for_the_carry_in(monkeypatch):
+    """A trigger that does not take them is not walked into again: the game's carry-in comes."""
     monkeypatch.setattr(door_node, "KEY_DOOR_TELEPORT_CUTOFF", 0.05)
     monkeypatch.setattr(door_node, "KEY_DOOR_ENTRY_TIMEOUT", 1.0)
     door = _Door([5])
     _trigger_never_fires(door, 0)
-    counts: dict[str, int] = {}
 
     async def _carry() -> None:
-        await asyncio.sleep(0.1)
-        counts["after_cutoff"] = door.clients[0].teleport.call_count
-        await asyncio.sleep(0.1)
-        counts["at_carry"] = door.clients[0].teleport.call_count
+        await asyncio.sleep(0.2)
         door.carry(0)
 
     carrying = asyncio.create_task(_carry())
     assert await _run(door) == "SUCCESS"
     await carrying
-    assert counts["at_carry"] == counts["after_cutoff"]
+    assert door.moves_to_trigger(0) == 1
+    door.clients[0].teleport.assert_not_called()
 
 
-async def test_a_safety_delay_past_the_cutoff_leaves_the_unlocker_to_the_game(monkeypatch):
-    """A slow setting cannot walk a teleport into the carry-in: it skips the teleport."""
+async def test_a_safety_delay_past_the_cutoff_walks_the_unlocker_once_the_cutoff_passes(monkeypatch):
+    """A walk is keys, not a write the game applies after landing (#284), so it need not be skipped."""
     monkeypatch.setattr(door_node, "KEY_DOOR_TELEPORT_CUTOFF", 0.02)
     monkeypatch.setattr(door_node, "KEY_DOOR_ENTRY_TIMEOUT", 1.0)
     door = _Door([5], safety_delay=0.5)
 
+    assert await _run(door) == "SUCCESS"
+    assert door.moves_to_trigger(0) == 1
+
+
+async def test_an_unlocker_whose_walk_fails_still_gets_the_carry_in(monkeypatch):
+    """The carry-in needs no walk, so a wall on the way to the trigger is waited past, not failed."""
+    from bartleby.runtime.movement.walk import WalkEnd
+
+    monkeypatch.setattr(door_node, "KEY_DOOR_ENTRY_TIMEOUT", 1.0)
+    door = _Door([5])
+    walked = door.clients[0].walk_to.side_effect
+
+    async def _no_route_to_the_trigger(point):
+        if tuple(point) == _TRIGGER:
+            return WalkEnd.NO_ROUTE
+        return await walked(point)
+
+    door.clients[0].walk_to.side_effect = _no_route_to_the_trigger
+
     async def _carry() -> None:
         await asyncio.sleep(0.1)
         door.carry(0)
@@ -352,7 +366,25 @@ async def test_a_safety_delay_past_the_cutoff_leaves_the_unlocker_to_the_game(mo
     carrying = asyncio.create_task(_carry())
     assert await _run(door) == "SUCCESS"
     await carrying
-    assert door.moves_to_trigger(0) == 0
+    assert door.moves_to_trigger(0) == 1
+
+
+async def test_a_walk_to_the_trigger_that_fails_with_no_prompt_is_a_failure_not_no_key():
+    """Nothing showed whether the door is open, so NO_KEY, which says it is shut, would be wrong."""
+    from bartleby.runtime.movement.walk import WalkEnd
+
+    door = _Door([0, 0], locked=False)
+    walked = door.clients[0].walk_to.side_effect
+
+    async def _no_route_to_the_trigger(point):
+        if tuple(point) == _TRIGGER:
+            return WalkEnd.NO_ROUTE
+        return await walked(point)
+
+    door.clients[0].walk_to.side_effect = _no_route_to_the_trigger
+
+    assert await _run(door) == "FAILURE"
+    assert door.total_presses() == 0
 
 
 async def test_a_carry_in_that_never_comes_gets_a_normal_try_at_the_trigger(monkeypatch):

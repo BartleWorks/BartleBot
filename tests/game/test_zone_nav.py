@@ -971,10 +971,23 @@ def test_crab_alley_is_reached_through_the_stone_block():
 
 def test_every_zone_on_the_map_has_a_walking_map_core_ships():
     """A walk plans on core's shipped zone map (``bartleby.runtime.movement.zone_maps``), so a
-    zone added here needs one: rebuild core's maps with its ``tools/build_zone_maps.py``, which
-    reads this file's zones (core's ``docs/GAME_UPDATES.md``), and pin the release carrying them."""
+    zone added here, or to the Scales of Knowledge table, needs one: rebuild core's maps with its
+    ``tools/build_zone_maps.py``, which reads both files' zones (core's ``docs/WALKING.md``,
+    *Which zones*), and pin the release carrying them. A Scales no shipped bot farms had none
+    until Stage 6 of #322, since the build read only this file and the bots."""
     from bartleby.runtime.movement import zone_maps
 
-    missing = sorted(zone for world in _shipped().worlds.values() for zone in world.zones if not zone_maps.has(zone))
+    from bartlebot.game import scales
 
-    assert missing == []
+    on_the_map = {zone for world in _shipped().worlds.values() for zone in world.zones}
+    at_a_scales = {
+        zone
+        for entry in scales.load().values()
+        for zone in (
+            entry.entrance_zone,
+            *(z for step in entry.steps for z in (step.from_zone, step.to_zone)),
+            entry.zone,
+        )
+    }
+
+    assert sorted(zone for zone in on_the_map | at_a_scales if not zone_maps.has(zone)) == []
