@@ -294,3 +294,51 @@ async def test_a_gate_between_and_not_under_the_point_is_not_walked_up_to(gate_u
 
     assert walked[0].result.end is WalkEnd.NO_ROUTE
     assert gate_under_goal.walks == [(1340.0, 1000.0, 0.0)]
+
+
+async def test_each_walk_is_a_span_in_the_run_trace(real_walks, monkeypatch, tmp_path):
+    import json  # noqa: PLC0415
+
+    from bartleby.runtime import run_trace  # noqa: PLC0415
+
+    monkeypatch.setenv("BARTLEBOT_DEV", "1")
+    client = _client()
+    path = run_trace.start(lambda c: 1, tmp_path)
+    try:
+        await walking.walk_clients(_machine(), [client], (1400.0, 1000.0, 0.0))
+    finally:
+        run_trace.stop()
+
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    walk = next(r for r in records if r.get("kind") == "span" and r.get("name") == "walk")
+    text = json.dumps(walk)
+    for field in ("zone", "end", "distance", "seconds", "stalls", "detours"):
+        assert field in text, field
+    assert '"arrived"' in text
+
+
+def test_every_node_that_walks_declares_avoid_mobs():
+    """A node whose run reaches a walk offers the option that shapes it (nodes/CLAUDE.md)."""
+    import inspect  # noqa: PLC0415
+
+    from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS  # noqa: PLC0415
+
+    walks = (
+        "reach_prompt(",
+        "reach_sigil_prompt(",
+        "clear_stale_prompt(",
+        "take_turns(",
+        "walk_clients(",
+        "walk_all(",
+        "fire_trigger(",
+        "navigate(",
+        "enter_zone.run(",
+        "navigate_to_potion_vendor(",
+    )
+    missing = []
+    for node_type, run in NODE_REGISTRY.items():
+        source = inspect.getsource(inspect.getmodule(run))
+        if any(w in source for w in walks):
+            if not any(o.name == walking.AVOID_MOBS for o in NODE_SPECS[node_type].required_bot_options):
+                missing.append(node_type)
+    assert missing == []
