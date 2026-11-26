@@ -738,11 +738,13 @@ class Pickup(enum.Enum):
     IN_AN_EXIT = "inside an exit"
 
 
-#: How far from an entity a wizard can stand and still get its pickup prompt.
-#: PROVISIONAL until measured with tools/probe_pickup_reach.py (Stage 5 of #322): a pickup
-#: stands off this far, less a walk's arrival margin, on the far side of an entity named in
-#: Keep Away From, and skips a spot inside an exit with no floor outside within this.
-PICKUP_REACH = 120.0
+#: How far from an entity a wizard can stand and still get its pickup prompt, a little inside
+#: the edge tools/probe_pickup_reach.py measured on 2026-11-25: on Nightside's FrostedFlax_01 the
+#: prompt came on no farther out than 285 and went off no nearer than 300, the game's flag lagging
+#: the walk both ways (Stage 5 of #322). A pickup stands off this far, less a walk's arrival
+#: margin, on the far side of an entity named in Keep Away From, and skips a spot inside an exit
+#: with no floor outside within this.
+PICKUP_REACH = 275.0
 
 
 async def pickup_spot(client, xyz, keep_away: Collection[str] = ()):

@@ -226,10 +226,11 @@ game puts a wizard on arrival isn't in the bot.
 
 `uv run --no-sync python tools/probe_pickup_reach.py --entity "<Entity ID>"` reads, while you walk
 toward and away from a reagent, how far from it the pickup prompt still shows. It only reads.
-`node_helpers.PICKUP_REACH` is set from its summary's farthest distance with the prompt: a pickup
-stands off by that, less a walk's arrival margin, beside an entity named in Keep Away From, and
-skips a spawn inside an exit with no floor outside within it. Run it with no other prompt in
-range, since the game's prompt flag does not say whose prompt shows.
+The flag lags the walk both ways, so the summary brackets the edge from where the prompt came on
+and went off. `node_helpers.PICKUP_REACH` (275) sits a little inside it, from FrostedFlax_01's
+285 to 300: a pickup stands off by that, less a walk's arrival margin, beside an entity named in
+Keep Away From, and skips a spawn inside an exit with no floor outside within it. Run it with no
+other prompt in range, since the game's prompt flag does not say whose prompt shows.
 
 ### Zone connectivity: `tools/zone_graph/`
 

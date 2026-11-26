@@ -11,8 +11,11 @@ from tools import probe_pickup_reach as probe  # noqa: E402
 _SPOT = (0.0, 0.0, 0.0)
 
 
-def _at(x: float, prompt: bool, entity: str = "Reagent_A", z: float = 0.0) -> probe.Sample:
-    return probe.Sample(0.0, (x, 0.0, z), prompt, entity, _SPOT)
+_clock = iter(range(1, 10_000))
+
+
+def _at(x: float, prompt: bool, entity: str = "Reagent_A", z: float = 0.0, t: float | None = None) -> probe.Sample:
+    return probe.Sample(float(next(_clock)) if t is None else t, (x, 0.0, z), prompt, entity, _SPOT)
 
 
 def test_the_summary_gives_the_farthest_prompt_and_the_nearest_without_one():
@@ -23,6 +26,33 @@ def test_the_summary_gives_the_farthest_prompt_and_the_nearest_without_one():
     assert "farthest with the prompt: 110 (3D 110)" in summary
     assert "nearest without it:       130 (3D 130)" in summary
     assert "overlap" not in summary
+
+
+def test_the_edge_is_bracketed_by_where_the_prompt_came_on_and_went_off():
+    """The flag lags both ways: on late walking in, off late walking out."""
+    out_and_in = [_at(x, p) for x, p in [(100, True), (300, True), (340, False), (300, False), (270, True)]]
+    again = [_at(x, p) for x, p in [(320, True), (310, False), (200, False), (285, True)]]
+
+    summary = probe.summarize(out_and_in + again)
+
+    assert "the edge: on no farther out than 285, off no nearer than 310 (2 on, 2 off)" in summary
+    assert "they cross" not in summary
+
+
+def test_crossings_that_disagree_are_called_out():
+    summary = probe.summarize([_at(200, False), _at(330, True), _at(250, False)])
+
+    assert "on no farther out than 330, off no nearer than 250" in summary
+    assert "they cross" in summary
+
+
+def test_runs_pooled_together_make_no_crossing_where_one_ends_and_the_next_begins():
+    first = [_at(200, True, t=1.0), _at(350, False, t=2.0), _at(280, True, t=3.0)]
+    second = [_at(400, False, t=0.5), _at(270, True, t=1.5), _at(310, False, t=2.5)]
+
+    summary = probe.summarize(first + second)
+
+    assert "on no farther out than 280, off no nearer than 310 (2 on, 2 off)" in summary
 
 
 def test_distances_are_flat_with_the_3d_beside_them():

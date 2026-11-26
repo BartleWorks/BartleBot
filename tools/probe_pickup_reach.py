@@ -24,8 +24,16 @@ Re-read one or several, pooled, without the game running:
 
          uv run --no-sync python tools/probe_pickup_reach.py --analyze tools/probe_pickup_reach.*.local.csv
 
-The summary gives the farthest a prompt showed and the nearest it was gone, in 2D (what the
-pickup's rules measure) and 3D. PICKUP_REACH goes at or a little under the farthest it showed.
+The game's prompt flag lags the walk both ways: walking out, the prompt stays on a little past
+the edge, and walking in, it comes on a little inside it. So the summary brackets the edge from
+the crossings: the prompt came on no farther out than one distance, so the edge is at least
+that; and went off no nearer than another, so the edge is at most that. The farthest it showed
+and the nearest it was gone come after, overlapping by the lag. Distances are 2D (what the
+pickup's rules measure). PICKUP_REACH goes a little inside the bracket's low end.
+
+OUTCOME, 2026-11-25: Nightside's FrostedFlax_01, 17 times out and in over two runs. On at 150 to
+285, off at 300 to 467 (further each way the faster the walk), with one flicker on at 325 and off
+at 327, so the edge is about 285 to 300. PICKUP_REACH is 275.
 
 Wizard names and ids are never read or printed. Reagent template names are game data and are.
 """
@@ -86,6 +94,18 @@ def _edges(samples: list[Sample]) -> list[str]:
     shown = [s for s in samples if s.prompt]
     gone = [s for s in samples if not s.prompt]
     lines = []
+    # A crossing is between samples of one run: pooled runs each start their clock at 0.
+    steps = [(a, b) for a, b in zip(samples, samples[1:]) if b.t > a.t]
+    came_on = [b.flat for a, b in steps if b.prompt and not a.prompt]
+    went_off = [b.flat for a, b in steps if a.prompt and not b.prompt]
+    if came_on and went_off:
+        low, high = max(came_on), min(went_off)
+        lines.append(
+            f"  the edge: on no farther out than {low:.0f}, off no nearer than {high:.0f}"
+            f" ({len(came_on)} on, {len(went_off)} off)"
+        )
+        if low > high:
+            lines.append("  they cross: a flicker, or the edge depends on the side; look at the crossings in the CSV")
     if shown:
         far = max(shown, key=lambda s: s.flat)
         lines.append(f"  farthest with the prompt: {far.flat:.0f} (3D {far.full:.0f})")
