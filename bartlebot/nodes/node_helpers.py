@@ -741,7 +741,7 @@ async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_
     and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
     is its own case to log.
     """
-    await client.teleport(xyz)
+    await walking.teleport(client, xyz)
     if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
         return Pickup.NO_PROMPT
     await game_keys.press(client, GameAction.INTERACT, 0.1)

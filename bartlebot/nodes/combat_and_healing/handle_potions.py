@@ -420,13 +420,13 @@ async def _open_potion_shop(machine, clients: list) -> bool:
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(_HILDA_XYZ) for c in clients])
+        await asyncio.gather(*[walking.teleport(c, _HILDA_XYZ) for c in clients])
 
         if not await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL
         ):
             machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG)
-            await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])
+            await asyncio.gather(*[walking.teleport(c, _HILDA_RESET_XYZ) for c in clients])
             continue
 
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
@@ -436,7 +436,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
             return True
 
         machine.log(f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])
+        await asyncio.gather(*[walking.teleport(c, _HILDA_RESET_XYZ) for c in clients])
 
     machine.log(
         f"FAILURE: potion shop never opened after {MAX_RETRIES} attempts",

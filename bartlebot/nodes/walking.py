@@ -32,6 +32,13 @@ logger = logging.getLogger(__name__)
 #: #322): every wizard walks at its own speed, and nothing here writes ``speed_multiplier``.
 WALKS_WRITE_SPEED = False
 
+#: Whether anything may write a client's position. Off until the short teleport radius is
+#: confirmed (Stage 7 of #322, HOP_MAX), the user's call of 2026-11-25: every position write
+#: left in BartleBot goes through :func:`teleport`, which refuses while this is False, so no
+#: run teleports at all. A node whose move is refused fails, naming it. The suite turns it on
+#: (``tests/conftest.py``, ``teleports_enabled``) for the nodes that still teleport.
+TELEPORTS_ENABLED = False
+
 #: How long a node whose walk ran into a fight waits for ambient combat to take it over. The
 #: watcher reads every client's battle flag each poll interval, so it preempts the node well
 #: inside this; one that never comes means no watcher is running, and the node fails.
@@ -56,6 +63,23 @@ AVOID_MOBS_OPTION = BotOptionSpec(
 #: Planners come from here, so a test can hand the walk a zone of its own.
 load_planner = zone_maps.load
 has_map = zone_maps.has
+
+
+class TeleportRefused(Exception):  # noqa: N818 - the refusal is the message, not an error state
+    """A position write while :data:`TELEPORTS_ENABLED` is off."""
+
+
+async def teleport(client, xyz, *args, how: str = "teleport", **kwargs) -> None:
+    """Write *client*'s position to *xyz* by its *how* (``teleport``, or wizsprinter's ``tp_to``):
+    the one way BartleBot writes a position until Stage 7's ``hop``, and refused while
+    :data:`TELEPORTS_ENABLED` is off, by raising :class:`TeleportRefused`."""
+    if not TELEPORTS_ENABLED:
+        where = point(xyz)
+        raise TeleportRefused(
+            f"a teleport to ({where[0]:.0f}, {where[1]:.0f}, {where[2]:.0f}) was refused: teleports are "
+            "off until the short teleport radius is confirmed (Stage 7 of #322)"
+        )
+    await getattr(client, how)(xyz, *args, **kwargs)
 
 
 @dataclass
@@ -219,6 +243,9 @@ def _players(numbers: Sequence[int]) -> str:
 
 
 __all__ = [
+    "TELEPORTS_ENABLED",
+    "TeleportRefused",
+    "teleport",
     "ARRIVED_WITHIN",
     "AVOID_MOBS",
     "AVOID_MOBS_OPTION",

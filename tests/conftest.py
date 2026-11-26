@@ -531,6 +531,24 @@ def bartlebot_product(_bartlebot_product, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def teleports_enabled(monkeypatch):
+    """Let the nodes that still teleport do so in their tests, as they will once Stage 7's
+    short radius is confirmed. The app runs with ``walking.TELEPORTS_ENABLED`` off; a test of
+    the refusal asks for ``no_teleports``."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", True)
+
+
+@pytest.fixture
+def no_teleports(monkeypatch):
+    """The app as it runs today: every position write refused."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", False)
+
+
+@pytest.fixture(autouse=True)
 def walk_double(monkeypatch):
     """Walk every client on the client's own ``walk_to`` mock instead of core's route walker.
 

@@ -55,7 +55,7 @@ from bartleby.runtime.timing import (
 )
 
 from bartlebot.clients import port_map
-from bartlebot.nodes import combat_runner, node_helpers
+from bartlebot.nodes import combat_runner, node_helpers, walking
 from bartlebot.nodes.combat_and_healing import collect_wisps
 from bartlebot.options import player_realms
 
@@ -468,7 +468,7 @@ class AmbientSession:
     async def _move(self, client, point, what: str) -> bool:
         """Teleport *client* to *point*, then check it landed SAFE_RADIUS clear of every mob."""
         try:
-            await client.teleport(point)
+            await walking.teleport(client, point)
             clearance = await node_helpers.mob_clearance(client, point)
         except Exception as exc:
             self._log(f"{self._p(client)} could not move to {what} ({exc!r}); going to the hub", logging.WARNING)

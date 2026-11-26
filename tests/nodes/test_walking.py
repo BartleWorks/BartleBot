@@ -342,3 +342,56 @@ def test_every_node_that_walks_declares_avoid_mobs():
             if not any(o.name == walking.AVOID_MOBS for o in NODE_SPECS[node_type].required_bot_options):
                 missing.append(node_type)
     assert missing == []
+
+
+# --- nothing teleports ---------------------------------------------------------------------------
+
+
+def test_teleports_are_off_in_the_app():
+    """The user's call (2026-11-25): no teleport at all until Stage 7 confirms the short radius.
+    Read from the source, since the suite turns it on (``teleports_enabled``)."""
+    import re  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    source = Path(walking.__file__).read_text(encoding="utf-8")
+    assert re.search(r"^TELEPORTS_ENABLED = False$", source, re.M)
+
+
+async def test_a_teleport_while_they_are_off_is_refused_and_writes_nothing(no_teleports):
+    client = _client()
+    client.tp_to = AsyncMock()
+
+    with pytest.raises(walking.TeleportRefused, match=r"teleport to \(10, 20, 30\) was refused"):
+        await walking.teleport(client, (10.0, 20.0, 30.0))
+    with pytest.raises(walking.TeleportRefused):
+        await walking.teleport(client, (10.0, 20.0, 30.0), how="tp_to")
+
+    client.teleport.assert_not_awaited()
+    client.tp_to.assert_not_awaited()
+
+
+async def test_a_teleport_while_they_are_on_goes_through(monkeypatch):
+    client = _client()
+
+    await walking.teleport(client, (10.0, 20.0, 30.0), wait_on_inuse=True)
+
+    client.teleport.assert_awaited_once_with((10.0, 20.0, 30.0), wait_on_inuse=True)
+
+
+def test_every_position_write_goes_through_the_guard():
+    """No ``.teleport(`` or ``.tp_to(`` call anywhere in bartlebot/ but walking.teleport's own."""
+    import ast  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    root = Path(walking.__file__).resolve().parents[1]
+    found = []
+    for path in root.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                if node.func.attr in ("teleport", "tp_to") and not (
+                    isinstance(node.func.value, ast.Name) and node.func.value.id == "walking"
+                ):
+                    found.append(f"{path.relative_to(root)}:{node.lineno}")
+    # walking.teleport's getattr(client, how) is the one write, and no attribute call.
+    assert found == []

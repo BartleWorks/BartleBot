@@ -53,7 +53,7 @@ from bartleby.runtime.game import wizard_names
 from bartleby.runtime.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL
 
 from bartlebot.bot.client_health_monitor import restriction_for
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.combat_runner import resolve_combat
 
 logger = logging.getLogger(__name__)
@@ -410,7 +410,7 @@ class AuthoringTools:
         if not movers:
             return
         results = await asyncio.gather(
-            *[c.teleport(xyz, yaw, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for _, c in movers],
+            *[walking.teleport(c, xyz, yaw, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for _, c in movers],
             return_exceptions=True,
         )
         moved = [i + 1 for (i, _), r in zip(movers, results) if not isinstance(r, Exception)]

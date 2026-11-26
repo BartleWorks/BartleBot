@@ -540,6 +540,9 @@ async def test_the_watcher_logs_a_players_change_once_with_where_it_stood():
     assert logged.count("P3: zone=Dst loading=False at (1, -3, 3)") == 1
 
 
+# A known flake (no issue): seen once under -n auto during Stage 4 of #322, passes alone. Its
+# 0.02 s sleep against a 0.001 s poll is timing-bound. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_the_watcher_reports_a_client_it_cannot_read_instead_of_raising():
     loading = FakeClient()
     loading.zone_name.side_effect = RuntimeError("loading")

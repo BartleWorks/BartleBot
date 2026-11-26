@@ -34,6 +34,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.game import entity_names
 from bartlebot.gui.context_help import set_help_topic
+from bartlebot.nodes import walking
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +279,7 @@ class EntityBrowserDialog(QDialog):
 
         self._teleport_btn.setEnabled(False)
         try:
-            await self._client.teleport(XYZ(*pos), wait_on_inuse=True, purge_on_after_unuser_fixer=True)
+            await walking.teleport(self._client, XYZ(*pos), wait_on_inuse=True, purge_on_after_unuser_fixer=True)
         except Exception:
             if self._closed:
                 return

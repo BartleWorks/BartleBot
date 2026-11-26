@@ -45,7 +45,7 @@ from bartleby.runtime.timing import (
 )
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 
 BOARD_OBJECT = "object"
 BOARD_WALK = "walk"
@@ -111,10 +111,10 @@ async def _board(
             machine.log(f"Player {number}: boarding did not take; retrying ({attempt}/{attempts})", logging.DEBUG)
         # Clear a prompt left over from somewhere else before trusting the one at Board XYZ.
         if reset and (attempt > 1 or (board == BOARD_OBJECT and await client.is_in_npc_range())):
-            await client.teleport(reset)
+            await walking.teleport(client, reset)
             if board == BOARD_OBJECT:
                 await node_helpers.poll_until(lambda: _no_prompt(client), safety_delay, POLL_INTERVAL)
-        await client.teleport(board_xyz)
+        await walking.teleport(client, board_xyz)
 
         if board == BOARD_WALK:
             if await node_helpers.poll_until(committed, safety_delay, POLL_INTERVAL):

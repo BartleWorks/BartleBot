@@ -457,7 +457,7 @@ async def apply_elixir(
             f"Elixir not active on client(s) {[n for n, _ in pending]}; resetting to retry",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(reset) for _, c in pending])
+        await asyncio.gather(*[walking.teleport(c, reset) for _, c in pending])
 
     machine.log(
         f"FAILURE: level-scaling elixir not active on client(s) {[n for n, _ in pending]} after {MAX_RETRIES} attempts",
@@ -477,7 +477,7 @@ async def _use_station(machine, client, client_number: int, interact: XYZ, safet
     nothing useful to distinguish here between "the menu never opened" and "the click did
     not take".
     """
-    await client.teleport(interact)
+    await walking.teleport(client, interact)
 
     machine.log(f"Client {client_number}: waiting for interact prompt…", logging.DEBUG)
     if not await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range([client]), safety_delay, POLL_INTERVAL):
