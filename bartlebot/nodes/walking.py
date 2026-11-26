@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from bartleby.runtime import run_trace
-from bartleby.runtime.arbiter import LeaseLost, Owner
+from bartleby.runtime.arbiter import Busy, LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
 from bartleby.runtime.movement.walk import ARRIVE_GOAL, ClientRead, Point, RouteWalker, WalkEnd, WalkResult
@@ -151,8 +151,12 @@ async def hop(machine, client, zone: str, start, end, *, number: int = 1) -> boo
                     logging.WARNING,
                 )
                 return False
+    except Busy as busy:
+        return refuse(f"its movement is held ({busy})")
     except LeaseLost as lost:
-        return refuse(f"its movement is held ({lost})")
+        # Taken after the checks, by a fight or a stop: the hop may have been written, so it fails.
+        machine.log(f"FAILURE: {label}'s hop to {_at(end)} in {zone!r} was interrupted: {lost}", logging.WARNING)
+        return False
     machine.log(f"{label}: hopped {far:.0f} to {_at(end)}", logging.DEBUG)
     return True
 

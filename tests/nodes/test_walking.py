@@ -482,6 +482,21 @@ async def test_a_hop_writes_nothing_while_another_lease_holds_the_client(quick_s
     client.teleport.assert_not_awaited()
 
 
+async def test_a_hop_whose_lease_is_taken_while_it_settles_fails(monkeypatch):
+    from bartleby.runtime.arbiter import Owner  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "HOP_SETTLE", 5.0)
+    client, machine = _hopper(), FakeMachine()
+    hop = asyncio.create_task(walking.hop(machine, client, "Test/Hop", _START, _END))
+    while not client.teleport.await_count:
+        await asyncio.sleep(0)
+
+    async with machine.arbiter.acquire(client, Owner.COMBAT):
+        assert await asyncio.wait_for(hop, timeout=2) is False
+    assert any("was interrupted" in m for m, _ in machine.logs)
+    client.teleport.assert_awaited_once()
+
+
 async def test_a_failed_write_fails_the_hop_and_is_not_retried(quick_settle):
     client, machine = _hopper(), FakeMachine()
     client.teleport.side_effect = ValueError("Tried to teleport while should update bool is set")

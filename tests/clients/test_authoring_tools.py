@@ -373,6 +373,28 @@ async def test_a_walk_by_hand_takes_the_open_bots_avoid_mobs(monkeypatch):
     assert seen == [False]
 
 
+async def test_a_walk_by_hand_with_no_bot_option_takes_the_app_setting(monkeypatch):
+    """A bot without the option, or none open, falls to the user's own Avoid Mobs."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+    from bartlebot.options import option_values  # noqa: PLC0415
+
+    seen = []
+
+    async def walk(machine, client, number, goal, avoid, *args, **kwargs):
+        seen.append(avoid)
+        return walking.Walked(walking._not_walked(walking.WalkEnd.ARRIVED, "Z", (0, 0, 0), goal, ""))
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    monkeypatch.setattr(option_values, "option_value", lambda cfg, name, default=None: default)
+    monkeypatch.setattr(option_values, "app_value", lambda name: False)
+    client = FakeClient()
+
+    await _tools([client], config=MagicMock()).walk_to([client], (1.0, 2.0, 3.0))
+    await _tools([client]).walk_to([client], (1.0, 2.0, 3.0))
+
+    assert seen == [False, False]
+
+
 async def test_a_second_action_while_one_is_in_flight_is_ignored(monkeypatch):
     clients = [FakeClient(), FakeClient()]
     monkeypatch.setattr(authoring_tools.wizard_names, "cached_name", lambda c: "Someone")

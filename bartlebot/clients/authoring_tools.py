@@ -153,9 +153,12 @@ class _HandWalk:
     def get_option(self, name: str, default=None):
         from bartlebot.options import option_values  # noqa: PLC0415 - keeps settings out of import time
 
+        # The open bot's value first; with no bot open, or one without the option, the app setting's.
+        value = option_values.UNSET
         if self._config is not None:
-            return option_values.option_value(self._config, name, default)
-        value = option_values.app_value(name)
+            value = option_values.option_value(self._config, name, option_values.UNSET)
+        if value is option_values.UNSET:
+            value = option_values.app_value(name)
         return default if value is option_values.UNSET else value
 
     @staticmethod
