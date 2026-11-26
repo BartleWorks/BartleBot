@@ -681,3 +681,40 @@ async def test_a_walks_span_says_whether_it_was_into_a_fight_and_what_watching_m
     assert walk["attrs"]["mob_reads"] > 0
     for field in ("mob_read_s", "mob_read_max", "list_read_s"):
         assert walk["attrs"][field] >= 0, field
+
+
+# --- player numbers ---------------------------------------------------------------------------
+
+
+def test_a_client_is_numbered_by_its_place_among_the_runs_players():
+    party = [FakeClient(), FakeClient(), FakeClient()]
+    machine = FakeMachine()
+    machine.clients = party
+
+    assert walking.player_numbers(machine, [party[1]]) == [2]
+    assert walking.player_numbers(machine, [party[2], party[0]]) == [3, 1]
+
+
+def test_without_the_runs_players_clients_are_numbered_in_the_order_given():
+    party = [FakeClient(), FakeClient()]
+    machine = FakeMachine()
+
+    assert walking.player_numbers(machine, party[1:]) == [1], "a machine that lists no players"
+    machine.clients = party[:1]
+    assert walking.player_numbers(machine, [party[1], party[0]]) == [1, 2], "one it does not list"
+
+
+async def test_a_walk_of_some_players_is_labeled_with_their_player_numbers(monkeypatch, walk_double):
+    party = [FakeClient(), FakeClient(), FakeClient()]
+    machine = FakeMachine()
+    machine.clients = party
+    numbers = []
+
+    async def walk(machine, client, number, *args, **kwargs):
+        numbers.append(number)
+        return await walk_double(machine, client, number, *args, **kwargs)
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    await walking.walk_clients(machine, [party[1]], XYZ(0, 0, 0))
+
+    assert numbers == [2]

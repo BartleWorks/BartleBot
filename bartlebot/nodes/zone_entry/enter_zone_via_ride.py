@@ -235,18 +235,20 @@ async def run(machine, clients: list, params: dict) -> str:
     await node_helpers.note_realm_peers(machine, clients)
 
     # 2. Board.
+    numbers = walking.player_numbers(machine, clients)
+
     async def _boarded(index: int, client) -> bool:
         if not node_helpers.zone_matches(zones[index], from_zone):
             return True
-        return await _board(machine, client, index + 1, board, board_xyz, reset, ride_zone, to_zone, safety_delay)
+        return await _board(machine, client, numbers[index], board, board_xyz, reset, ride_zone, to_zone, safety_delay)
 
     aboard = await asyncio.gather(*[_boarded(i, c) for i, c in enumerate(clients)])
-    riders = [(i + 1, c) for i, (c, ok) in enumerate(zip(clients, aboard)) if ok]
+    riders = [(n, c) for n, c, ok in zip(numbers, clients, aboard) if ok]
     if not riders:
         machine.log("FAILURE: no player could board the ride", logging.WARNING)
         return "FAILURE"
     if len(riders) < len(clients):
-        stuck = [i + 1 for i, ok in enumerate(aboard) if not ok]
+        stuck = [n for n, ok in zip(numbers, aboard) if not ok]
         machine.log(f"Player(s) {stuck} could not board; continuing to the arrival check", logging.INFO)
 
     # 3. Skip.

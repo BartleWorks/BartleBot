@@ -710,6 +710,51 @@ async def test_a_client_already_there_outranks_a_larger_group_elsewhere(monkeypa
     assert game.waves == [([2, 3, 4], [1])]
 
 
+async def test_a_lone_client_with_the_cheaper_route_outranks_a_larger_group_elsewhere(monkeypatch):
+    """The Galleries run: three together far off, one alone near. Whoever travels, the other
+    three port at the end, so the group saves nothing and the longer route costs minutes."""
+    game = _Game(monkeypatch, [_S1, _HUB, _HUB, _HUB], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(*game.clients[1:])
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[1]]
+    assert game.waves == [([2, 3, 4], [1])]
+
+
+async def test_a_cheaper_route_outranks_more_players_able_to_port_to_it(monkeypatch):
+    """Player 1 is one zone away, and only player 2 can port to it; player 3, two zones away,
+    both others can reach, player 2 by way of player 1. Player 1 still travels."""
+    game = _Game(monkeypatch, [_S1, _HUB, _HUB])
+    names = _NAMES[:3]
+    for client, name in zip(game.clients, names):
+        wizard_names.remember(client, name)
+    # Player 1 can port to player 3, player 2 to player 1, and player 3 to nobody.
+    game.survey.return_value = port_map.PortMap.from_survey(names, [[names[2]], [names[0]], []], [(), (), ()])
+
+    await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert game.groups[0] == [1]
+
+
+async def test_who_travels_is_logged_with_each_players_zone_route_and_reach(monkeypatch):
+    game = _Game(monkeypatch, [_S1, _HUB, _S2], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1])
+    see_each_other(game.clients[2])
+    machine = FakeMachine()
+
+    await zone_navigation.navigate(machine, game.clients, _S2, nav=_nav(_walk(_HUB, _S1), _walk(_S1, _S2)))
+
+    [line] = [msg for msg, _ in machine.logs if msg.startswith("Who travels: ")]
+    assert line == (
+        f"Who travels: P1 in {_S1!r}: 1 zone change, 2 can port to it; "
+        f"P2 in {_HUB!r}: 2 zone changes, 2 can port to it; P3 in {_S2!r}: there, 2 can port to it"
+    )
+
+
 async def test_a_client_already_there_that_nobody_can_port_to_does_not_lead(monkeypatch):
     game = _Game(monkeypatch, [_S2, _S1, _S1])
     see_each_other(game.clients[0])

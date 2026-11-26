@@ -342,6 +342,16 @@ def _flat(a, b) -> float:
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
 
+def player_numbers(machine, clients: Sequence) -> list[int]:
+    """Each of *clients*' player number, 1-based, for the log: its place among the run's
+    players (``machine.clients``), so a node run on some of them, as a trip's leader alone,
+    names each as the rest of the log does. When the machine lists no players, or not all of
+    these, each is numbered by its place in *clients*."""
+    party = list(getattr(machine, "clients", None) or ())
+    found = [next((i + 1 for i, c in enumerate(party) if c is client), None) for client in clients]
+    return list(range(1, len(clients) + 1)) if None in found else found
+
+
 async def walk_clients(
     machine,
     clients: Sequence,
@@ -376,12 +386,13 @@ async def walk_clients(
     the move after a fight, walked by the session itself) waits for nothing: nothing will
     preempt it.
 
-    *numbers* labels the clients in the log, 1-based, for a caller walking a subset.
+    *numbers* labels the clients in the log, 1-based; by default each is its player number
+    (:func:`player_numbers`).
 
     *wait_for_preempt* False is for a walk outside a run (the authoring tools' go-to), where
     nothing would preempt it: a fight met is logged, and nothing is waited for.
     """
-    labels = list(numbers) if numbers is not None else list(range(1, len(clients) + 1))
+    labels = list(numbers) if numbers is not None else player_numbers(machine, clients)
     avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
     walked = list(
         await asyncio.gather(

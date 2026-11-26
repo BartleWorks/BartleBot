@@ -89,7 +89,8 @@ NODE_SPEC = NodeSpec(
         + "\n\n"
         + (
             "On a long route, or one through a teleporter, the leader travels and the others teleport "
-            "to it on arrival. When nothing else decides who leads, the players' group leader in the "
+            "to it on arrival. The leader is a player already in Zone, or else the one with the "
+            "shortest trip. When nothing else decides who leads, the players' group leader in the "
             "game does, so the others can take the game's Teleport to Leader. A player who can't "
             "teleport travels alone, then changes to the leader's realm."
         )

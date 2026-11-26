@@ -29,7 +29,7 @@ from bartleby.runtime.paths import (
 from bartleby.runtime.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
 _FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match
@@ -205,7 +205,7 @@ async def _use_list_sequentially(
             return False
         return True
 
-    numbers = list(range(1, len(clients) + 1))
+    numbers = walking.player_numbers(machine, clients)
     results = await node_helpers.take_turns(
         machine,
         clients,

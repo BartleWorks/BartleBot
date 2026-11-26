@@ -11,6 +11,7 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone as gtz
+from bartlebot.nodes import walking
 from tests.conftest import FakeClient, FakeMachine, ModalScreen
 from tests.node_helper_patches import patch_helper
 
@@ -53,6 +54,26 @@ async def test_success_single_client():
     assert result == "SUCCESS"
     # One walk into the box: the client stands there while the poll waits for the zone to change.
     assert client.walk_to.call_count == 1
+
+
+async def test_a_player_run_alone_is_numbered_as_among_the_runs_players(monkeypatch, walk_double):
+    """As a trip's leader is: its walk is logged under its own player number, not P1."""
+    other, client = FakeClient(), FakeClient()
+    client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
+    machine = FakeMachine()
+    machine.clients = [other, client]
+    numbers = []
+
+    async def walk(machine, c, number, *args, **kwargs):
+        numbers.append(number)
+        return await walk_double(machine, c, number, *args, **kwargs)
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(machine=machine, clients=[client], params=_PARAMS)
+
+    assert result == "SUCCESS"
+    assert numbers == [2]
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
