@@ -49,8 +49,13 @@ remember something for a later branch returns a value and lets an edge route on 
 (`bartlebot/nodes/walking.py`), never by writing its position. The server undoes a long
 written teleport, and the rule every stage of #322 keeps is that no teleport is longer than
 `HOP_MAX` and nothing but `walking.hop` writes a position (Stage 7). Until then
-`teleport_to_coordinates`, `pick_up` (Stage 5), and the Ride's, potions', level scaling's and
-the Skeleton Key unlocker's own moves (Stage 6) still teleport; nothing new may join them.
+`teleport_to_coordinates`, `pick_up` and the fights' and wisps' moves (Stage 5), and the Ride's,
+potions', level scaling's and the Skeleton Key unlocker's own moves (Stage 6) still write a
+position, and nothing new may join them. **Every one goes through `walking.teleport`, which
+refuses while `walking.TELEPORTS_ENABLED` is off**, as it ships until Stage 7 confirms the short
+radius (the user's call, 2026-11-25): the node fails with the move named. The suite turns it on
+(`teleports_enabled` in `tests/conftest.py`); `test_every_position_write_goes_through_the_guard`
+fails on a `.teleport(` or `.tp_to(` call anywhere else.
 
 - **Through the shared helpers where one fits**: `clear_stale_prompt`, `reach_prompt`,
   `take_turns` and `enter_zone.fire_trigger` walk. A node that calls one of them, or
