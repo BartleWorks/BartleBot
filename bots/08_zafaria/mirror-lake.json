@@ -2323,7 +2323,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 2640,
@@ -2429,7 +2429,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 5280,
@@ -2461,7 +2461,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Stop Morganthe",
       "position": {
         "x": 6160,
@@ -2514,7 +2514,7 @@
     },
     {
       "id": "state_18",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to bottom of the lake",
       "position": {
         "x": 7480,
@@ -2546,7 +2546,7 @@
     },
     {
       "id": "state_20",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Enter Raised Tower",
       "position": {
         "x": 8360,

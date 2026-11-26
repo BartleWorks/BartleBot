@@ -611,7 +611,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Follow the Old Quack",
       "position": {
         "x": 5280.0,
@@ -698,7 +698,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Next Room",
       "position": {
         "x": 7480.0,
@@ -756,7 +756,7 @@
     },
     {
       "id": "state_14",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Last Room",
       "position": {
         "x": 9240.0,

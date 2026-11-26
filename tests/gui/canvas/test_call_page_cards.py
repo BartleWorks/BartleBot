@@ -30,7 +30,7 @@ def _definition():
     """Sync players with its first hop recordable and promoted as "First hop"."""
     defn = sync_players_definition()
     tp_a = next(s for s in defn.states if s.id == "tp_a")
-    tp_a.node_type = "teleport_to_coordinates"
+    tp_a.node_type = "walk_to_xyz"
     tp_a.label = "First hop"
     tp_a.params = {}
     defn.panels = [SubgraphPanel(id="node_tp_a", kind="node", label="First hop", member="tp_a")]
@@ -122,7 +122,7 @@ def test_recording_opens_a_folded_card_without_remembering_it(canvas, monkeypatc
     monkeypatch.setattr("bartlebot.gui.canvas.call_page.asyncio.ensure_future", lambda coro: coro)
 
     page._get_clients = lambda: [object()]
-    page._record_from("node_tp_a", "teleport_to_coordinates", card.header.findChildren(RecordButton)[0], 0)
+    page._record_from("node_tp_a", "walk_to_xyz", card.header.findChildren(RecordButton)[0], 0)
 
     assert not card.is_collapsed
     stored = UiState().folds(param_cards.call_page_surface(SYNC_ID), {"node_tp_a": False})

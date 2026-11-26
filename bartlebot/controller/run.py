@@ -32,6 +32,7 @@ from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_r
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.content.store_roots import dev_mode
 from bartlebot.game import restricted_zones, walking_maps
+from bartlebot.nodes import walking
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.options import option_values, player_realms
 from bartlebot.settings_manager import SettingsManager
@@ -115,6 +116,8 @@ class Run:
         if not self._check_restricted_zones():
             return
         if not self._check_walking_maps():
+            return
+        if not self._check_hops():
             return
         walking_maps.WARMER.prefer(walking_maps.bot_zones(self._documents.loaded_config.states))
         if not self._check_player_realms():
@@ -251,6 +254,26 @@ class Run:
             "This bot can't be run. It names zones with no walking map:\n\n"
             f"{walking_maps.describe_found(found)}\n\n"
             f"{walking_maps.NO_MAP_TEXT}",
+        )
+        return False
+
+    def _check_hops(self) -> bool:
+        """Refuse to run a bot holding a Teleport to XYZ that spans too far. Returns whether to proceed.
+
+        The canvas marks the node with the same error, which keeps Run disabled; this is what a
+        hand-edited file reaches. It tells rather than asks: no hop goes farther than
+        ``walking.HOP_MAX``, and a node that spans past ``walking.HOP_SPAN`` could (Stage 7 of #322).
+        """
+        if self._documents.loaded_config is None:
+            return True
+        found = walking.span_errors(self._documents.loaded_config.states)
+        if not found:
+            return True
+        logger.warning("Refusing to run: %d Teleport to XYZ node(s) span too far", len(found))
+        QMessageBox.critical(
+            self._window,
+            "Teleport to XYZ",
+            "This bot can't be run:\n\n" + "\n".join(f"{label}: {error}" for label, error in found),
         )
         return False
 
@@ -480,7 +503,7 @@ class Run:
 
         First, because every later step and every node assumes the camera follows the
         player, and because the run locks the Exit Freecam button -- a camera left detached
-        now would stay detached until the run ended. Exit only, never TP to Camera: the
+        now would stay detached until the run ended. Exit only, never a move to the camera: the
         player is where the user left them, and a bot may well depend on that. Never raises.
         """
         try:

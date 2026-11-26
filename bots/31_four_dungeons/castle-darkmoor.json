@@ -1065,7 +1065,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 2640,
@@ -1278,7 +1278,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 8360.0,

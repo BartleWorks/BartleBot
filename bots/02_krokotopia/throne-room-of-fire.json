@@ -995,7 +995,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Prince Manu Nirini",
       "position": {
         "x": 3080,
@@ -1052,7 +1052,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Krokenkahmen",
       "position": {
         "x": 4400,

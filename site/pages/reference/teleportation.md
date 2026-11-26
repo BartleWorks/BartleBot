@@ -65,7 +65,7 @@ The bot stops after 3 consecutive failures on this node.
 
 **Usage notes**
 
-Follow this node with Teleport to Coordinates when the exact spot matters. Players arrive wherever the last zone change puts them.
+Follow this node with Walk to XYZ when the exact spot matters. Players arrive wherever the last zone change puts them.
 
 Players already together in the zone stay where they are, so the node is cheap at the top of a bot.
 
@@ -74,28 +74,6 @@ On a long route, or one through a teleporter, the leader travels and the others 
 With Player Realms set to Separate, every player travels on its own and nobody changes realm.
 
 **See also:** [Teleport to World Hub](#teleport-to-world-hub), [Change Realm](utility.md#change-realm)
-
-## Teleport to Coordinates { #teleport-to-coordinates }
-
-Teleports every player to a spot in the current zone.
-
-The bot stops after 20 consecutive failures on this node.
-
-**Parameters**
-
-| Parameter | What it does | Default |
-|---|---|---|
-| **Zone** | The zone every player must be in when the node starts. | required |
-| **Target XYZ** | Where in Zone to teleport players to. | required |
-
-**Returns**
-
-- **SUCCESS**: Every player is at Target XYZ.
-- **FAILURE**: A player wasn't in Zone at the start, or didn't reach Target XYZ after several tries.
-
-**Bot options** it adds to the bot's **Options** tab:
-
-- [Safety Delay](options.md#safety-delay)
 
 ## Teleport to Friend { #teleport-to-friend }
 
@@ -182,3 +160,60 @@ The bot stops after 10 consecutive failures on this node.
 **Usage notes**
 
 If only some players arrive, the others teleport to one who did before the node fails. This needs every player on the others' friends lists.
+
+## Teleport to XYZ { #teleport-to-xyz }
+
+Walks every player to a spot, then teleports each a short way, past a closed gate.
+
+The bot stops after 5 consecutive failures on this node.
+
+**Parameters**
+
+| Parameter | What it does | Default |
+|---|---|---|
+| **Zone** | The zone every player must be in when the node starts. | required |
+| **Start XYZ** | Where players walk to first, just before the gate. | required |
+| **End XYZ** | Where players land, just past the gate: at most 300 game units from Start XYZ. | required |
+
+**Returns**
+
+- **SUCCESS**: Every player stands at End XYZ.
+- **FAILURE**: A player wasn't in Zone at the start, couldn't walk to Start XYZ, or was put back by the game after the teleport.
+
+**Bot options** it adds to the bot's **Options** tab:
+
+- [Avoid Mobs](options.md#avoid-mobs)
+
+**Usage notes**
+
+Only for getting past something a walk can't, such as a closed gate. Start XYZ and End XYZ may lie at most 300 game units apart, and a player is never moved farther than 350. A teleport the game undoes isn't tried again.
+
+**See also:** [Walk to XYZ](#walk-to-xyz)
+
+## Walk to XYZ { #walk-to-xyz }
+
+Walks every player to a spot in the current zone.
+
+The bot stops after 20 consecutive failures on this node.
+
+**Parameters**
+
+| Parameter | What it does | Default |
+|---|---|---|
+| **Zone** | The zone every player must be in when the node starts. | required |
+| **XYZ** | Where in Zone to walk players to. | required |
+
+**Returns**
+
+- **SUCCESS**: Every player stands at XYZ.
+- **FAILURE**: A player wasn't in Zone at the start, or couldn't walk to XYZ, such as past a closed gate.
+
+**Bot options** it adds to the bot's **Options** tab:
+
+- [Avoid Mobs](options.md#avoid-mobs)
+
+**Usage notes**
+
+Players walk the way the zone's map plans, each from where it stands. A walk that meets a closed gate fails and names it: put a Teleport to XYZ there to hop past it.
+
+**See also:** [Teleport to XYZ](#teleport-to-xyz)

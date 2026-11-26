@@ -1659,7 +1659,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 5280.0,
@@ -1691,7 +1691,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 6600.0,

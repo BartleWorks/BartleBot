@@ -34,12 +34,12 @@ def _action(action: AuthoringAction, icon: str) -> BarAction:
     return BarAction(action.value, icon, ACTION_LABELS[action], checkable=action in _TOGGLES)
 
 
-#: Bar A's buttons by what they do, with a divider between groups: the two moves, the
-#: toggles that act on every player, and speed-authoring, which acts on the canvas.
-#: The pin is the node params' TP glyph, since XYZ sync is a teleport to a spot; porting to
-#: a friend and fighting take the game's own teleport and damage icons.
+#: Bar A's buttons by what they do, with a divider between groups: the move, the toggles
+#: that act on every player, and speed-authoring, which acts on the canvas. Porting to a
+#: friend and fighting take the game's own teleport and damage icons. XYZ sync went in
+#: Stage 7 of #322, since it wrote a position.
 AUTHORING_GROUPS: tuple[tuple[BarAction, ...], ...] = (
-    (_action(AuthoringAction.XYZ_SYNC, "teleport"), _action(AuthoringAction.TP_TO_FOCUSED, "friend_teleport")),
+    (_action(AuthoringAction.TP_TO_FOCUSED, "friend_teleport"),),
     (
         _action(AuthoringAction.TOGGLE_SPEED, "speed"),
         _action(AuthoringAction.TOGGLE_COMBAT, "fist"),
@@ -62,7 +62,6 @@ def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False
     The name leads because the button has none of its own; a toggle says when it is on.
     """
     what = {
-        AuthoringAction.XYZ_SYNC: "Move every other player in the same zone onto the focused player's spot",
         AuthoringAction.TP_TO_FOCUSED: "Teleport every other player to the focused player through the friends list",
         AuthoringAction.TOGGLE_SPEED: "Make every player walk faster, until switched off or a bot starts",
         AuthoringAction.TOGGLE_COMBAT: "Fight any battle a player enters, with the open bot's default Duel Strategy",
@@ -84,7 +83,7 @@ def authoring_enabled(action: AuthoringAction, *, clients: int, run_active: bool
     """
     if run_active:
         return False
-    if action in (AuthoringAction.XYZ_SYNC, AuthoringAction.TP_TO_FOCUSED):
+    if action is AuthoringAction.TP_TO_FOCUSED:
         return clients >= 2 and not busy
     return clients >= 1
 
@@ -93,7 +92,7 @@ def authoring_disabled_reason(action: AuthoringAction, *, run_active: bool, busy
     """Why *action*'s button is disabled, for its tooltip. Only asked of a disabled button."""
     if run_active:
         return "a bot is running"
-    if action in (AuthoringAction.XYZ_SYNC, AuthoringAction.TP_TO_FOCUSED):
+    if action is AuthoringAction.TP_TO_FOCUSED:
         return "another move is in progress" if busy else "needs at least two connected clients"
     return "needs a connected client"
 

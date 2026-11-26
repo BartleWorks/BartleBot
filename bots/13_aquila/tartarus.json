@@ -855,7 +855,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 6160.0,
@@ -1202,7 +1202,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Charon's Boat",
       "position": {
         "x": 12320.0,
@@ -1219,7 +1219,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Garden of Statues",
       "position": {
         "x": 12760.0,
@@ -1351,7 +1351,7 @@
     },
     {
       "id": "state_34",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 17600.0,
@@ -1392,7 +1392,7 @@
     },
     {
       "id": "state_41",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 21560.0,
@@ -1409,7 +1409,7 @@
     },
     {
       "id": "state_42",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 22000.0,
@@ -1426,7 +1426,7 @@
     },
     {
       "id": "state_43",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 22440.0,
@@ -1495,7 +1495,7 @@
     },
     {
       "id": "state_47",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 24200.0,

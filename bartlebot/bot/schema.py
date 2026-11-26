@@ -18,6 +18,38 @@ from bartlebot.content.subgraphs.subgraph_tags import normalize_subgraph_tags
 #: landing on recovery would be nonsense, not a convenience.
 FALLTHROUGH_RETURNS = ("FAILURE", "FALSE")
 
+#: Node types this BartleBot no longer has, and what an author uses instead. A file naming one
+#: refuses to load, and a share file holding one is refused on import, each with this text: the
+#: node is gone, and nothing rewrites a user's file for them. Teleport to Coordinates went in
+#: Stage 7 of #322, when every move began to walk.
+REMOVED_NODES = {
+    "teleport_to_coordinates": (
+        "Teleport to Coordinates, which this BartleBot no longer has. Walk to XYZ walks players to a "
+        "spot, and Teleport to XYZ moves them a few steps past a closed gate."
+    ),
+}
+
+
+class RemovedNode(ValueError):
+    """A file names a node type in :data:`REMOVED_NODES`."""
+
+
+def removed_node_text(data) -> str | None:
+    """What a bot, template or subgraph file *data* uses that is gone, in words, or None.
+
+    Read from the raw file, so the refusal says this rather than a validation error's wording."""
+    states = data.get("states") if isinstance(data, dict) else None
+    for state in states if isinstance(states, list) else []:
+        node_type = state.get("node_type") if isinstance(state, dict) else None
+        if node_type in REMOVED_NODES:
+            return f"It uses {REMOVED_NODES[node_type]}"
+    return None
+
+
+def _refuse_removed(data) -> None:
+    if (text := removed_node_text(data)) is not None:
+        raise RemovedNode(text)
+
 
 class XYZModel(BaseModel):
     x: float
@@ -205,6 +237,16 @@ class TransitionModel(BaseModel):
 class StateModel(BaseModel):
     id: str
     node_type: str
+
+    @field_validator("node_type")
+    @classmethod
+    def _not_removed(cls, value: str) -> str:
+        # Every way into a config goes through here, not only a file's load: an autosave, a
+        # template draft, an undo snapshot.
+        if value in REMOVED_NODES:
+            raise ValueError(f"It uses {REMOVED_NODES[value]}")
+        return value
+
     label: str | None = None
     position: dict | None = None  # {"x": float, "y": float}, the node's top-left — GUI canvas layout only
     params: dict = Field(default_factory=dict)
@@ -701,6 +743,7 @@ class BotConfig(BaseModel):
     def load(cls, path: str | Path) -> "BotConfig":
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
+        _refuse_removed(data)
         return cls.model_validate(data)
 
     def file_dump(self) -> dict:
@@ -967,7 +1010,9 @@ class SubgraphDefinition(BaseModel):
     @classmethod
     def load(cls, path: str | Path) -> "SubgraphDefinition":
         with open(path, encoding="utf-8") as f:
-            return cls.model_validate(json.load(f))
+            data = json.load(f)
+        _refuse_removed(data)
+        return cls.model_validate(data)
 
     def file_dump(self) -> dict:
         """The JSON body of this definition, as :meth:`save` writes it."""

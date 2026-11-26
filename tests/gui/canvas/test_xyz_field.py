@@ -6,6 +6,8 @@ required one could never look unfilled. Blank is now absent, a half-filled field
 invalid rather than saved, and a field nobody touched writes back what it loaded.
 """
 
+from types import SimpleNamespace
+
 import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QValidator
@@ -285,17 +287,17 @@ def _copy_action(field):
     return next(a for a in field.box_menu(field.axis_edit("x")).actions() if a.text() == "Copy XYZ")
 
 
-def test_copy_and_teleport_need_a_complete_coordinate(qapp):
+def test_copy_and_go_to_need_a_complete_coordinate(qapp):
     field = _form([_OPTIONAL], {}).widget("spot")
     assert not _copy_action(field).isEnabled()
-    assert not field.teleport_button.isEnabled()
+    assert not field.go_to_button.isEnabled()
 
     _type(field, "1", "2", "")
     assert not _copy_action(field).isEnabled()
 
     field.axis_edit("z").setText("3")
     assert _copy_action(field).isEnabled()
-    assert field.teleport_button.isEnabled()
+    assert field.go_to_button.isEnabled()
 
 
 def test_copy_and_paste_are_on_each_boxs_menu_ahead_of_its_own(qapp):
@@ -308,12 +310,34 @@ def test_copy_and_paste_are_on_each_boxs_menu_ahead_of_its_own(qapp):
     assert len(texts) > 3, "the box's own Undo / Cut / Copy / Paste follow the separator"
 
 
-def test_fill_current_and_teleport_sit_on_the_boxes_line(qapp):
+def test_fill_current_and_go_to_sit_on_the_boxes_line(qapp):
     field = _form([_OPTIONAL], {}).widget("spot")
     line = field.layout()
 
-    assert all(line.indexOf(w) >= 0 for w in (field.axis_edit("x"), field.fill_button, field.teleport_button))
-    assert field.teleport_button.text() == "", "the glyph alone; the verb is in the tooltip"
+    assert all(line.indexOf(w) >= 0 for w in (field.axis_edit("x"), field.fill_button, field.go_to_button))
+    assert field.go_to_button.text() == "", "the glyph alone; the verb is in the tooltip"
+
+
+async def test_go_to_walks_every_player_there_through_the_authoring_tools(qapp, monkeypatch):
+    """It walks, since nothing but walking.hop writes a position (Stage 7 of #322)."""
+    from unittest.mock import AsyncMock  # noqa: PLC0415
+
+    from bartlebot.clients import authoring_tools  # noqa: PLC0415
+
+    clients = [object(), object()]
+    tools = SimpleNamespace(walk_to=AsyncMock(return_value=True))
+    monkeypatch.setattr(authoring_tools, "_current", tools)
+    from bartlebot.gui.canvas.param_form import DynamicParamForm  # noqa: PLC0415
+
+    form = DynamicParamForm()
+    form.set_clients_getter(lambda: clients)
+    form.load_schema([_OPTIONAL], {"spot": {"x": 1.0, "y": 2.0, "z": 3.0}})
+    field = form.widget("spot")
+
+    await field._go_to()
+
+    tools.walk_to.assert_awaited_once_with(clients, (1.0, 2.0, 3.0))
+    assert "Walk" in field.go_to_button.toolTip()
 
 
 # ---------------------------------------------------------------------------

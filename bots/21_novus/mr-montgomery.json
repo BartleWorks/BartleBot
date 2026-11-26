@@ -749,7 +749,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Mr. Montgomery",
       "position": {
         "x": 4400.0,

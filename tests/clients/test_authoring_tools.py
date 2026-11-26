@@ -1,4 +1,4 @@
-"""The authoring utilities (#81): speed, auto-combat, auto-dialogue, XYZ sync and TP to player."""
+"""The authoring utilities (#81): speed, auto-combat, auto-dialogue, TP to player and a walk by hand."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bartleby.runtime.actions import helpers
-from wizwalker import XYZ
 
 from bartlebot.clients import authoring_tools
 from bartlebot.clients.authoring_tools import (
@@ -62,8 +61,8 @@ def test_every_action_has_a_default_hotkey_and_the_ids_agree():
 
 
 def test_the_default_hotkeys_are_the_f_keys_in_order():
+    """F1 went with XYZ sync (Stage 7 of #322); the rest kept their keys."""
     assert DEFAULT_AUTHORING_HOTKEYS == {
-        "xyz_sync": "F1",
         "tp_to_focused": "F2",
         "toggle_speed": "F3",
         "toggle_combat": "F4",
@@ -186,9 +185,9 @@ async def test_a_run_switches_the_toggles_off_and_refuses_them_until_it_ends(mon
     await tools.perform(AuthoringAction.TOGGLE_DIALOGUE, None)
     assert not tools.dialogue_on
     await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
-    await tools.perform(AuthoringAction.XYZ_SYNC, None)
+    assert await tools.walk_to([client], (1.0, 2.0, 3.0)) is False
     assert not tools.speed_on
-    client.teleport.assert_not_awaited()
+    client.walk_to.assert_not_awaited()
 
     tools.resume_after_run()
     await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
@@ -320,57 +319,103 @@ async def test_switching_auto_combat_off_stops_a_fight_in_progress(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# XYZ sync
+# A walk by hand: the go-to buttons (Stage 7 of #322)
 # ---------------------------------------------------------------------------
 
 
-def _placed(client: FakeClient, zone: str, xyz: XYZ, yaw: float = 0.0) -> FakeClient:
-    client.zone_name = AsyncMock(return_value=zone)
-    client.body.position = AsyncMock(return_value=xyz)
-    client.body.yaw = AsyncMock(return_value=yaw)
-    return client
+def test_xyz_sync_is_gone():
+    """It wrote a position, and nothing but walking.hop does."""
+    assert "xyz_sync" not in {a.value for a in AuthoringAction}
+    assert not hasattr(AuthoringTools, "xyz_sync")
 
 
-async def test_xyz_sync_moves_the_others_in_the_zone_onto_the_focused_player():
-    here = XYZ(1.0, 2.0, 3.0)
-    p1 = _placed(FakeClient(), "Zone/A", XYZ(0.0, 0.0, 0.0))
-    p2 = _placed(FakeClient(), "Zone/A", here, yaw=1.5)
-    p3 = _placed(FakeClient(), "Zone/B", XYZ(9.0, 9.0, 9.0))
-    tools = _tools([p1, p2, p3])
-
-    await tools.perform(AuthoringAction.XYZ_SYNC, p2.window_handle)
-
-    p1.teleport.assert_awaited_once()
-    assert p1.teleport.await_args.args == (here, 1.5)
-    p2.teleport.assert_not_awaited()
-    p3.teleport.assert_not_awaited()  # a position in another zone means nothing
+def test_the_go_to_buttons_find_the_tools_the_app_made():
+    tools = _tools([])
+    assert authoring_tools.current() is tools
 
 
-async def test_xyz_sync_with_one_player_moves_nobody():
-    p1 = _placed(FakeClient(), "Zone/A", XYZ(0.0, 0.0, 0.0))
-    await _tools([p1]).xyz_sync(None)
-    p1.teleport.assert_not_awaited()
+async def test_a_walk_by_hand_walks_every_player_and_writes_no_position():
+    clients = [FakeClient(), FakeClient()]
+
+    assert await _tools(clients).walk_to(clients, (10.0, 20.0, 30.0)) is True
+
+    for c in clients:
+        assert tuple(c.walk_to.await_args.args[0]) == (10.0, 20.0, 30.0)
+        c.teleport.assert_not_awaited()
 
 
-async def test_a_second_action_while_one_is_in_flight_is_ignored():
-    p1 = _placed(FakeClient(), "Zone/A", XYZ(0.0, 0.0, 0.0))
-    p2 = _placed(FakeClient(), "Zone/A", XYZ(1.0, 0.0, 0.0))
+async def test_a_walk_by_hand_that_does_not_arrive_says_so():
+    from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
+
+    client = FakeClient()
+    client.walk_to.return_value = WalkEnd.NO_ROUTE
+
+    assert await _tools([client]).walk_to([client], (1.0, 2.0, 3.0)) is False
+
+
+async def test_a_walk_by_hand_takes_the_open_bots_avoid_mobs(monkeypatch):
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    seen = []
+
+    async def walk(machine, client, number, goal, avoid, *args, **kwargs):
+        seen.append(avoid)
+        return walking.Walked(walking._not_walked(walking.WalkEnd.ARRIVED, "Z", (0, 0, 0), goal, ""))
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    monkeypatch.setattr(authoring_tools.walking, "walk_one", walk)
+    config = MagicMock()
+    monkeypatch.setattr("bartlebot.options.option_values.option_value", lambda cfg, name, default=None: False)
+    client = FakeClient()
+
+    await _tools([client], config=config).walk_to([client], (1.0, 2.0, 3.0))
+
+    assert seen == [False]
+
+
+async def test_a_walk_by_hand_with_no_bot_option_takes_the_app_setting(monkeypatch):
+    """A bot without the option, or none open, falls to the user's own Avoid Mobs."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+    from bartlebot.options import option_values  # noqa: PLC0415
+
+    seen = []
+
+    async def walk(machine, client, number, goal, avoid, *args, **kwargs):
+        seen.append(avoid)
+        return walking.Walked(walking._not_walked(walking.WalkEnd.ARRIVED, "Z", (0, 0, 0), goal, ""))
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    monkeypatch.setattr(option_values, "option_value", lambda cfg, name, default=None: default)
+    monkeypatch.setattr(option_values, "app_value", lambda name: False)
+    client = FakeClient()
+
+    await _tools([client], config=MagicMock()).walk_to([client], (1.0, 2.0, 3.0))
+    await _tools([client]).walk_to([client], (1.0, 2.0, 3.0))
+
+    assert seen == [False, False]
+
+
+async def test_a_second_action_while_one_is_in_flight_is_ignored(monkeypatch):
+    clients = [FakeClient(), FakeClient()]
+    monkeypatch.setattr(authoring_tools.wizard_names, "cached_name", lambda c: "Someone")
     release = asyncio.Event()
 
-    async def slow_teleport(*_args, **_kwargs):
+    async def slow_gather(*_args, **_kwargs):
         await release.wait()
+        return True
 
-    p2.teleport = AsyncMock(side_effect=slow_teleport)
-    tools = _tools([p1, p2])
+    gather = AsyncMock(side_effect=slow_gather)
+    monkeypatch.setattr(authoring_tools.node_helpers, "gather_at_player", gather)
+    tools = _tools(clients)
 
-    first = asyncio.ensure_future(tools.xyz_sync(p1.window_handle))
-    await _until(lambda: p2.teleport.await_count == 1)
+    first = asyncio.ensure_future(tools.tp_to_player(clients[0].window_handle))
+    await _until(lambda: gather.await_count == 1)
     assert tools.busy
-    await tools.xyz_sync(p1.window_handle)
+    await tools.tp_to_player(clients[0].window_handle)
     release.set()
     await first
 
-    assert p2.teleport.await_count == 1
+    assert gather.await_count == 1
     assert not tools.busy
 
 

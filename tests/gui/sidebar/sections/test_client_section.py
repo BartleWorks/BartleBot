@@ -425,26 +425,29 @@ def test_a_run_locks_the_drag_grip(qapp, section):
     assert host
 
 
-def test_a_run_locks_both_freecam_buttons(qapp, section):
-    """Detaching the camera or teleporting moves a client the FSM is driving."""
+def test_a_run_locks_the_freecam_toggle(qapp, section):
+    """Detaching the camera takes it off a client the FSM is driving."""
     host, clients = section(active=1)
     card = clients.cards[0]
-    toggle, tp = card.freecam_buttons
+    toggle = card.freecam_button
 
     clients.set_bot_running(True)
     assert not toggle.isEnabled()
-    assert not tp.isEnabled()
-
     card._set_freecam(True)
-    assert not tp.isEnabled(), "entering freecam must not re-enable TP during a run"
+    assert not toggle.isEnabled(), "entering freecam must not re-enable it during a run"
 
     clients.set_bot_running(False)
     assert toggle.isEnabled()
-    assert tp.isEnabled(), "TP comes back with the camera still detached"
+    assert host
 
-    card._set_freecam(False)
-    assert toggle.isEnabled()
-    assert not tp.isEnabled()
+
+def test_the_card_has_no_teleport_to_the_camera(qapp, section):
+    """TP to Camera wrote a position, and nothing but walking.hop does (Stage 7 of #322)."""
+    host, clients = section(active=1)
+    card = clients.cards[0]
+
+    assert [b.text() for b in card.findChildren(type(card.freecam_button)) if "Camera" in b.text()] == []
+    assert not hasattr(card, "_tp_to_freecam")
     assert host
 
 

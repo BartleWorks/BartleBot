@@ -841,7 +841,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Spawn Bellows",
       "position": {
         "x": 2200,

@@ -2,7 +2,7 @@
 
 Opens a resizable dialog showing all entities near a client, sorted by
 distance.  Users can refresh the list on demand, copy an entity name
-or XYZ position to the clipboard, and teleport the client to a selected
+or XYZ position to the clipboard, and walk the client to a selected
 entity to look at it.  No continuous polling — the list is fetched once
 on open and again whenever the Refresh button is pressed.
 
@@ -32,15 +32,15 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.clients import authoring_tools
 from bartlebot.game import entity_names
 from bartlebot.gui.context_help import set_help_topic
-from bartlebot.nodes import walking
 
 logger = logging.getLogger(__name__)
 
 _DIST_ROLE = Qt.ItemDataRole.UserRole  # float — raw distance for numeric sort
 _XYZ_ROLE = Qt.ItemDataRole.UserRole + 1  # str  — JSON xyz for clipboard
-_POS_ROLE = Qt.ItemDataRole.UserRole + 2  # tuple — raw (x, y, z) for teleporting
+_POS_ROLE = Qt.ItemDataRole.UserRole + 2  # tuple — raw (x, y, z) to walk to
 
 _NAME_COL, _DISPLAY_COL, _DIST_COL, _LOC_COL = range(4)
 
@@ -62,7 +62,7 @@ class EntityBrowserDialog(QDialog):
         super().__init__(parent)
         self._client = client
         self._load_task: asyncio.Task | None = None
-        self._teleport_task: asyncio.Task | None = None
+        self._walk_task: asyncio.Task | None = None
         self._closed = False
         self._build_ui()
         self._start_load()
@@ -89,8 +89,8 @@ class EntityBrowserDialog(QDialog):
         self._closed = True
         if self._load_task:
             self._load_task.cancel()
-        if self._teleport_task:
-            self._teleport_task.cancel()
+        if self._walk_task:
+            self._walk_task.cancel()
         super().closeEvent(event)
 
     # ------------------------------------------------------------------
@@ -120,7 +120,7 @@ class EntityBrowserDialog(QDialog):
 
         root_layout.addLayout(top_row)
 
-        # Button row: copy buttons (right-aligned) + status label. All TERTIARY, Teleport
+        # Button row: copy buttons (right-aligned) + status label. All TERTIARY, Walk to
         # included: these are four equal reads on one selection, and the most *interesting*
         # verb in a row is not the same thing as the one the surface expects. Nothing in an
         # equal-weight row outranks its neighbors — see gui/CLAUDE.md.
@@ -141,11 +141,11 @@ class EntityBrowserDialog(QDialog):
         self._copy_xyz_btn.clicked.connect(self._copy_selected_xyz)
         btn_row.addWidget(self._copy_xyz_btn)
 
-        self._teleport_btn = ActionButton("arrow_right", "Teleport", fill=False)
-        self._teleport_btn.setToolTip("Teleport this player to the selected entity")
-        self._teleport_btn.setEnabled(False)
-        self._teleport_btn.clicked.connect(self._on_teleport)
-        btn_row.addWidget(self._teleport_btn)
+        self._walk_btn = ActionButton("arrow_right", "Walk to", fill=False)
+        self._walk_btn.setToolTip("Walk this player to the selected entity")
+        self._walk_btn.setEnabled(False)
+        self._walk_btn.clicked.connect(self._on_walk)
+        btn_row.addWidget(self._walk_btn)
 
         root_layout.addLayout(btn_row)
 
@@ -177,7 +177,7 @@ class EntityBrowserDialog(QDialog):
         self._tree.clear()
         self._copy_name_btn.setEnabled(False)
         self._copy_xyz_btn.setEnabled(False)
-        self._teleport_btn.setEnabled(False)
+        self._walk_btn.setEnabled(False)
         try:
             player_pos = await self._client.body.position()
             entities = await self._client.get_base_entity_list()
@@ -231,7 +231,7 @@ class EntityBrowserDialog(QDialog):
         has_selection = bool(self._tree.selectedItems())
         self._copy_name_btn.setEnabled(has_selection)
         self._copy_xyz_btn.setEnabled(has_selection)
-        self._teleport_btn.setEnabled(has_selection)
+        self._walk_btn.setEnabled(has_selection)
 
     def _on_search_changed(self, text: str) -> None:
         # Either name matches: a user looking for a boss knows what the game calls it, not
@@ -253,12 +253,12 @@ class EntityBrowserDialog(QDialog):
         if items:
             pyperclip.copy(items[0].data(_NAME_COL, _XYZ_ROLE) or "")
 
-    def _on_teleport(self) -> None:
-        """Start a teleport to the selected entity, replacing one still in flight.
+    def _on_walk(self) -> None:
+        """Start a walk to the selected entity, replacing one still in flight.
 
         The task reference is kept for the same reason the load's is: this writes to
         the dialog's widgets after its await, and those writes hit a deleted C++
-        object if the teleport outlives the dialog.
+        object if the walk outlives the dialog.
         """
         items = self._tree.selectedItems()
         if not items:
@@ -270,21 +270,27 @@ class EntityBrowserDialog(QDialog):
             asyncio.get_running_loop()
         except RuntimeError:
             return  # no loop: unit tests drive this dialog directly
-        if self._teleport_task and not self._teleport_task.done():
-            self._teleport_task.cancel()
-        self._teleport_task = asyncio.ensure_future(self._teleport_to(pos))
+        if self._walk_task and not self._walk_task.done():
+            self._walk_task.cancel()
+        self._walk_task = asyncio.ensure_future(self._walk_to(pos))
 
-    async def _teleport_to(self, pos: tuple[float, float, float]) -> None:
-        from wizwalker import XYZ
-
-        self._teleport_btn.setEnabled(False)
+    async def _walk_to(self, pos: tuple[float, float, float]) -> None:
+        """Walk this player to the entity, to its edge when it stands inside the object (the
+        walk's ``approach``), through the authoring tools. It walks, since nothing but
+        ``walking.hop`` writes a position (Stage 7 of #322)."""
+        tools = authoring_tools.current()
+        if tools is None:
+            return
+        self._walk_btn.setEnabled(False)
         try:
-            await walking.teleport(self._client, XYZ(*pos), wait_on_inuse=True, purge_on_after_unuser_fixer=True)
+            arrived = await tools.walk_to([self._client], pos, approach=True)
+            if not arrived and not self._closed:
+                self._status.setText("Couldn't walk there — see logs")
         except Exception:
             if self._closed:
                 return
-            logger.exception("Failed to teleport to entity")
-            self._status.setText("Teleport failed — see logs")
+            logger.exception("Failed to walk to entity")
+            self._status.setText("Couldn't walk there — see logs")
         finally:
             if not self._closed:
-                self._teleport_btn.setEnabled(bool(self._tree.selectedItems()))
+                self._walk_btn.setEnabled(bool(self._tree.selectedItems()))

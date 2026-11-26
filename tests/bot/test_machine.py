@@ -214,31 +214,6 @@ async def test_a_cancellation_escaping_a_node_is_its_failure(caplog):
     assert "cancellation nothing asked for" in caplog.text
 
 
-async def test_a_refused_teleport_fails_its_node_naming_the_move(caplog, no_teleports):
-    """Teleports are off until Stage 7 of #322: the node fails, and the log says why, with no traceback."""
-    from bartlebot.nodes import walking  # noqa: PLC0415
-
-    calls = []
-
-    async def node(machine, clients, params):
-        if not calls:
-            calls.append(1)
-            await walking.teleport(object(), (1.0, 2.0, 3.0))
-        machine.stop()
-        return "SUCCESS"
-
-    transitions = []
-    machine = make_machine(
-        node, on_transition=lambda prev, result, nxt, _taken: transitions.append((prev, result, nxt))
-    )
-    with caplog.at_level(logging.WARNING):
-        await asyncio.wait_for(machine.run(), timeout=1.0)
-
-    assert transitions[0] == ("state_a", "FAILURE", "state_a")
-    assert "FAILURE: a teleport to (1, 2, 3) was refused" in caplog.text
-    assert "Traceback" not in caplog.text and "Node execution failed" not in caplog.text
-
-
 async def test_cancelling_the_run_after_a_stop_still_cancels_it():
     """A stop alone ends the loop; a cancel of run() itself must reach its caller, stop or no stop."""
     started = asyncio.Event()

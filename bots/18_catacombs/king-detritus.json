@@ -530,7 +530,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger first dialogue",
       "position": {
         "x": 2640,
@@ -557,7 +557,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger second dialogue",
       "position": {
         "x": 3520,
@@ -667,7 +667,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger boss dialogue",
       "position": {
         "x": 6600,

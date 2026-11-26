@@ -372,6 +372,10 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
     assert len(_log_lines(machine, "Client 0: target not found")) == 1
 
 
+# A known flake (no issue yet: filing one was refused in Stage 7.1 of #322's session): looked for
+# the target only twice in the 0.2 s timeout once under -n auto, and passes alone. See core's
+# tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once():
     # Kept looking is asserted as the time it took, a floor that load can only raise: a count of
     # finds within the timeout came up short when a loaded worker overran it (#199).

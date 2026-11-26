@@ -81,7 +81,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=3,
     usage_notes=(
         (
-            "Follow this node with Teleport to Coordinates when the exact spot matters. Players "
+            "Follow this node with Walk to XYZ when the exact spot matters. Players "
             "arrive wherever the last zone change puts them."
         )
         + "\n\n"

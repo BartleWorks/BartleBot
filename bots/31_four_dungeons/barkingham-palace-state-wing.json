@@ -461,7 +461,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 2640,

@@ -58,6 +58,9 @@ KEEPS_PLACE = frozenset(
 
 #: The params that name the zone a node's points are in, and the zone it leaves for.
 IN_ZONE = ("zone", "from_zone")
+
+#: Nodes whose own two points are a hop, not a walk: walked to the first, then moved to the second.
+HOPS = frozenset({"teleport_to_xyz"})
 OUT_ZONE = ("to_zone", "dungeon_zone")
 
 Point = tuple[float, float, float]
@@ -139,6 +142,8 @@ def pairs_of(config) -> set[Pair]:
         if not points or not zone:
             continue
         for (k1, p1), (k2, p2) in zip(points, points[1:]):
+            if state.node_type in HOPS:
+                continue  # its start to its end is the hop past the gate, never walked
             pairs.add(Pair(zone, p1, p2, f"{name[sid]}: {k1} › {k2}", state.node_type))
         for from_zone, point, before in into[sid]:
             if from_zone == zone and point != points[0][1]:

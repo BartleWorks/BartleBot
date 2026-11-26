@@ -90,6 +90,7 @@ from bartlebot.gui.canvas.node_item import (
 )
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
+from bartlebot.nodes import walking
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS, node_display_name
 from bartlebot.options import player_realms
 
@@ -405,6 +406,9 @@ def _validate_node(
             f"This node needs every player on one realm, and this bot's {player_realms.OPTION} is "
             f"{player_realms.SEPARATE}"
         )
+
+    if (too_far := walking.span_error(state)) is not None:
+        error_reasons.append(too_far)
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]

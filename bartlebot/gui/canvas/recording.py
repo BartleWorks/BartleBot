@@ -11,6 +11,7 @@ keys and prompt text:
     ``enter_zone_via_object``).
   * ``_KeyDoor`` — unlock a door and walk through it (``open_skeleton_key_door``).
   * ``_Point`` — the zone and the player's position, at once.
+  * ``_Hop`` — the spot before a gate, then the spot past it (``teleport_to_xyz``).
   * ``_Enemy`` — the mob closest to the player, by name (``handle_combat``).
 
 Adding a new recordable node type is one ``_REGISTRY`` entry: a workflow and the
@@ -558,6 +559,53 @@ class _Point(_Workflow):
         return f"Done — {zone.split('/')[-1]}"
 
 
+#: Seconds a player stands still, once past the gate, for the spot to count as the end.
+HOP_END_STILL = 1.0
+#: Units a player may drift and still be standing still.
+HOP_END_DRIFT = 5.0
+
+
+@dataclass(frozen=True, kw_only=True)
+class _Hop(_Workflow):
+    """The spot before a gate, then the spot past it.
+
+    The zone and where the player stands become Start XYZ at once. The player then walks
+    past the gate, which an author can do while it is open, and stops: once they stand more
+    than a walk's arrival margin from the start and keep still for :data:`HOP_END_STILL`,
+    where they stand is End XYZ. A span past ``walking.HOP_SPAN`` is said in the closing
+    status, as the editor marks the node with it.
+    """
+
+    def keys(self) -> list[str]:
+        return ["zone", "start_xyz", "end_xyz"]
+
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
+        from bartlebot.nodes import walking  # noqa: PLC0415 - keeps this module's imports light
+
+        zone = await _zone_to_record(client)
+        start = await client.body.position()
+        param_form.set_str("zone", zone)
+        _set_position(param_form, "start_xyz", start)
+        on_status("Walk past the gate, then stand still…")
+        loop = asyncio.get_running_loop()
+        still_since, last = None, start
+        while True:
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
+            here = await client.body.position()
+            if node_helpers.distance(here, start) <= walking.ARRIVED_WITHIN:
+                still_since, last = None, here
+                continue
+            _set_position(param_form, "end_xyz", here)
+            if node_helpers.distance(here, last) > HOP_END_DRIFT or still_since is None:
+                still_since, last = loop.time(), here
+            elif loop.time() - still_since >= HOP_END_STILL:
+                break
+        span = node_helpers.distance(start, here)
+        if span > walking.HOP_SPAN:
+            return f"Done — {span:.0f} apart, past the {walking.HOP_SPAN:.0f} a hop may span"
+        return f"Done — {span:.0f} apart"
+
+
 @dataclass(frozen=True, kw_only=True)
 class _Enemy(_Workflow):
     """The mob closest to the player — the one their card shows — captured at once.
@@ -617,7 +665,8 @@ _REGISTRY: dict[str, _Workflow] = {
         zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone", names_target=True
     ),
     "open_skeleton_key_door": _KeyDoor(),
-    "teleport_to_coordinates": _Point(shows_stop=False),
+    "walk_to_xyz": _Point(shows_stop=False),
+    "teleport_to_xyz": _Hop(),
     "mark_location": _Point(shows_stop=False),
     "teleport_to_marked_location": _Point(sets_label=True),
     "handle_combat": _Enemy(),

@@ -21,7 +21,7 @@ class _StubClient:
     def __init__(self) -> None:
         self.body = self
         self.started = asyncio.Event()
-        self.teleport_started = asyncio.Event()
+        self.walk_started = asyncio.Event()
 
     async def position(self):
         self.started.set()
@@ -30,9 +30,30 @@ class _StubClient:
     async def get_base_entity_list(self):  # pragma: no cover - never reached
         return []
 
-    async def teleport(self, *args, **kwargs):
-        self.teleport_started.set()
+
+class _StubTools:
+    """The authoring tools, whose walk never ends, so it is still in flight when we close."""
+
+    def __init__(self, client: _StubClient) -> None:
+        self._client = client
+        self.walks: list[tuple] = []
+
+    async def walk_to(self, clients, goal, *, approach=False):
+        self.walks.append((clients, goal, approach))
+        self._client.walk_started.set()
         await asyncio.sleep(9999)
+
+
+@pytest.fixture
+def tools(monkeypatch):
+    from bartlebot.clients import authoring_tools  # noqa: PLC0415
+
+    def install(client):
+        stub = _StubTools(client)
+        monkeypatch.setattr(authoring_tools, "_current", stub)
+        return stub
+
+    return install
 
 
 def _select_an_entity(dlg, pos=(1.0, 2.0, 3.0)):
@@ -84,39 +105,56 @@ async def test_refreshing_replaces_the_previous_load(qapp):
     dlg.close()
 
 
-async def test_teleporting_with_no_selection_starts_nothing(qapp):
+async def test_walking_with_no_selection_starts_nothing(qapp):
     dlg = EntityBrowserDialog(_StubClient())
 
-    dlg._on_teleport()
+    dlg._on_walk()
 
-    assert dlg._teleport_task is None
+    assert dlg._walk_task is None
     dlg.close()
 
 
-async def test_closing_cancels_an_in_flight_teleport(qapp):
+async def test_the_walk_goes_to_the_entity_s_edge_and_writes_no_position(qapp, tools):
+    """It walks, since nothing but walking.hop writes a position (Stage 7 of #322)."""
     client = _StubClient()
+    stub = tools(client)
     dlg = EntityBrowserDialog(client)
     _select_an_entity(dlg)
 
-    dlg._on_teleport()
-    # A ceiling, not a cadence: the event is set on the teleport's first await.
-    await asyncio.wait_for(client.teleport_started.wait(), timeout=10)
+    dlg._on_walk()
+    await asyncio.wait_for(client.walk_started.wait(), timeout=10)
+
+    assert stub.walks == [([client], (1.0, 2.0, 3.0), True)]
+    assert dlg._walk_btn.text() == "Walk to"
+    dlg.close()
+
+
+async def test_closing_cancels_an_in_flight_walk(qapp, tools):
+    client = _StubClient()
+    tools(client)
+    dlg = EntityBrowserDialog(client)
+    _select_an_entity(dlg)
+
+    dlg._on_walk()
+    # A ceiling, not a cadence: the event is set on the walk's first await.
+    await asyncio.wait_for(client.walk_started.wait(), timeout=10)
 
     dlg.close()
 
     with pytest.raises(asyncio.CancelledError):
-        await dlg._teleport_task
+        await dlg._walk_task
 
 
-async def test_a_second_teleport_replaces_the_first(qapp):
+async def test_a_second_walk_replaces_the_first(qapp, tools):
     client = _StubClient()
+    tools(client)
     dlg = EntityBrowserDialog(client)
     _select_an_entity(dlg)
 
-    dlg._on_teleport()
-    first = dlg._teleport_task
-    dlg._on_teleport()
+    dlg._on_walk()
+    first = dlg._walk_task
+    dlg._on_walk()
 
-    assert dlg._teleport_task is not first
+    assert dlg._walk_task is not first
     assert first.cancelled() or first.cancelling()
     dlg.close()

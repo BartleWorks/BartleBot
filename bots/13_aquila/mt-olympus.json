@@ -617,7 +617,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 6600,
@@ -774,7 +774,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 10120,
@@ -808,7 +808,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Sky Balcony",
       "position": {
         "x": 11000,
@@ -902,7 +902,7 @@
     },
     {
       "id": "state_27",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 13200,
@@ -958,7 +958,7 @@
     },
     {
       "id": "state_30",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Activate puzzle",
       "position": {
         "x": 14520,
@@ -1105,7 +1105,7 @@
     },
     {
       "id": "state_36",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 17600,
@@ -1162,7 +1162,7 @@
     },
     {
       "id": "state_61",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Elite Cyclops Guard",
       "position": {
         "x": 18920,
@@ -1578,7 +1578,7 @@
     },
     {
       "id": "state_62",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Ares Savage Spear",
       "position": {
         "x": 26840,

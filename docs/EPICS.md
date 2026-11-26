@@ -452,10 +452,10 @@ into a fight and the floor outside an exit, pinned by Stage 5, and 0.14.1 the ma
 Knowledge, pinned by Stage 6. **No BartleBot
 release is cut until Stages 7 and 8 land** (the user's call, 2026-11-25): Stage 4's walks can fail
 in the bots `tools/check_bot_routes.py` lists, where a gate or a placed floor is in the way.
-**Nothing teleports until Stage 7 confirms the short radius** (the user's call, the same day):
-every position write left goes through `walking.teleport`, which refuses while
-`walking.TELEPORTS_ENABLED` is off, so a node that still teleports fails, named, until its stage
-walks it.
+**Since Stage 7.1, `walking.hop` is the one position write**, an author's Teleport to XYZ past a
+closed gate, never farther than `HOP_MAX` (350, the user's call of 2026-11-26) from where the
+wizard stands; Teleport to Coordinates is gone, and a file naming it refuses to load. **No hop
+runs in game before #327** (the user's call, the same day).
 
 | stage | issue | what | status |
 |---|---|---|---|
@@ -466,7 +466,7 @@ walks it.
 | 4 | #323 | the run's helpers walk | landed |
 | 5 | #324 | fights and pickups by walking | landed |
 | 6 | #325 | the other movers walk | landed |
-| 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
+| 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` (7.1), and hops where a gate is found closed (7.2) | 7.1 landed |
 | 8 | core #17 | verified links | |
 | 9 | #327 | the bot library on live | |
 

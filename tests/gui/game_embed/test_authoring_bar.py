@@ -23,7 +23,7 @@ def test_switched_off_speed_has_no_button_and_its_group_keeps_the_other_toggles(
     """Stage 0 of #322: left out rather than grayed, since a button that can't be used is noise."""
     assert AuthoringAction.TOGGLE_SPEED.value not in AuthoringBar().action_ids
     assert [[a.id for a in group] for group in shown_groups()] == [
-        ["xyz_sync", "tp_to_focused"],
+        ["tp_to_focused"],
         ["toggle_combat", "toggle_dialogue"],
         ["toggle_speed_authoring"],
     ]
@@ -51,12 +51,12 @@ def test_a_disabled_button_says_why_and_every_button_has_a_tooltip(qapp):
     for action in AuthoringAction:
         assert bar.button(action).toolTip()
     # No clients: everything is disabled, and says what is needed.
-    assert "Unavailable" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
-    assert "two" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
+    assert "Unavailable" in bar.button(AuthoringAction.TP_TO_FOCUSED).toolTip()
+    assert "two" in bar.button(AuthoringAction.TP_TO_FOCUSED).toolTip()
     bar.show_state(speed_on=False, combat_on=False, busy=False, run_active=True, clients=2, hotkeys={})
     assert "bot is running" in bar.button(AuthoringAction.TOGGLE_SPEED).toolTip()
     bar.show_state(speed_on=False, combat_on=False, busy=False, run_active=False, clients=2, hotkeys={})
-    assert "Unavailable" not in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
+    assert "Unavailable" not in bar.button(AuthoringAction.TP_TO_FOCUSED).toolTip()
 
 
 @pytest.mark.usefixtures("speed_enabled")

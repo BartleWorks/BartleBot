@@ -1134,7 +1134,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Gearhead",
       "position": {
         "x": 3080.0,
@@ -1249,7 +1249,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Spike the Crusher",
       "position": {
         "x": 5280.0,
@@ -1281,7 +1281,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 6160.0,
@@ -1344,7 +1344,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Meowiarty",
       "position": {
         "x": 7040.0,

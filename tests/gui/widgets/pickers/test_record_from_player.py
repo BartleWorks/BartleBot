@@ -76,7 +76,7 @@ def panel(qapp, monkeypatch, players):
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="teleport_to_coordinates", params={})],
+        states=[StateModel(id="a", node_type="walk_to_xyz", params={})],
         transitions=[],
     )
     canvas = BotCanvas()

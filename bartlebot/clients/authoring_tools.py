@@ -1,10 +1,9 @@
 """Hands-on utilities for driving several clients while authoring a bot (#81).
 
 Recording a bot means walking four wizards through a dungeon by hand, and moving each one
-separately is most of the work. These are the four utilities that take it away, the same
-set a Deimos user reaches for while multiboxing:
+separately is most of the work. These are the utilities that take it away, much the set a
+Deimos user reaches for while multiboxing:
 
-* **XYZ sync** puts every other player on the source player's spot, in the same zone.
 * **TP to player** ports every other player to the source player through the friends list,
   which is the one that crosses zones and realms. It is ``teleport_to_friend``'s hooked-player
   half, run outside a bot.
@@ -22,7 +21,12 @@ set a Deimos user reaches for while multiboxing:
   the game. ``BotCanvas.speed_insert`` places the node; the toggle only says when the keys
   are live, which ``slot_keys_armed`` decides.
 
-The *source* of the first two is the game window that last had focus, falling back to
+**Going to a spot by hand** (:meth:`AuthoringTools.walk_to`, the param form's and the entity
+browser's go-to buttons) walks every player there, on the tools' own arbiter. XYZ sync and the
+client card's TP to Camera are gone: they wrote a position, and nothing but ``walking.hop``
+does (Stage 7 of #322).
+
+The *source* of TP to player is the game window that last had focus, falling back to
 Player 1. "Last", because clicking a button in BartleBot takes the focus away from the game.
 
 None of this belongs in a run. A run walks at the game's own speed -- its timeouts and a
@@ -66,7 +70,6 @@ class AuthoringAction(StrEnum):
     then the toggles that act on every player, then speed-authoring, which acts on the canvas.
     """
 
-    XYZ_SYNC = "xyz_sync"
     TP_TO_FOCUSED = "tp_to_focused"
     TOGGLE_SPEED = "toggle_speed"
     TOGGLE_COMBAT = "toggle_combat"
@@ -96,7 +99,6 @@ def shown_hotkeys(bindings: dict[str, str]) -> dict[str, str]:
 
 #: What each action is called on a button and in a settings row.
 ACTION_LABELS: dict[AuthoringAction, str] = {
-    AuthoringAction.XYZ_SYNC: "XYZ sync",
     AuthoringAction.TP_TO_FOCUSED: "Teleport to player",
     AuthoringAction.TOGGLE_SPEED: "Speed",
     AuthoringAction.TOGGLE_COMBAT: "Auto-combat",
@@ -139,6 +141,40 @@ class _ModuleLog:
         logger.log(level, "TP to player: %s", message)
 
 
+class _HandWalk:
+    """What ``walking.walk_clients`` needs from a machine, for a walk by hand outside a run: the
+    tools' arbiter, the open bot's Avoid Mobs (or the app setting's with none open), and
+    ``log``, to this module's logger."""
+
+    def __init__(self, arbiter: Arbiter, bot_config) -> None:
+        self.arbiter = arbiter
+        self._config = bot_config
+
+    def get_option(self, name: str, default=None):
+        from bartlebot.options import option_values  # noqa: PLC0415 - keeps settings out of import time
+
+        # The open bot's value first; with no bot open, or one without the option, the app setting's.
+        value = option_values.UNSET
+        if self._config is not None:
+            value = option_values.option_value(self._config, name, option_values.UNSET)
+        if value is option_values.UNSET:
+            value = option_values.app_value(name)
+        return default if value is option_values.UNSET else value
+
+    @staticmethod
+    def log(message: str, level: int = logging.INFO) -> None:
+        logger.log(level, "Go to: %s", message)
+
+
+#: The tools the app made, for a surface with no way to be handed them (the go-to buttons).
+_current: AuthoringTools | None = None
+
+
+def current() -> AuthoringTools | None:
+    """The :class:`AuthoringTools` the app made, or None before it has (and in most tests)."""
+    return _current
+
+
 class AuthoringTools:
     """The state behind the utilities: four toggles, and at most one action in flight.
 
@@ -155,13 +191,16 @@ class AuthoringTools:
         speed_multiplier: Callable[[], float],
         on_change: Callable[[], None] | None = None,
     ) -> None:
+        global _current
         self._clients = clients
         self._bot_config = bot_config
         self._on_change = on_change
         self._run_active = False
+        # The leases a walk by hand takes; Speed's boost holds the same clients on it.
+        self._arbiter = Arbiter()
 
         self._speed = SpeedBoost(
-            Arbiter(),
+            self._arbiter,
             lambda: [Member(client, i + 1) for i, client in enumerate(self._clients())],
             speed_multiplier,
             on_change=self._changed,
@@ -175,6 +214,7 @@ class AuthoringTools:
         self._action_task: asyncio.Task | None = None
 
         self._speed_authoring = False
+        _current = self
 
     # ------------------------------------------------------------------
     # State
@@ -208,7 +248,7 @@ class AuthoringTools:
 
     @property
     def busy(self) -> bool:
-        """Whether an XYZ sync or a TP is in flight."""
+        """Whether a TP to player is in flight."""
         return self._action_task is not None and not self._action_task.done()
 
     @property
@@ -234,9 +274,7 @@ class AuthoringTools:
 
     async def perform(self, action: AuthoringAction, source_hwnd: int | None) -> None:
         """Do *action*, the way its button or hotkey asks for it."""
-        if action is AuthoringAction.XYZ_SYNC:
-            await self.xyz_sync(source_hwnd)
-        elif action is AuthoringAction.TP_TO_FOCUSED:
+        if action is AuthoringAction.TP_TO_FOCUSED:
             await self.tp_to_player(source_hwnd)
         elif action is AuthoringAction.TOGGLE_SPEED:
             await self.set_speed(not self.speed_on)
@@ -358,12 +396,23 @@ class AuthoringTools:
             await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL if True in results else POLL_INTERVAL)
 
     # ------------------------------------------------------------------
-    # XYZ sync and TP
+    # Going somewhere: TP to player, and a walk by hand
     # ------------------------------------------------------------------
 
-    async def xyz_sync(self, source_hwnd: int | None) -> None:
-        """Put every other player in the source's zone on the source's spot, facing its way."""
-        await self._run_action("XYZ sync", self._xyz_sync(source_hwnd))
+    async def walk_to(self, clients: list, goal, *, approach: bool = False) -> bool:
+        """Walk every one of *clients* to *goal*, as a node's walk would, and say whether all arrived.
+
+        Refused while a bot runs, since the run's own arbiter holds its clients and two walks
+        would steer one wizard. A fight met on the way is not waited out: nothing preempts a
+        walk by hand, and Auto-combat, if it is on, takes it. *approach* is ``walk_clients``':
+        a goal inside an object the client lists is walked to its edge.
+        """
+        if self._refuse_during_run("Go to"):
+            return False
+        walked = await walking.walk_clients(
+            _HandWalk(self._arbiter, self._bot_config()), clients, goal, approach=approach, wait_for_preempt=False
+        )
+        return all(w.ok for w in walked)
 
     async def tp_to_player(self, source_hwnd: int | None) -> None:
         """Port every other player to the source player through the friends list."""
@@ -388,36 +437,6 @@ class AuthoringTools:
         finally:
             self._action_task = None
             self._changed()
-
-    async def _xyz_sync(self, source_hwnd: int | None) -> None:
-        clients = list(self._clients())
-        if len(clients) < 2:
-            logger.info("XYZ sync: there is no other player to move")
-            return
-        index = source_index(clients, source_hwnd)
-        source = clients[index]
-        if await source.is_loading():
-            logger.info("XYZ sync: P%d is on a loading screen", index + 1)
-            return
-        zone, xyz, yaw = await asyncio.gather(source.zone_name(), source.body.position(), source.body.yaw())
-
-        others = [(i, c) for i, c in enumerate(clients) if i != index]
-        zones = await asyncio.gather(*[c.zone_name() for _, c in others], return_exceptions=True)
-        movers = [(i, c) for (i, c), z in zip(others, zones) if z == zone]
-        # Across a zone a position means nothing, and a TP would drop the player in the void.
-        if skipped := [i + 1 for (i, _), z in zip(others, zones) if z != zone]:
-            logger.info("XYZ sync: player(s) %s are not in P%d's zone and stay put", skipped, index + 1)
-        if not movers:
-            return
-        results = await asyncio.gather(
-            *[walking.teleport(c, xyz, yaw, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for _, c in movers],
-            return_exceptions=True,
-        )
-        moved = [i + 1 for (i, _), r in zip(movers, results) if not isinstance(r, Exception)]
-        for (i, _), r in zip(movers, results):
-            if isinstance(r, Exception):
-                logger.warning("XYZ sync: P%d could not be moved: %s", i + 1, r)
-        logger.info("XYZ sync: moved player(s) %s to P%d", moved, index + 1)
 
     async def _tp_to_player(self, source_hwnd: int | None) -> None:
         clients = list(self._clients())

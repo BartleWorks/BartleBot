@@ -47,23 +47,40 @@ def test_a_node_walks_from_its_reset_to_its_point():
 def test_the_next_node_walks_from_where_the_last_left_off_through_a_fight():
     bot = _bot(
         [
-            _s("a", "teleport_to_coordinates", zone=Z, xyz=_xyz(100)),
+            _s("a", "walk_to_xyz", zone=Z, xyz=_xyz(100)),
             _s("f", "handle_combat"),
-            _s("b", "teleport_to_coordinates", zone=Z, xyz=_xyz(900)),
+            _s("b", "walk_to_xyz", zone=Z, xyz=_xyz(900)),
         ],
         [("a", "f"), ("f", "b")],
     )
 
-    assert cbr.Pair(Z, (100.0, 0.0, 0.0), (900.0, 0.0, 0.0), "A › B", "teleport_to_coordinates") in cbr.pairs_of(bot)
+    assert cbr.Pair(Z, (100.0, 0.0, 0.0), (900.0, 0.0, 0.0), "A › B", "walk_to_xyz") in cbr.pairs_of(bot)
+
+
+def test_a_teleport_to_xyz_walks_to_its_start_and_leaves_the_wizard_at_its_end():
+    """Its start to its end is the hop past the gate, so it is never planned as a walk (Stage 7 of #322)."""
+    bot = _bot(
+        [
+            _s("a", "walk_to_xyz", zone=Z, xyz=_xyz(100)),
+            _s("h", "teleport_to_xyz", zone=Z, start_xyz=_xyz(500), end_xyz=_xyz(700)),
+            _s("b", "walk_to_xyz", zone=Z, xyz=_xyz(900)),
+        ],
+        [("a", "h"), ("h", "b")],
+    )
+
+    assert {(p.start[0], p.goal[0], p.where) for p in cbr.pairs_of(bot)} == {
+        (100.0, 500.0, "A › H"),
+        (700.0, 900.0, "H › B"),
+    }
 
 
 def test_a_zone_change_or_a_port_loses_track_of_the_wizard():
     bot = _bot(
         [
             _s("a", "enter_zone", from_zone=Z, to_zone="Test/T_Next", xyz=_xyz(100), reset_xyz=_xyz(50)),
-            _s("b", "teleport_to_coordinates", zone=Z, xyz=_xyz(900)),
+            _s("b", "walk_to_xyz", zone=Z, xyz=_xyz(900)),
             _s("p", "teleport_to_friend"),
-            _s("c", "teleport_to_coordinates", zone=Z, xyz=_xyz(300)),
+            _s("c", "walk_to_xyz", zone=Z, xyz=_xyz(300)),
         ],
         [("a", "b"), ("b", "p"), ("p", "c")],
     )

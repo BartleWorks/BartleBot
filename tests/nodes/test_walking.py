@@ -5,6 +5,7 @@ walk back and walk core's ``SimClient`` on planners built here, as core's own wa
 """
 
 import asyncio
+import logging
 import time
 from unittest.mock import AsyncMock
 
@@ -13,10 +14,11 @@ from bartleby.runtime.movement.collision import MESH, WALKABLE, Solid
 from bartleby.runtime.movement.route import ZoneFiles, build_planner
 from bartleby.runtime.movement.walk import WalkEnd, WalkResult
 from bartleby.runtime.testing.sim_client import SimClient
+from wizwalker import XYZ
 
 from bartlebot.nodes import walking
 from bartlebot.options import bot_options
-from tests.conftest import FakeMachine
+from tests.conftest import FakeClient, FakeMachine
 
 ZONE = "Test/T_Walk"
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
@@ -344,79 +346,204 @@ def test_every_node_that_walks_declares_avoid_mobs():
     assert missing == []
 
 
-# --- nothing teleports ---------------------------------------------------------------------------
+# --- the hop (Stage 7 of #322) -------------------------------------------------------------------
+
+_START = (1000.0, 1000.0, 0.0)
+_END = (1250.0, 1000.0, 0.0)  # 250 past the start, inside HOP_SPAN
 
 
-def test_teleports_are_off_in_the_app():
-    """The user's call (2026-11-25): no teleport at all until Stage 7 confirms the short radius.
-    Read from the source, since the suite turns it on (``teleports_enabled``)."""
+def _hopper(at=_START, zone="Test/Hop") -> FakeClient:
+    """A client standing at *at*, whose position moves to wherever it is teleported."""
+    client = FakeClient()
+    client.zone_name.return_value = zone
+    client.here = XYZ(*at)
+
+    async def position():
+        return client.here
+
+    async def teleport(xyz, *args, **kwargs):
+        client.here = XYZ(xyz.x, xyz.y, xyz.z)
+
+    client.body.position = AsyncMock(side_effect=position)
+    client.teleport = AsyncMock(side_effect=teleport)
+    return client
+
+
+@pytest.fixture
+def quick_settle(monkeypatch):
+    monkeypatch.setattr(walking, "HOP_SETTLE", 0.05)
+
+
+def test_hop_max_and_the_start_tolerance_are_pinned():
+    """The user's numbers of 2026-11-26. Read from the source too, so a change to either is a
+    change to this test, seen in review."""
     import re  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
 
+    assert walking.HOP_MAX == 350.0
+    assert walking.HOP_START_TOLERANCE == 50.0
+    assert walking.HOP_SPAN == 300.0
     source = Path(walking.__file__).read_text(encoding="utf-8")
-    assert re.search(r"^TELEPORTS_ENABLED = False$", source, re.M)
+    assert re.search(r"^HOP_MAX = 350\.0$", source, re.M)
 
 
-async def test_a_teleport_while_they_are_off_is_refused_and_writes_nothing(no_teleports):
-    client = _client()
-    client.tp_to = AsyncMock()
+def test_a_chain_of_hops_never_outruns_walking():
+    assert walking.HOP_SETTLE == 1.0
+    assert walking.HOP_MAX / walking.HOP_SETTLE < walking.WALKING_PACE
 
-    with pytest.raises(walking.TeleportRefused, match=r"teleport to \(10, 20, 30\) was refused"):
-        await walking.teleport(client, (10.0, 20.0, 30.0))
-    with pytest.raises(walking.TeleportRefused):
-        await walking.teleport(client, (10.0, 20.0, 30.0), how="tp_to")
+
+async def test_a_hop_lands_with_one_write(quick_settle):
+    client, machine = _hopper(), FakeMachine()
+
+    assert await walking.hop(machine, client, "Test/Hop", _START, _END) is True
+
+    client.teleport.assert_awaited_once()
+    assert tuple(client.teleport.await_args.args[0]) == _END
+
+
+async def test_a_hop_reads_back_only_once_it_has_settled(monkeypatch):
+    """Right after the write the position reads as the end whether or not the server keeps it.
+    The server puts this one back a moment later, and the hop has to see that."""
+    monkeypatch.setattr(walking, "HOP_SETTLE", 0.2)
+    client, machine = _hopper(), FakeMachine()
+
+    async def teleport(xyz, *args, **kwargs):
+        client.here = XYZ(xyz.x, xyz.y, xyz.z)
+
+        async def snap_back():
+            await asyncio.sleep(0.05)
+            client.here = XYZ(*_START)
+
+        asyncio.get_running_loop().create_task(snap_back())
+
+    client.teleport.side_effect = teleport
+
+    assert await walking.hop(machine, client, "Test/Hop", _START, _END) is False
+    client.teleport.assert_awaited_once()  # never written again
+    assert any("was undone" in m and lvl == logging.WARNING for m, lvl in machine.logs)
+
+
+async def test_a_hop_the_server_undoes_fails_and_is_not_retried(quick_settle):
+    client, machine = _hopper(), FakeMachine()
+    client.teleport.side_effect = None  # the write lands nowhere: the wizard stays put
+
+    assert await walking.hop(machine, client, "Test/Hop", _START, _END) is False
+    client.teleport.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    ("setup", "why"),
+    [
+        # Standing far from the end, whatever the start param says.
+        (lambda c: setattr(c, "here", XYZ(600.0, 1000.0, 0.0)), "past HOP_MAX"),
+        # Near enough to the end, but not at the node's start.
+        (lambda c: setattr(c, "here", XYZ(1100.0, 1100.0, 0.0)), "from the start"),
+        (lambda c: setattr(c.zone_name, "return_value", "Test/Elsewhere"), "Test/Elsewhere"),
+        (lambda c: setattr(c.is_loading, "return_value", True), "loading"),
+        (lambda c: setattr(c.in_battle, "return_value", True), "fight"),
+    ],
+)
+async def test_a_hop_that_fails_a_check_writes_nothing(quick_settle, setup, why):
+    client, machine = _hopper(), FakeMachine()
+    setup(client)
+
+    assert await walking.hop(machine, client, "Test/Hop", _START, _END) is False
 
     client.teleport.assert_not_awaited()
-    client.tp_to.assert_not_awaited()
+    assert any(why in m and lvl == logging.WARNING for m, lvl in machine.logs), machine.logs
 
 
-async def test_a_teleport_while_they_are_on_goes_through(monkeypatch):
-    client = _client()
+async def test_a_hop_measures_from_where_the_wizard_stands_not_the_start_param(quick_settle):
+    """A start param close to the end cannot stretch a hop from somewhere else."""
+    client, machine = _hopper(at=(700.0, 1000.0, 0.0)), FakeMachine()
 
-    await walking.teleport(client, (10.0, 20.0, 30.0), wait_on_inuse=True)
-
-    client.teleport.assert_awaited_once_with((10.0, 20.0, 30.0), wait_on_inuse=True)
-
-
-def test_every_position_write_goes_through_the_guard():
-    """No ``.teleport(`` or ``.tp_to(`` call anywhere in bartlebot/ but walking.teleport's own."""
-    import ast  # noqa: PLC0415
-    from pathlib import Path  # noqa: PLC0415
-
-    root = Path(walking.__file__).resolve().parents[1]
-    found = []
-    for path in root.rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-                if node.func.attr in ("teleport", "tp_to") and not (
-                    isinstance(node.func.value, ast.Name) and node.func.value.id == "walking"
-                ):
-                    found.append(f"{path.relative_to(root)}:{node.lineno}")
-    # walking.teleport's getattr(client, how) is the one write, and no attribute call.
-    assert found == []
+    assert await walking.hop(machine, client, "Test/Hop", (1240.0, 1000.0, 0.0), _END) is False
+    client.teleport.assert_not_awaited()
 
 
-def test_teleport_to_coordinates_is_the_one_node_left_that_writes_a_position():
-    """Stage 6 of #322 walked the rest (potions, level scaling, rides, the Skeleton Key door), so a
-    node that calls walking.teleport again would be a move walking was meant to replace. Stage 7
-    replaces this one with walking.hop. The authoring tools outside nodes/ are Stage 7's too."""
-    import ast  # noqa: PLC0415
-    from pathlib import Path  # noqa: PLC0415
+async def test_a_hop_writes_nothing_while_another_lease_holds_the_client(quick_settle):
+    from bartleby.runtime.arbiter import Owner  # noqa: PLC0415
 
-    nodes = Path(walking.__file__).resolve().parent
-    callers = set()
-    for path in nodes.rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "teleport"
-                and isinstance(node.func.value, ast.Name)
-                and node.func.value.id == "walking"
-            ):
-                callers.add(path.relative_to(nodes).as_posix())
-    assert callers == {"teleportation/teleport_to_coordinates.py"}
+    client, machine = _hopper(), FakeMachine()
+    held, release = asyncio.Event(), asyncio.Event()
+
+    async def hold():
+        async with machine.arbiter.acquire(client, Owner.COMBAT):
+            held.set()
+            await release.wait()
+
+    holder = asyncio.create_task(hold())
+    await held.wait()
+    try:
+        assert await walking.hop(machine, client, "Test/Hop", _START, _END) is False
+    finally:
+        release.set()
+        await holder
+    client.teleport.assert_not_awaited()
+
+
+async def test_a_hop_whose_lease_is_taken_while_it_settles_fails(monkeypatch):
+    from bartleby.runtime.arbiter import Owner  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "HOP_SETTLE", 5.0)
+    client, machine = _hopper(), FakeMachine()
+    hop = asyncio.create_task(walking.hop(machine, client, "Test/Hop", _START, _END))
+    while not client.teleport.await_count:
+        await asyncio.sleep(0)
+
+    async with machine.arbiter.acquire(client, Owner.COMBAT):
+        assert await asyncio.wait_for(hop, timeout=2) is False
+    assert any("was interrupted" in m for m, _ in machine.logs)
+    client.teleport.assert_awaited_once()
+
+
+async def test_a_failed_write_fails_the_hop_and_is_not_retried(quick_settle):
+    client, machine = _hopper(), FakeMachine()
+    client.teleport.side_effect = ValueError("Tried to teleport while should update bool is set")
+
+    assert await walking.hop(machine, client, "Test/Hop", _START, _END) is False
+    client.teleport.assert_awaited_once()
+
+
+def _hop_state(start, end):
+    from bartlebot.bot.schema import StateModel  # noqa: PLC0415
+
+    def xyz(p):
+        return {"x": p[0], "y": p[1], "z": p[2]}
+
+    return StateModel(id="h", node_type="teleport_to_xyz", params={"start_xyz": xyz(start), "end_xyz": xyz(end)})
+
+
+def test_a_teleport_to_xyz_spanning_past_hop_span_is_an_error():
+    assert walking.span_error(_hop_state(_START, (1300.0, 1000.0, 0.0))) is None
+    too_far = walking.span_error(_hop_state(_START, (1301.0, 1000.0, 0.0)))
+    assert too_far is not None and "301 apart" in too_far
+    # In three dimensions, as hop measures.
+    assert walking.span_error(_hop_state(_START, (1250.0, 1000.0, 200.0))) is not None
+
+
+def test_only_a_teleport_to_xyz_with_both_points_has_a_span():
+    from bartlebot.bot.schema import StateModel  # noqa: PLC0415
+
+    assert walking.span_error(StateModel(id="w", node_type="walk_to_xyz", params={})) is None
+    assert walking.span_error(StateModel(id="h", node_type="teleport_to_xyz", params={"start_xyz": None})) is None
+
+
+async def test_a_fight_met_on_a_walk_by_hand_waits_for_nothing(monkeypatch):
+    """Outside a run nothing preempts a walk, so walk_clients does not wait for one."""
+
+    async def fought(machine, client, number, goal, *args, **kwargs):
+        return walking.Walked(WalkResult(WalkEnd.FIGHT, ZONE, (0.0, 0.0, 0.0), tuple(goal)))
+
+    monkeypatch.setattr(walking, "walk_one", fought)
+    monkeypatch.setattr(walking, "FIGHT_PREEMPT_WAIT", 5.0)
+    machine = _machine()
+    started = time.monotonic()
+
+    await walking.walk_clients(machine, [object()], (1.0, 2.0, 3.0), wait_for_preempt=False)
+
+    assert time.monotonic() - started < 1.0
+    assert any("a fight started on the walk" in m for m, _ in machine.logs)
 
 
 # --- a walk into a fight (Stage 5 of #322) ---------------------------------------------------

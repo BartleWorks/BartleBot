@@ -218,3 +218,45 @@ def test_load_invalid_schema_raises(tmp_path):
     path.write_text(json.dumps({"name": "Bad Bot"}))  # missing required fields
     with pytest.raises(ValidationError):
         BotConfig.load(path)
+
+
+# ---------------------------------------------------------------------------
+# A node this build no longer has (Stage 7 of #322)
+# ---------------------------------------------------------------------------
+
+
+def _with_removed_node() -> dict:
+    data = json.loads(json.dumps(VALID_DATA))
+    data["states"][1]["node_type"] = "teleport_to_coordinates"
+    return data
+
+
+def test_a_bot_file_naming_teleport_to_coordinates_refuses_to_load_naming_its_replacements(tmp_path):
+    from bartlebot.bot.schema import RemovedNode  # noqa: PLC0415
+
+    path = tmp_path / "old.json"
+    path.write_text(json.dumps(_with_removed_node()), encoding="utf-8")
+
+    with pytest.raises(RemovedNode) as refused:
+        BotConfig.load(path)
+    text = str(refused.value)
+    assert text.startswith("It uses Teleport to Coordinates")
+    assert "Walk to XYZ" in text and "Teleport to XYZ" in text
+
+
+def test_every_way_into_a_config_refuses_the_removed_node_too():
+    """An autosave, a template draft or an undo snapshot is validated, not loaded from a path."""
+    with pytest.raises(ValidationError, match="Teleport to Coordinates"):
+        BotConfig.model_validate(_with_removed_node())
+
+
+def test_a_subgraph_file_naming_it_refuses_to_load(tmp_path):
+    from bartlebot.bot.schema import RemovedNode, SubgraphDefinition  # noqa: PLC0415
+
+    path = tmp_path / "sg.json"
+    path.write_text(
+        json.dumps({"id": "sg", "name": "S", "states": [{"id": "a", "node_type": "teleport_to_coordinates"}]}),
+        encoding="utf-8",
+    )
+    with pytest.raises(RemovedNode, match="Walk to XYZ"):
+        SubgraphDefinition.load(path)

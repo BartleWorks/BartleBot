@@ -720,7 +720,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger entrance dialogue",
       "position": {
         "x": 2640.0,
@@ -778,7 +778,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Condemned Soldiers",
       "position": {
         "x": 3960.0,
@@ -833,7 +833,7 @@
     },
     {
       "id": "state_14",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 5280.0,
@@ -862,7 +862,7 @@
     },
     {
       "id": "state_16",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Condemned Manders",
       "position": {
         "x": 6160.0,
@@ -894,7 +894,7 @@
     },
     {
       "id": "state_41",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 7040.0,
@@ -928,7 +928,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Izft",
       "position": {
         "x": 7920.0,
@@ -983,7 +983,7 @@
     },
     {
       "id": "state_43",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 9680.0,
@@ -1040,7 +1040,7 @@
     },
     {
       "id": "state_20",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger dialogue",
       "position": {
         "x": 11000.0,
@@ -1057,7 +1057,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Pit Vipers",
       "position": {
         "x": 11440.0,
@@ -1101,7 +1101,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Apep",
       "position": {
         "x": 12760.0,
@@ -1191,7 +1191,7 @@
     },
     {
       "id": "state_26",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Ammit, the Devourer",
       "position": {
         "x": 15400.0,

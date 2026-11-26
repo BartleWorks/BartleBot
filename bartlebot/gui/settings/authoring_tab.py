@@ -27,7 +27,6 @@ from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLI
 
 #: Each hotkey row's one line, and the longer prose behind its ``?`` (empty: none).
 _HOTKEY_TEXT: dict[AuthoringAction, tuple[str, str]] = {
-    AuthoringAction.XYZ_SYNC: ("Move every other player in the zone onto the focused player.", ""),
     AuthoringAction.TP_TO_FOCUSED: (
         "Teleport every other player to the focused player.",
         "Players teleport across zones and realms, through the friends list.",

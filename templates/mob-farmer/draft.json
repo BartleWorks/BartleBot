@@ -70,7 +70,7 @@
     },
     {
       "id": "t_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to safe spot near mobs",
       "position": {
         "x": 1320.0,

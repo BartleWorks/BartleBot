@@ -1219,7 +1219,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Pool",
       "position": {
         "x": 3080,
@@ -1412,7 +1412,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Kagemoosha",
       "position": {
         "x": 7040,
@@ -1444,7 +1444,7 @@
     },
     {
       "id": "state_19",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to safety",
       "position": {
         "x": 7920,

@@ -1643,7 +1643,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Mother Sunn",
       "position": {
         "x": 3960.0,

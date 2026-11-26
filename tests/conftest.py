@@ -535,21 +535,15 @@ def bartlebot_product(_bartlebot_product, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def teleports_enabled(monkeypatch):
-    """Let the nodes that still teleport do so in their tests, as they will once Stage 7's
-    short radius is confirmed. The app runs with ``walking.TELEPORTS_ENABLED`` off; a test of
-    the refusal asks for ``no_teleports``."""
-    from bartlebot.nodes import walking  # noqa: PLC0415
+def no_authoring_tools(monkeypatch):
+    """No test sees another test's ``AuthoringTools`` as the app's (``authoring_tools.current``).
 
-    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", True)
+    The go-to buttons walk through the one the app made, and a test that builds one would
+    otherwise leave it there for every later test in the worker.
+    """
+    from bartlebot.clients import authoring_tools  # noqa: PLC0415
 
-
-@pytest.fixture
-def no_teleports(monkeypatch):
-    """The app as it runs today: every position write refused."""
-    from bartlebot.nodes import walking  # noqa: PLC0415
-
-    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", False)
+    monkeypatch.setattr(authoring_tools, "_current", None)
 
 
 @pytest.fixture(autouse=True)

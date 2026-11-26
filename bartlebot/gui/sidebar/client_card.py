@@ -10,7 +10,8 @@ client (Stage 8 of #167). What only BartleBot needs is here, where the client is
   a node takes (:func:`xyz_clipboard_text`).
 - **the debug verbs**: the Entity Browser and the UI Tree Browser, each a dialog on this
   card's client, on the face as core's product verbs.
-- **the freecam pair**, under the rows.
+- **the freecam toggle**, under the rows. Its TP to Camera went in Stage 7 of #322, since it
+  wrote a position, and nothing but ``walking.hop`` does.
 """
 
 from __future__ import annotations
@@ -26,8 +27,6 @@ from bartleby.runtime.game import wizard_names
 from bartleby.runtime.views import PlayerRow, PlayerView
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from wizwalker import XYZ
-
-from bartlebot.nodes import walking
 
 #: What the XYZ row reads before a position has been read. Spelled out rather than
 #: derived from :func:`format_xyz`, so the placeholder form and the value form cannot
@@ -98,7 +97,7 @@ class ClientCard(PlayerCard):
     def __init__(self, client, index: int, *, unhooked: bool = False, parent: QWidget | None = None) -> None:
         self._client = client
         self._in_freecam = False
-        # Whether a bot run has the freecam pair locked. See set_locked.
+        # Whether a bot run has the freecam toggle locked. See set_locked.
         self._bot_running = False
         self._last_mob_time: float = 0.0
         super().__init__(initial_view(client, index, unhooked=unhooked), VERBS, parent=parent)
@@ -109,34 +108,20 @@ class ClientCard(PlayerCard):
     # ------------------------------------------------------------------
 
     def _build_extras(self, layout: QVBoxLayout) -> None:
-        # The freecam pair stays two buttons on the face. They are a stateful toggle and a
-        # thing that acts on the *camera* rather than on the card, so neither is a verb in
-        # the sense ``_verbs`` means -- a menu entry reading "Enter Freecam" that says
-        # "Exit Freecam" half the time is a verb list that has to be rebuilt to be read.
-        #
-        # Both TERTIARY: they are sequential steps, not alternatives, and detaching the
-        # camera is not what this card expects you to do. Glyphless because none of the
-        # shipped icons is a camera, and an icon name that does not resolve is worse than
-        # no glyph -- see gui/CLAUDE.md.
-        #
-        # "TP to Camera", not "TP to Freecam", and the reason is width rather than
-        # wording: this pair is the card's widest row, and an ``ActionButton`` is ~14px
-        # wider than the bare button it replaced -- enough to push the card past the
-        # sidebar's own floor under ``windowsvista``, which is the failure
-        # ``test_the_player_card_fits_the_right_sidebar_under_every_available_style``
-        # exists to catch. The shorter label buys back 5px and says the same thing.
-        # Anything added to this row has to be measured against that test.
+        # The freecam toggle stays a button on the face. It is stateful and acts on the
+        # *camera* rather than on the card, so it is not a verb in the sense ``_verbs``
+        # means -- a menu entry reading "Enter Freecam" that says "Exit Freecam" half the
+        # time is a verb list that has to be rebuilt to be read. TERTIARY, since detaching
+        # the camera is not what this card expects you to do; glyphless because none of the
+        # shipped icons is a camera, and an icon name that does not resolve is worse than no
+        # glyph -- see gui/CLAUDE.md. Its TP to Camera partner wrote a position, and went in
+        # Stage 7 of #322.
         self._freecam_btn = ActionButton("", "Enter Freecam", parent=self)
         self._freecam_btn.clicked.connect(lambda: asyncio.ensure_future(self._toggle_freecam()))
-        self._tp_btn = ActionButton("", "TP to Camera", parent=self)
-        self._tp_btn.setEnabled(False)
-        self._tp_btn.clicked.connect(lambda: asyncio.ensure_future(self._tp_to_freecam()))
 
         freecam_row = QHBoxLayout()
         freecam_row.setContentsMargins(0, 2, 0, 0)
-        freecam_row.setSpacing(4)
         freecam_row.addWidget(self._freecam_btn, 1)
-        freecam_row.addWidget(self._tp_btn, 1)
         layout.addLayout(freecam_row)
 
     # ------------------------------------------------------------------
@@ -149,10 +134,10 @@ class ClientCard(PlayerCard):
         return self._client
 
     def set_locked(self, locked: bool, reason: str = "") -> None:
-        """Lock Unhook and the grip as core's card does, and the freecam pair with them.
+        """Lock Unhook and the grip as core's card does, and the freecam toggle with them.
 
-        BartleBot locks for a bot run. Detaching the camera or teleporting the player moves
-        a client the FSM is driving, underneath whatever node is running.
+        BartleBot locks for a bot run. Detaching the camera takes it off a client the FSM is
+        driving, underneath whatever node is running.
         """
         super().set_locked(locked, reason)
         if self.is_unhooked:
@@ -220,37 +205,19 @@ class ClientCard(PlayerCard):
         except Exception:
             pass  # client may have disconnected
 
-    async def _tp_to_freecam(self) -> None:
-        """Teleport the client to the current freecam position, then exit freecam."""
-        try:
-            free = await self._client.game_client.free_camera_controller()
-            pos = await free.position()
-            # Exit freecam before teleporting — matches Deimos behavior.
-            await self._client.camera_elastic()
-            self._set_freecam(False)
-            await walking.teleport(self._client, pos, wait_on_inuse=True, purge_on_after_unuser_fixer=True)
-        except Exception:
-            pass
-
     def _set_freecam(self, active: bool) -> None:
         self._in_freecam = active
         self._freecam_btn.setText("Exit Freecam" if active else "Enter Freecam")
         self._sync_freecam_buttons()
 
     def _sync_freecam_buttons(self) -> None:
-        """Enable the pair from the two facts that decide it: a run, and a detached camera.
-
-        One place, because both facts change independently -- a run starting must not
-        enable TP for a camera that is not detached, and leaving freecam must not re-enable
-        a button a run has locked.
-        """
+        """Enable the toggle unless a run has it locked."""
         self._freecam_btn.setEnabled(not self._bot_running)
-        self._tp_btn.setEnabled(self._in_freecam and not self._bot_running)
 
     @property
-    def freecam_buttons(self) -> tuple[ActionButton, ActionButton]:
-        """The Enter/Exit Freecam toggle and TP to Camera, for the callers that check their state."""
-        return self._freecam_btn, self._tp_btn
+    def freecam_button(self) -> ActionButton:
+        """The Enter/Exit Freecam toggle, for the callers that check its state."""
+        return self._freecam_btn
 
     @property
     def in_freecam(self) -> bool:

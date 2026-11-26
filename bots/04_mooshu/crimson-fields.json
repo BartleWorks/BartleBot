@@ -1041,7 +1041,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Construct first barricade",
       "position": {
         "x": 7480,
@@ -1058,7 +1058,7 @@
     },
     {
       "id": "state_16",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Construct second barricade",
       "position": {
         "x": 7920,
@@ -1075,7 +1075,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Construct third barricade",
       "position": {
         "x": 8360,
@@ -1409,7 +1409,7 @@
     },
     {
       "id": "state_32",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Yakedo",
       "position": {
         "x": 14520,
@@ -1516,7 +1516,7 @@
     },
     {
       "id": "state_42",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Cancel invulnerability",
       "position": {
         "x": 18480.0,
@@ -1576,7 +1576,7 @@
     },
     {
       "id": "state_37",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Mobs",
       "position": {
         "x": 15400.0,
@@ -1619,7 +1619,7 @@
     },
     {
       "id": "state_47",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Leave battlefield",
       "position": {
         "x": 16720.0,
@@ -1636,7 +1636,7 @@
     },
     {
       "id": "state_36",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Mobs",
       "position": {
         "x": 14520,

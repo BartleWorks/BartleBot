@@ -20,7 +20,6 @@ from bartlebot.bot import variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
 from bartlebot.game import restricted_zones
-from bartlebot.nodes import walking
 from bartlebot.options import bot_options, option_values
 
 logger = logging.getLogger(__name__)
@@ -887,10 +886,6 @@ class BotMachine:
                         self._no_match_count = 0
                         self._consecutive_same_state_count = 0
                         continue
-                    self.last_result = "FAILURE"
-                except walking.TeleportRefused as refused:
-                    # The node moved a client the one way that is off for now: it fails, named.
-                    self.log(f"FAILURE: {refused}", logging.WARNING)
                     self.last_result = "FAILURE"
                 except Exception:
                     logger.exception("Node execution failed in state %s", self._fmt_state(state_id))

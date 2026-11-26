@@ -985,7 +985,7 @@
     },
     {
       "id": "state_27",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Exit combat",
       "position": {
         "x": 12320,
