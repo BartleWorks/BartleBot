@@ -1587,7 +1587,7 @@
     },
     {
       "id": "state_25",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Preceptor of Order",
       "position": {
         "x": 7920.0,
@@ -1647,7 +1647,7 @@
     },
     {
       "id": "state_29",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Trigger cutscene",
       "position": {
         "x": 9680.0,
@@ -1691,7 +1691,7 @@
     },
     {
       "id": "state_32",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to first group of wisps",
       "position": {
         "x": 11000.0,
@@ -1725,7 +1725,7 @@
     },
     {
       "id": "state_34",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to second group of wisps",
       "position": {
         "x": 11880.0,

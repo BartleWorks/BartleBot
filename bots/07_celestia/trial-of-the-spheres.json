@@ -1911,7 +1911,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Activate cutscene",
       "position": {
         "x": 2640,
@@ -1928,7 +1928,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Begin Test of the Shining Stars",
       "position": {
         "x": 3520.0,
@@ -2057,7 +2057,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Begin Test of Constellation",
       "position": {
         "x": 6160.0,
@@ -2157,7 +2157,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Begin Test of Vision",
       "position": {
         "x": 8360.0,
@@ -2423,7 +2423,7 @@
     },
     {
       "id": "state_24",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Ptolemos",
       "position": {
         "x": 13640.0,

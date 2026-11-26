@@ -431,7 +431,7 @@
     },
     {
       "id": "t_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Oyotomi the Defiler",
       "position": {
         "x": 440,
@@ -501,7 +501,7 @@
     },
     {
       "id": "state_18",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Respawn Oyotomi the Defiler",
       "position": {
         "x": 3520,

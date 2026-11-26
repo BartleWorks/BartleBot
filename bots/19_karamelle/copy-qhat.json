@@ -1172,7 +1172,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Copy Qhat",
       "position": {
         "x": 2640,

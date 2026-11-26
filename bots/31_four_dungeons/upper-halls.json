@@ -1029,7 +1029,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 4400.0,
@@ -1059,7 +1059,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 5280.0,
@@ -1117,7 +1117,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 6600.0,
@@ -1175,7 +1175,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 8360.0,
@@ -1257,7 +1257,7 @@
     },
     {
       "id": "state_16",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 10120.0,
@@ -1344,7 +1344,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 12320.0,
@@ -1443,7 +1443,7 @@
     },
     {
       "id": "state_28",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Coordinates",
       "position": {
         "x": 14960.0,

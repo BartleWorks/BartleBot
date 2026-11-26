@@ -1114,7 +1114,7 @@
     },
     {
       "id": "state_27",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Pops O'Leary",
       "position": {
         "x": 13640.0,
@@ -1183,7 +1183,7 @@
     },
     {
       "id": "state_42",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Old Smokey",
       "position": {
         "x": 3520.0,
@@ -1240,7 +1240,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to O'Leary Napper",
       "position": {
         "x": 4840.0,
@@ -1297,7 +1297,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Open gate",
       "position": {
         "x": 6160.0,
@@ -1427,7 +1427,7 @@
     },
     {
       "id": "state_40",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Hit gate trigger",
       "position": {
         "x": 9240.0,
@@ -1523,7 +1523,7 @@
     },
     {
       "id": "state_20",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Pops O'Leary",
       "position": {
         "x": 11000.0,

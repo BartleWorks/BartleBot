@@ -477,7 +477,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Voracious Legionnaires",
       "position": {
         "x": 3520.0,
@@ -522,7 +522,7 @@
     },
     {
       "id": "state_71",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to safety",
       "position": {
         "x": 4840.0,
@@ -592,7 +592,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Lamia",
       "position": {
         "x": 6160.0,
@@ -706,7 +706,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 8360.0,
@@ -764,7 +764,7 @@
     },
     {
       "id": "state_25",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Arion Spiny Stallion",
       "position": {
         "x": 9680.0,
@@ -878,7 +878,7 @@
     },
     {
       "id": "state_59",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to wisps",
       "position": {
         "x": 11880.0,
@@ -936,7 +936,7 @@
     },
     {
       "id": "state_31",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Akhelios the Contriver",
       "position": {
         "x": 13200.0,
@@ -1021,7 +1021,7 @@
     },
     {
       "id": "state_35",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to health and mana wisps",
       "position": {
         "x": 14960.0,
@@ -1108,7 +1108,7 @@
     },
     {
       "id": "state_39",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Fix first CoralChord pipe",
       "position": {
         "x": 16720.0,
@@ -1137,7 +1137,7 @@
     },
     {
       "id": "state_41",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": " Fix second CoralChord pipe",
       "position": {
         "x": 17600.0,
@@ -1166,7 +1166,7 @@
     },
     {
       "id": "state_43",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Fix third CoralChord pipe",
       "position": {
         "x": 18480.0,
@@ -1248,7 +1248,7 @@
     },
     {
       "id": "state_47",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Lost Maiden",
       "position": {
         "x": 20240.0,
@@ -1297,7 +1297,7 @@
     },
     {
       "id": "state_50",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Atlantean Trierarch",
       "position": {
         "x": 21560.0,
@@ -1428,7 +1428,7 @@
     },
     {
       "id": "state_56",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Locate Poseidon Earth Shaker",
       "position": {
         "x": 24200,
@@ -1605,7 +1605,7 @@
     },
     {
       "id": "state_70",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Teles",
       "position": {
         "x": 18920.0,

@@ -1414,7 +1414,7 @@
     },
     {
       "id": "t_8",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Exit battle area",
       "position": {
         "x": 1320.0,

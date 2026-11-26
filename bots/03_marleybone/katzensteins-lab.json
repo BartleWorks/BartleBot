@@ -978,7 +978,7 @@
     },
     {
       "id": "state_25",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Smogger",
       "position": {
         "x": 12320.0,
@@ -1011,7 +1011,7 @@
     },
     {
       "id": "state_37",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport to Dr. Von Katzenstein",
       "position": {
         "x": 11000.0,
@@ -1072,7 +1072,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Go to Firegut's gate",
       "position": {
         "x": 4400.0,

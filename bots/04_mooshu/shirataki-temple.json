@@ -1423,7 +1423,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Open Gate",
       "position": {
         "x": 8360.0,
@@ -1653,7 +1653,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport To Coordinates",
       "position": {
         "x": 12760.0,
@@ -1905,7 +1905,7 @@
     },
     {
       "id": "state_34",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport To Coordinates",
       "position": {
         "x": 18040.0,
@@ -1989,7 +1989,7 @@
     },
     {
       "id": "state_39",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Teleport To Coordinates",
       "position": {
         "x": 20240.0,

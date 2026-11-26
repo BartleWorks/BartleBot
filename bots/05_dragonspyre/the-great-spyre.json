@@ -2230,7 +2230,7 @@
     },
     {
       "id": "state_28",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Enter render radius for mobs",
       "position": {
         "x": 8360,
@@ -2287,7 +2287,7 @@
     },
     {
       "id": "state_32",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Activate Malistaire dialogue",
       "position": {
         "x": 10120,
@@ -2332,7 +2332,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "teleport_to_coordinates",
+      "node_type": "walk_to_xyz",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
         "x": 5720.0,
