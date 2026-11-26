@@ -129,3 +129,42 @@ def test_the_whole_report_renders(trace):
     for title in ("Summary", "Pre-run", "Nodes", "Combat", "slowest rounds", "UI-tree walks", "Stalls", "Background"):
         assert f"== {title}" in text or title in text
     assert "100 reads outside any span" in text
+
+
+def _walk_trace(tmp_path, *walks):
+    records = [{"kind": "start", "wall": "2026-11-25T09:00:00.000"}, *walks]
+    path = tmp_path / "run_walks.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+    return report.load(path)
+
+
+def test_moves_count_the_fights_a_walk_started_that_it_was_not_walking_into(tmp_path):
+    trace = _walk_trace(
+        tmp_path,
+        _span(1, "walk", 1.0, 2.0, slot=1, zone="Z", goal=[1, 2, 3], fight=True, end="a fight started"),
+        _span(2, "walk", 4.0, 3.0, slot=2, zone="Z", goal=[4, 5, 6], fight=False, end="a fight started"),
+        _span(3, "walk", 8.0, 5.0, slot=1, zone="Z", goal=[7, 8, 9], fight=False, end="arrived"),
+    )
+
+    lines = report.moves(trace)
+
+    assert lines[0].startswith("3 walks (10.00 s), 1 of them into a fight: 2 a fight started, 1 arrived")
+    assert lines[1] == "Fights started by a walk not into one (unplanned): 1"
+    assert lines[2].split() == ["+", "4.00", "P2", "in", "Z", "toward", "[4,", "5,", "6]"]
+
+
+def test_moves_say_what_watching_mobs_cost_the_walks(tmp_path):
+    trace = _walk_trace(
+        tmp_path,
+        _span(1, "walk", 0.0, 4.0, end="arrived", mob_reads=20, mob_read_s=0.2, mob_read_max=0.03, list_read_s=0.1),
+        _span(2, "walk", 5.0, 6.0, end="arrived", mob_reads=30, mob_read_s=0.3, mob_read_max=0.05, list_read_s=0.2),
+    )
+
+    assert report.moves(trace)[-1] == (
+        "Watching mobs: 50 reads, 500 ms in all (5% of the time walking), the longest 50 ms; "
+        "of it, listing the entities 300 ms"
+    )
+
+
+def test_a_trace_with_no_walks_says_so(trace):
+    assert report.moves(trace) == ["No walks in this trace."]

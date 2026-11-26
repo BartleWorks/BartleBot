@@ -18,6 +18,10 @@ Sections, in order:
   round's planning phase, which is the game's animations and the server.
 - **Slowest rounds**: each player's priorities in those rounds, split into casts,
   conditions and the rest, which is reads and fixed waits.
+- **Moves**: every walk a run made, by how it ended. A fight a walk started that it was not
+  walking into is unplanned, and a dungeon bot's passes should show none (Stage 5 of #322).
+  Then what watching mobs cost the walks: the entity list read for mobs and gates, in all and
+  at its longest.
 - **UI-tree walks**, **stalls** and **background reads**: the costs that land on the
   event loop itself.
 """
@@ -295,6 +299,35 @@ def slowest_rounds(trace: Trace, count: int) -> list[str]:
     return lines or ["No combat in this trace."]
 
 
+def moves(trace: Trace) -> list[str]:
+    spans = [s for s in trace.named("walk") if s.name == "walk"]
+    if not spans:
+        return ["No walks in this trace."]
+    ends = Counter(s.attrs.get("end", "?") for s in spans)
+    into_fights = [s for s in spans if s.attrs.get("fight")]
+    unplanned = [s for s in spans if s.attrs.get("end") == "a fight started" and not s.attrs.get("fight")]
+    lines = [
+        f"{len(spans)} walks ({_ms(sum(s.dur for s in spans))}), {len(into_fights)} of them into a fight: "
+        + ", ".join(f"{n} {end}" for end, n in ends.most_common()),
+        f"Fights started by a walk not into one (unplanned): {len(unplanned)}",
+    ]
+    for s in unplanned:
+        lines.append(
+            f"  +{s.t:8.2f}  {_player(s.slot)}  in {s.attrs.get('zone', '?')} toward {s.attrs.get('goal', '?')}"
+        )
+    reads = sum(s.attrs.get("mob_reads", 0) for s in spans)
+    if reads:
+        mob_s = sum(s.attrs.get("mob_read_s", 0.0) for s in spans)
+        list_s = sum(s.attrs.get("list_read_s", 0.0) for s in spans)
+        longest = max(s.attrs.get("mob_read_max", 0.0) for s in spans)
+        walking_s = sum(s.dur for s in spans)
+        lines.append(
+            f"Watching mobs: {reads} reads, {_ms(mob_s)} in all ({mob_s / walking_s:.0%} of the time walking), "
+            f"the longest {_ms(longest)}; of it, listing the entities {_ms(list_s)}"
+        )
+    return lines
+
+
 def walks(trace: Trace) -> list[str]:
     by_where: dict[tuple, list[dict]] = defaultdict(list)
     for event in trace.events:
@@ -350,6 +383,7 @@ def report(trace: Trace, slow_rounds: int = 3) -> str:
         ("Nodes", nodes(trace)),
         ("Combat", combat(trace)),
         (f"The {slow_rounds} slowest rounds", slowest_rounds(trace, slow_rounds)),
+        ("Moves", moves(trace)),
         ("UI-tree walks", walks(trace)),
         ("Stalls", stalls(trace)),
         ("Background reads", background(trace)),
