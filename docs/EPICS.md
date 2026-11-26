@@ -450,6 +450,10 @@ reviewing them and walking the walker in game. 0.12.1 carries Stage 3.1's gates,
 the r815378 update's wizwalker, and 0.13.0 Stage 3.2's gate read, pinned by Stage 4. **No BartleBot
 release is cut until Stages 7 and 8 land** (the user's call, 2026-11-25): Stage 4's walks can fail
 in the bots `tools/check_bot_routes.py` lists, where a gate or a placed floor is in the way.
+**Nothing teleports until Stage 7 confirms the short radius** (the user's call, the same day):
+every position write left goes through `walking.teleport`, which refuses while
+`walking.TELEPORTS_ENABLED` is off, so a node that still teleports fails, named, until its stage
+walks it.
 
 | stage | issue | what | status |
 |---|---|---|---|
@@ -457,7 +461,7 @@ in the bots `tools/check_bot_routes.py` lists, where a gate or a placed floor is
 | 1 | core #14 | route planning (1.1), and the shipped zone maps (1.2) | landed |
 | 2 | core #15 | walking a route in core | landed |
 | 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | landed |
-| 4 | #323 | the run's helpers walk | in progress |
+| 4 | #323 | the run's helpers walk | landed |
 | 5 | #324 | fights and pickups by walking | |
 | 6 | #325 | the other movers walk | |
 | 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
