@@ -107,7 +107,7 @@ The bot stops after 5 consecutive failures on this node.
 
 !!! warning "Shown before a run"
 
-    This bot walks to reagents across the zone. Run it on a quiet realm.
+    This bot walks to collect reagents. Run it on a quiet realm.
 
 **Usage notes**
 

@@ -222,6 +222,15 @@ shipped bot's points. The first run in a fresh cache builds the walking copies i
 It sees nothing of the walk from a zone's arrival point to its first node, since where the
 game puts a wizard on arrival isn't in the bot.
 
+### How far a pickup's prompt reaches: `probe_pickup_reach.py`
+
+`uv run --no-sync python tools/probe_pickup_reach.py --entity "<Entity ID>"` reads, while you walk
+toward and away from a reagent, how far from it the pickup prompt still shows. It only reads.
+`node_helpers.PICKUP_REACH` is set from its summary's farthest distance with the prompt: a pickup
+stands off by that, less a walk's arrival margin, beside an entity named in Keep Away From, and
+skips a spawn inside an exit with no floor outside within it. Run it with no other prompt in
+range, since the game's prompt flag does not say whose prompt shows.
+
 ### Zone connectivity: `tools/zone_graph/`
 
 Which zones connect, where gates and arrival points sit, and the hub/spiral-door zone

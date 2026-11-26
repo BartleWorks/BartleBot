@@ -10,7 +10,7 @@ Running a bot carries risks for your account, your items and the players around 
 
 ## Be fair to other players
 
-- **Run collecting bots on a quiet realm.** A bot that teleports to reagents or items takes them from anyone nearby. When a bot changes realm to find fresh spawns, it picks among the game's quieter realms.
+- **Run collecting bots on a quiet realm.** A bot that walks to reagents or items takes them from anyone nearby. When a bot changes realm to find fresh spawns, it picks among the game's quieter realms.
 - **Team-Up brings in players who aren't yours.** With [**Team-Up**](../../reference/options.md#team-up) on, a bot joins the game's queue, and strangers fight beside it. Turn it on only for a run you'd be glad to have company on.
 - **Stay out of PvP.** BartleBot doesn't automate PvP, and there's no way to turn that off. [PvP](pvp.md) has what happens if a run reaches it.
 
@@ -29,7 +29,7 @@ When a bot could cost you something, **Safety Check** lists it before the first 
 | "This bot sells drops when your backpack is full." | Lock what you value in the game, or keep it on a keep list. [Quicksell and keep lists](quicksell.md) has how. |
 | "This bot's author has it sell…" | The bot sells something your settings keep. Turn off the switch it names in the bot's **Options** tab to keep it. You're asked once per bot. |
 | "With quicksell off, nothing is sold." | Your backpack fills, then your bank. Clear space, or turn quicksell on. |
-| "This bot teleports to collect…" | Run it on a quiet realm. |
+| "This bot walks to collect…" | Run it on a quiet realm. |
 | "This bot teleports your players to another wizard…" | Check the name shown. The wizard must be online and on every player's friends list. To fix the name, type it in **Change Friend Name** in the dialog. It sets your [Friend Name](../../reference/options.md#friend-name), which changes it for every bot. |
 | "Team-Up is on with more than one player." | Each player queues alone and may land in another copy of the dungeon. Turn off **Team-Up**, or run anyway. |
 | "A level scaling player already has an elixir active." | Cancel the elixir in the game to start everyone together. [When something goes wrong in a run](when-something-goes-wrong.md#level-scaling-elixirs-at-the-start-of-a-run) has why. |

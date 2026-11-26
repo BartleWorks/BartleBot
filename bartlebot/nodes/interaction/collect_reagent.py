@@ -80,7 +80,7 @@ NODE_SPEC = NodeSpec(
         "such as a cave mouth, is picked up from the floor just outside it, or skipped when that "
         "is too far for its prompt to show, so no player leaves the zone."
     ),
-    safety_warning="This bot walks to reagents across the zone. Run it on a quiet realm.",
+    safety_warning="This bot walks to collect reagents. Run it on a quiet realm.",
     implies_tags=["Reagents"],
     see_also=["collect_item"],
 )
