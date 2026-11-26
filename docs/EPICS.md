@@ -466,7 +466,7 @@ runs in game before #327** (the user's call, the same day).
 | 4 | #323 | the run's helpers walk | landed |
 | 5 | #324 | fights and pickups by walking | landed |
 | 6 | #325 | the other movers walk | landed |
-| 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` (7.1), and hops where a gate is found closed (7.2) | 7.1 landed |
+| 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` (7.1), and hops where a gate is found closed (7.2) | Landed |
 | 8 | core #17 | verified links | |
 | 9 | #327 | the bot library on live | |
 

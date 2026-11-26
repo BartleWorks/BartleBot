@@ -97,6 +97,8 @@ Every move in a bot walks. A walk that meets a closed gate stops there, and the 
 
 A Teleport to XYZ spans 300 game units at most from start to end, a few steps. A node with a longer span has an error, and the bot can't run. Use it only for a gate. To go anywhere else, use [Walk to XYZ](../../reference/teleportation.md#walk-to-xyz).
 
+A gate the bot opens itself needs no Teleport to XYZ, such as a door that opens once its room's fight is won. A walk stops only at a gate that's still closed when it gets there. A gate too deep to cross in 300 game units can't be teleported past at all, so the bot has to open it the game's way, by winning the fight or using the object before it.
+
 ## Look inside the game { #look-inside-the-game }
 
 Some parameters name something you can't read off the screen: an entity's ID, or a UI path. Two browsers find them. Each player's card in the right sidebar's **Players** tab opens them, for that player's game.
