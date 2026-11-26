@@ -216,11 +216,23 @@ other points, and the last point of one node and the first of the next along an 
 nothing between changed the zone or moved the wizard (`KEEPS_PLACE` lists the nodes that
 don't; a port, a zone change or any other node loses track). It lists the pairs with no route,
 those whose only way crosses a gate (with the `Crossing` a Teleport to XYZ past it would need:
-Stage 7 of #322 places those from this list), those over `LONG_WALK` (60 s) at a wizard's own
-speed, and the gates crossed that have a way around. Run it after a map release or a change to a
+Stage 7 of #322 places those where a walking-only run finds the gate closed), those over
+`LONG_WALK` (60 s) at a wizard's own speed, and the gates crossed that have a way around. A
+Teleport to XYZ's own start and end are a hop, never planned as a walk (`HOPS`). Run it after a map release or a change to a
 shipped bot's points. The first run in a fresh cache builds the walking copies it needs.
 It sees nothing of the walk from a zone's arrival point to its first node, since where the
 game puts a wizard on arrival isn't in the bot.
+
+### Old bots' Teleport to Coordinates: `migrate_teleport_nodes.py`
+
+`uv run --no-sync python tools/migrate_teleport_nodes.py [--check] [path ...]` rewrites every
+Teleport to Coordinates node as a Walk to XYZ, which takes the same Zone and XYZ, so only the node
+type changes, by text replacement: nothing else in the file moves. With no paths it rewrites the
+shipped `bots/` and `templates/`, a released version's sha256 in its `template.json` with it; given
+paths, it rewrites a tester's own bots, templates or subgraphs sent in. The app doesn't migrate
+them itself (the user's call, 2026-11-26): a file naming the old node refuses to load, naming its
+replacements. Each rewritten file must load and save byte-identical, or the tool exits 1. A walk
+that used to teleport past a closed gate needs a Teleport to XYZ placed by hand (Stage 7 of #322).
 
 ### How far a pickup's prompt reaches: `probe_pickup_reach.py`
 

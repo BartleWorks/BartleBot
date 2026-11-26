@@ -47,16 +47,27 @@ remember something for a later branch returns a value and lets an edge route on 
 
 **A node moves a client inside a zone by walking it, through `walking.walk_clients`**
 (`bartlebot/nodes/walking.py`), never by writing its position. The server undoes a long
-written teleport, and the rule every stage of #322 keeps is that no teleport is longer than
-`HOP_MAX` and nothing but `walking.hop` writes a position (Stage 7). Until then
-`teleport_to_coordinates` is the one node that still writes a position, beside the authoring
-tools outside `nodes/`, and nothing new may join them:
-`test_teleport_to_coordinates_is_the_one_node_left_that_writes_a_position` fails on another.
-**Every one goes through `walking.teleport`, which refuses while `walking.TELEPORTS_ENABLED` is
-off**, as it ships until Stage 7 confirms the short radius (the user's call, 2026-11-25): the
-node fails with the move named. The suite turns it on
-(`teleports_enabled` in `tests/conftest.py`); `test_every_position_write_goes_through_the_guard`
-fails on a `.teleport(` or `.tp_to(` call anywhere else.
+written teleport, and the user called the rule critical: **no teleport goes farther than
+`walking.HOP_MAX` (350), and nothing in BartleBot but `walking.hop` writes a position.**
+`tests/test_position_writes.py`'s `test_nothing_writes_a_position_but_the_hop` fails on a
+`.teleport(`, wizsprinter's `tp_to*` or `goto_closest*`, a `write_position` or `write_xyz`, or an
+import of `wiz_navigator` anywhere else in `bartlebot/` (the free camera's own position is its one
+exception).
+
+- **A hop is a node the author places, never a planned one.** Teleport to XYZ walks every client
+  to its Start XYZ and then hops each to its End XYZ, past a closed gate a walk can't cross. Its
+  two points lie at most `HOP_SPAN` (300) apart, so a wizard anywhere within
+  `HOP_START_TOLERANCE` (50, a walk's arrival margin) of the start is never past `HOP_MAX` from
+  the end: a longer span is the node's validation error and refuses the bot at Run
+  (`walking.span_error`).
+- **`hop` checks everything right before its one write**, under the client's movement lease:
+  no other lease holds it, it is in the zone, not loading or fighting, and where it stands now is
+  near the start and within `HOP_MAX` of the end. It reads back only after `HOP_SETTLE` (1 s),
+  since right after a write the position reads as the end whatever the server does, and a hop the
+  server undid fails the node and is never written again. `HOP_MAX` is a constant with no
+  setting, option or param, as the restricted zones have none, and a test pins it.
+- **Walk to XYZ is the one-point move**: a walk, which fails naming a closed gate in the way.
+  That failure is how an author learns where a Teleport to XYZ goes.
 
 - **Through the shared helpers where one fits**: `clear_stale_prompt`, `reach_prompt`,
   `take_turns` and `enter_zone.fire_trigger` walk. A node that calls one of them, or

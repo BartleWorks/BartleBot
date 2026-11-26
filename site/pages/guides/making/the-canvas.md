@@ -55,7 +55,7 @@ Now the bot has one warning, on Collect Wisps: "Uncovered return value: 'FAILURE
 
 Select a node to open its page in **Properties**. At the top is the node's label, which you can type over, and a gray line saying what kind of node it is. **Show descriptions** and **Collapse all** act on the whole page. Under them are four cards:
 
-- **Parameters**: the node's settings, one row each. The `?` beside a row shows what it does, and the reset button beside that puts the default back. A required row that's still empty shows a red asterisk, and the card's band says how many are left to fill. Some rows have buttons at the end: **Fill current** reads a connected player's zone or position, the play button takes every player to a zone, and the teleport button to a position. Right-click a position's boxes to copy or paste it.
+- **Parameters**: the node's settings, one row each. The `?` beside a row shows what it does, and the reset button beside that puts the default back. A required row that's still empty shows a red asterisk, and the card's band says how many are left to fill. Some rows have buttons at the end: **Fill current** reads a connected player's zone or position, the play button takes every player to a zone, and the pin walks every player to a position. Right-click a position's boxes to copy or paste it.
 - **Connections**: where each thing the node returns goes, and the edges that come in. A FAILURE or FALSE with no edge says "recovery · not drawn". An edge with a condition, or one that changes a variable, shows that in a gray chip, as its label on the canvas does. Point at the chip to read all of it.
 - **Notes**: anything you want to remember about this step. The bot doesn't read it.
 - **Role**: **Initial state** and **Recovery state**. Checking one moves that role here from the node that held it.
@@ -82,13 +82,20 @@ While it records, the button reads **Stop**. Select it to stop early, and nothin
 | [Open Skeleton Key Door](../../reference/zone-entry.md#open-skeleton-key-door) | Walk to the door, use your key, and walk through. |
 | [Interact](../../reference/interaction.md#interact) | Walk up to the NPC or object and use it. |
 | [Interact Menu](../../reference/interaction.md#interact-menu) | Walk up and use it. Set **Menu Path** yourself after. |
-| [Teleport to Coordinates](../../reference/teleportation.md#teleport-to-coordinates) | Stand where the bot should go. Record takes the spot at once. |
+| [Walk to XYZ](../../reference/teleportation.md#walk-to-xyz) | Stand where the bot should go. Record takes the spot at once. |
+| [Teleport to XYZ](../../reference/teleportation.md#teleport-to-xyz) | Stand just before the gate, walk past it while it's open, and stop. Record takes the spot where you stop as the end. |
 | [Mark Location](../../reference/teleportation.md#mark-location) | Stand where the mark should be. |
 | [Teleport to Marked Location](../../reference/teleportation.md#teleport-to-marked-location) | Stand at the mark. |
 | [Handle Combat](../../reference/combat-and-healing.md#handle-combat) | Stand near the enemy. Record takes the closest one's name. |
 
 !!! info "Speed-authoring"
-    With speed-authoring on, keys 1 to 0 in a game window add that favorites-bar slot's node and start recording it, so you can record a dungeon without leaving the game. **Settings › Authoring** turns it on, and sets the other keys that help while you record: moving every player onto the one you're playing, auto-combat and auto-dialogue.
+    With speed-authoring on, keys 1 to 0 in a game window add that favorites-bar slot's node and start recording it, so you can record a dungeon without leaving the game. **Settings › Authoring** turns it on, and sets the other keys that help while you record: teleporting every player to the one you're playing through the friends list, auto-combat and auto-dialogue.
+
+## Get past a closed gate { #closed-gates }
+
+Every move in a bot walks. A walk that meets a closed gate stops there, and the log names the gate. Where a gate stays closed, such as a door that opens only for a quest, put a [Teleport to XYZ](../../reference/teleportation.md#teleport-to-xyz) there. Players walk to its **Start XYZ**, then move a few steps to its **End XYZ**, past the gate.
+
+A Teleport to XYZ spans 300 game units at most from start to end, a few steps. A node with a longer span has an error, and the bot can't run. Use it only for a gate. To go anywhere else, use [Walk to XYZ](../../reference/teleportation.md#walk-to-xyz).
 
 ## Look inside the game { #look-inside-the-game }
 
@@ -100,7 +107,7 @@ Some parameters name something you can't read off the screen: an entity's ID, or
 
 - **Copy ID** copies the ID a node's parameter takes, such as a reagent's in [Collect Reagent](../../reference/interaction.md#collect-reagent).
 - **Copy XYZ** copies its position, in the form a position row pastes.
-- **Teleport** takes the player to it, to look at it.
+- **Walk to** walks the player to it, to look at it.
 - **Refresh** reads the list again. It doesn't update by itself.
 
 The player's card has two shortcuts of its own: selecting its **XYZ** row copies the player's position, and its **Enemy** row the closest enemy's name.

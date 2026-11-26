@@ -22,6 +22,12 @@ What every change ships with here. The ways this suite goes slow or flaky are co
   A drag on a card list is core's `bartleby.qt.testing.drag_helpers`, picking rows in a
   picker its `picker_helpers`, and a made-up art cache its `extracted_art`.
 
+- **Nothing writes a position but the hop.** `tests/test_position_writes.py` scans all of
+  `bartlebot/`, beside the family guards, and fails on any position write outside
+  `walking.hop`: a `.teleport(`, wizsprinter's `tp_to*` and `goto_closest*` (read from
+  `SprintyClient`, so a new one is caught too), a `write_position` or `write_xyz`, or an import
+  of `wiz_navigator`. Its one exception, the free camera's own position, is named in the test
+  with its reason, and an exception that matches nothing fails (Stage 7 of #322).
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
