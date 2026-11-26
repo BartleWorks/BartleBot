@@ -258,6 +258,17 @@ and went off. `node_helpers.PICKUP_REACH` (275) sits a little inside it, from Fr
 Keep Away From, and skips a spawn inside an exit with no floor outside within it. Run it with no
 other prompt in range, since the game's prompt flag does not say whose prompt shows.
 
+### Where a walk the game allows leaves the planner's floor: `probe_walk_track.py`
+
+`uv run --no-sync python tools/probe_walk_track.py` records a walk you make by hand (zone and
+position, every 0.2 s; it only reads), and `--analyze <csv>` lays the track over the grid that
+zone's planner builds: which piece each stretch was on, and where the wizard stood on a spot the
+grid refuses, why (no floor at that height, a wall and the solid that makes it, the clearance
+from a wall or drop, a step too high), with a map in `logs/walk_route/track/`. Close BartleBot
+first, since two programs hooking one client clash. It found what splits Dragonspyre's Arena: a
+box tilted into a ramp and a leaning slab, which the grid reads as wall (core's
+`docs/WALKING.md`, *What is not done*, says why they stay that way).
+
 ### Zone connectivity: `tools/zone_graph/`
 
 Which zones connect, where gates and arrival points sit, and the hub/spiral-door zone
