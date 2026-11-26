@@ -1057,7 +1057,7 @@
           "from": "Krokotopia/KT_Hub",
           "to": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
           "interact_xyz": {"x": 2197.53, "y": -1717.65, "z": -111.21},
-          "reset_xyz": {"x": 2344.4, "y": -1254.37, "z": -89.77},
+          "reset_xyz": {"x": 2229.86, "y": -983.49, "z": -89.77},
           "verified": true,
           "source": "recorded"
         },

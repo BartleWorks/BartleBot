@@ -215,13 +215,27 @@ report to `logs/check_bot_routes/`. A walk is a pair of points: a node's Reset X
 other points, and the last point of one node and the first of the next along an edge, while
 nothing between changed the zone or moved the wizard (`KEEPS_PLACE` lists the nodes that
 don't; a port, a zone change or any other node loses track). It lists the pairs with no route,
-those whose only way crosses a gate (with the `Crossing` a Teleport to XYZ past it would need:
-Stage 7 of #322 places those where a walking-only run finds the gate closed), those over
-`LONG_WALK` (60 s) at a wizard's own speed, and the gates crossed that have a way around. A
-Teleport to XYZ's own start and end are a hop, never planned as a walk (`HOPS`). Run it after a map release or a change to a
-shipped bot's points. The first run in a fresh cache builds the walking copies it needs.
-It sees nothing of the walk from a zone's arrival point to its first node, since where the
-game puts a wizard on arrival isn't in the bot.
+those whose only way crosses a gate (with the `Crossing` a Teleport to XYZ past it would need),
+those over `LONG_WALK` (60 s) at a wizard's own speed, and the gates crossed that have a way
+around. A Teleport to XYZ's own start and end are a hop, never planned as a walk (`HOPS`). Run it
+after a map release or a change to a shipped bot's points. The first run in a fresh cache builds
+the walking copies it needs. It sees nothing of the walk from a zone's arrival point to its first
+node, since where the game puts a wizard on arrival isn't in the bot.
+
+**"A gate is the only way" is where to look, not where to hop.** It tries one gate closed at a
+time, with every other gate open, and knows nothing of what opens one. Stage 7.2 of #322 found it
+wrong both ways:
+
+- **Most of the gates it lists are open by the time the walk reaches them.** A fight won or a
+  console used just before opens them (Celestial Pyramid's blockers, Galleries' webs), or a
+  farming wizard's quests removed them long ago. The client's entity list says which are there.
+- **A zone whose gates all start closed needs more hops than it lists.** Hidden Temple Gauntlet's
+  doors stay shut, since the bot skips the rooms that open them. The report named three doors, and
+  the way with every door closed crosses eight. Plan such a zone with every gate closed
+  (`ZonePlanner.close` on each), and find the fewest doors that join the two points.
+- **A Crossing longer than `HOP_SPAN` can't be hopped**, and is often a deep solid rather than a
+  long doorway: each Galleries web is a mesh at least 500 deep by its hull. The bot opens such a
+  gate the game's way instead (Galleries fights in order).
 
 ### Old bots' Teleport to Coordinates: `migrate_teleport_nodes.py`
 

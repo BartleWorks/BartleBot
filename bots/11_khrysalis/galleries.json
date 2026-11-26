@@ -1481,13 +1481,13 @@
       "name": "Defeat Kravenly the Hunter and Ghost Dog",
       "type": "bool",
       "default": false,
-      "description": "Whether or not to complete the first fight in Galleries. Drops gear, but NOT spellements."
+      "description": "Whether or not to complete the first fight in Galleries. Drops gear, but NOT spellements. It is also fought whenever a later fight is on, since the web past it opens only once it is won."
     },
     {
       "name": "Defeat Balor the Broken Fang and Santa Muerte",
       "type": "bool",
       "default": false,
-      "description": "Whether or not to complete the second fight in Galleries. Drops gear, but NOT spellements."
+      "description": "Whether or not to complete the second fight in Galleries. Drops gear, but NOT spellements. It is also fought whenever the third fight is on, since the web past it opens only once it is won."
     },
     {
       "name": "Defeat Archmagus Lorcan and Lord Ombra",
@@ -1660,7 +1660,7 @@
     {
       "id": "state_4",
       "node_type": "walk_to_xyz",
-      "label": "Teleport to Coordinates",
+      "label": "Walk to Balor the Broken Fang and Santa Muerte",
       "position": {
         "x": 5280.0,
         "y": 90.0
@@ -1692,7 +1692,7 @@
     {
       "id": "state_7",
       "node_type": "walk_to_xyz",
-      "label": "Teleport to Coordinates",
+      "label": "Walk to Archmagus Lorcan and Lord Ombra",
       "position": {
         "x": 6600.0,
         "y": 0.0
@@ -1748,6 +1748,30 @@
         "if_mana_below": 0.15,
         "mark_zone": ""
       }
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon past the last fight",
+      "position": {
+        "x": 7480.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Khrysalis/Interiors/KR_Z12_I03_Galleries",
+        "to_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+        "xyz": {
+          "x": 2183.41,
+          "y": -950.37,
+          "z": 635.12
+        },
+        "reset_xyz": {
+          "x": 2087.41,
+          "y": -746.37,
+          "z": 635.12
+        },
+        "stagger": false
+      }
     }
   ],
   "transitions": [
@@ -1767,24 +1791,9 @@
             }
           ],
           "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
+        },
         {
           "flags": [
-            {
-              "option": "Defeat Balor the Broken Fang and Santa Muerte",
-              "negate": true
-            },
             {
               "option": "Defeat Archmagus Lorcan and Lord Ombra",
               "negate": false
@@ -1808,58 +1817,6 @@
     {
       "trigger": "advance",
       "source": "state_3",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Defeat Archmagus Lorcan and Lord Ombra",
-              "negate": false
-            },
-            {
-              "option": "Defeat Kravenly the Hunter and Ghost Dog",
-              "negate": true
-            },
-            {
-              "option": "Defeat Balor the Broken Fang and Santa Muerte",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Defeat Balor the Broken Fang and Santa Muerte",
-              "negate": false
-            },
-            {
-              "option": "Defeat Kravenly the Hunter and Ghost Dog",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
       "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
@@ -1869,6 +1826,24 @@
           "flags": [
             {
               "option": "Defeat Kravenly the Hunter and Ghost Dog",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        },
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        },
+        {
+          "flags": [
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
               "negate": false
             }
           ],
@@ -1930,7 +1905,17 @@
     {
       "trigger": "advance",
       "source": "state_8",
-      "dest": "t_13",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "t_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2119,6 +2104,7 @@
     "version": 1
   },
   "history": [
+    "849932e933f3c85f93f81d3ccbcc54278a384c7cb99b3b76206f8ce3d6c3d9c4",
     "0270c145e7ac4c60b9cff930a15ae1d393f10748062bdb153a115df00e30a979",
     "acf44e62bc8ba1d0c834bab7b069827db8f0ee8d949cdc877ce88614afee9ba9",
     "d40d6f04518e4556a2efa3213195d193fc432479e3ca27a4a304d38ad88b1db0",
