@@ -397,6 +397,28 @@ def test_every_position_write_goes_through_the_guard():
     assert found == []
 
 
+def test_teleport_to_coordinates_is_the_one_node_left_that_writes_a_position():
+    """Stage 6 of #322 walked the rest (potions, level scaling, rides, the Skeleton Key door), so a
+    node that calls walking.teleport again would be a move walking was meant to replace. Stage 7
+    replaces this one with walking.hop. The authoring tools outside nodes/ are Stage 7's too."""
+    import ast  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    nodes = Path(walking.__file__).resolve().parent
+    callers = set()
+    for path in nodes.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "teleport"
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "walking"
+            ):
+                callers.add(path.relative_to(nodes).as_posix())
+    assert callers == {"teleportation/teleport_to_coordinates.py"}
+
+
 # --- a walk into a fight (Stage 5 of #322) ---------------------------------------------------
 
 

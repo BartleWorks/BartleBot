@@ -173,14 +173,17 @@ async def _press_until_open(unlocker, prompted: list) -> float | None:
 
 
 async def _enter_unlocker(door: _Door, unlocker, pressed_at: float) -> bool:
-    """Get the player who used the key into To Zone, without crossing the game's carry-in.
+    """Get the player who used the key into To Zone, beside the game's own carry-in.
 
-    Left alone they are carried in about 7 s after the press, and a teleport that crosses that
-    is applied once they land, which puts them back out (#284). So this is on the clock from
-    the press, not on Safety Delay, whose retries would run straight through it: wait Safety
-    Delay for the trigger to work, teleport them in until KEY_DOOR_TELEPORT_CUTOFF, then leave
-    them alone. A Safety Delay past the cutoff means no teleport at all. Past
-    KEY_DOOR_ENTRY_TIMEOUT no carry-in is coming, and a normal attempt at the trigger is safe.
+    Left alone they are carried in about 7 s after the press. So this waits Safety Delay, up
+    to KEY_DOOR_TELEPORT_CUTOFF, for the door to take them, and then walks them into its
+    trigger once, which is quicker than the carry-in. The walk ends when the zone changes,
+    whichever of the two moved them. It used to be a teleport, kept clear of the carry-in
+    since one that crossed it was applied once they landed and put them back out (#284). A
+    walk is keys, not a position write the game holds, so it cannot land late; the cutoff
+    stays only as the wait's bound. A walk that fails is logged and the carry-in waited for,
+    since that needs no walk. Past KEY_DOOR_ENTRY_TIMEOUT no carry-in is coming, and a normal
+    attempt at the trigger is made.
     """
     loop = asyncio.get_running_loop()
     machine = door.machine
@@ -195,15 +198,14 @@ async def _enter_unlocker(door: _Door, unlocker, pressed_at: float) -> bool:
     going = await node_helpers.poll_until(
         _on_its_way, left_until(min(door.safety_delay, KEY_DOOR_TELEPORT_CUTOFF)), POLL_INTERVAL
     )
-    tried = False
-    while not going and left_until(KEY_DOOR_TELEPORT_CUTOFF) > 0:
-        if tried:
-            await walking.teleport(unlocker, door.reset)
-        tried = True
-        machine.log(f"Teleporting P{number} to the door's trigger", logging.DEBUG)
-        await walking.teleport(unlocker, door.trigger)
-        wait = min(KEY_DOOR_RETRY_INTERVAL, left_until(KEY_DOOR_TELEPORT_CUTOFF))
-        going = await node_helpers.poll_until(_on_its_way, wait, POLL_INTERVAL)
+    if not going:
+        machine.log(f"Walking P{number} into the door's trigger", logging.DEBUG)
+        (walked,) = await walking.walk_clients(machine, [unlocker], door.trigger, numbers=[number])
+        if not walked.ok:
+            machine.log(
+                f"P{number} could not walk into the door's trigger; waiting for the game to carry them", logging.INFO
+            )
+        going = await _on_its_way()
 
     if not going:
         machine.log(f"Leaving P{number} for the game to carry through the door", logging.DEBUG)
@@ -296,7 +298,11 @@ async def _unlock_and_enter(door: _Door, interact: XYZ) -> str:
         # is a rerun, after a fight, of a node that already got the door open.
         first = clients[0]
         machine.log(f"No player got the interact prompt after {MAX_RETRIES} attempts; trying the trigger", logging.INFO)
-        await walking.teleport(first, door.trigger)
+        (walked,) = await walking.walk_clients(machine, [first], door.trigger, numbers=[1])
+        if not walked.ok and not await door.on_its_way(first):
+            # Logged with where it ended. Whether the door is open is still unknown, so not NO_KEY.
+            machine.log("FAILURE: could not walk to the door's trigger to see whether it is open", logging.WARNING)
+            return "FAILURE"
 
         async def _first_is_going() -> bool:
             return await door.on_its_way(first)
@@ -334,26 +340,26 @@ async def _unlock_and_enter(door: _Door, interact: XYZ) -> str:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(), client.is_loading(),
+    APIs: client.zone_name(), walking.walk_clients(), client.is_in_npc_range(), client.is_loading(),
           game_keys.press(client, GameAction.INTERACT)
 
     Flow:
       1. See where everyone is. All in to_zone is done. Some in to_zone means the door is open
          and the node is running again, so the rest go. Anyone in neither zone fails.
-      2. Clear any stale prompt at reset_xyz, then teleport everyone to interact_xyz until the
+      2. Clear any stale prompt at reset_xyz, then walk everyone to interact_xyz until the
          prompt shows on someone. A player with no key never gets it, so waiting for every
          client would cost each attempt its full Safety Delay.
       3. No prompt: try the trigger with the first player. The door is open if it fires,
          otherwise nobody has a key. Return NO_KEY.
       4. Press X with the lowest-numbered player who has the prompt, again if it stays.
       5. Wait Safety Delay, then enter: the unlocker first with four players and the rest once
-         it has landed, everyone together with fewer. Only the unlocker's teleports are on the
+         it has landed, everyone together with fewer. Only the unlocker's walk is on the
          clock from the press; see _enter_unlocker.
       6. Wait for every player to be in to_zone, with straggler recovery to anyone inside.
 
-    FAILURE: a client in neither zone; a stale prompt would not clear; the prompt went before X,
-    or stayed after it; dialogue did not clear within DIALOG_TIMEOUT; not every client reached
-    to_zone. NO_KEY: step 3.
+    FAILURE: a client in neither zone; a stale prompt would not clear; a walk failed; the prompt
+    went before X, or stayed after it; dialogue did not clear within DIALOG_TIMEOUT; not every
+    client reached to_zone. NO_KEY: step 3.
     """
     from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]
