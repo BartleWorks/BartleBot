@@ -1,9 +1,9 @@
 """The inspector and panel rows converted in issue #90, commit 1.
 
-These surfaces are all rows of *equal* verbs — Refresh, Copy ID, Copy XYZ and Teleport
+These surfaces are all rows of *equal* verbs — Refresh, Copy ID, Copy XYZ and Walk to
 are four reads on one selection — so the thing worth guarding is the absence of a weight
 rather than the presence of one. ``gui/CLAUDE.md`` is explicit that nothing in an
-equal-weight row outranks its neighbors, and Teleport is the button that will tempt
+equal-weight row outranks its neighbors, and Walk to is the button that will tempt
 someone: it is the most interesting verb in its row, which is not the same as the one the
 surface expects.
 
@@ -100,14 +100,14 @@ def test_no_inspector_row_claims_a_weight(qapp, name, factory, count):
     assert styles == {ActionStyle.TERTIARY}
 
 
-def test_teleport_does_not_outrank_the_copies_beside_it(qapp):
+def test_walk_to_does_not_outrank_the_copies_beside_it(qapp):
     """The one that will tempt someone: it is the most interesting verb in the row, which
     is not the same thing as the one the surface expects."""
     browser = _entity_browser()
 
-    teleport = next(b for b in _buttons(browser) if b.text() == "Teleport")
+    walk = next(b for b in _buttons(browser) if b.text() == "Walk to")
 
-    assert teleport.action_style is ActionStyle.TERTIARY
+    assert walk.action_style is ActionStyle.TERTIARY
 
 
 @pytest.mark.parametrize(("name", "factory", "count"), INSPECTORS, ids=[i[0] for i in INSPECTORS])

@@ -16,26 +16,25 @@ from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SettingsManage
 
 @pytest.mark.usefixtures("speed_enabled")
 def test_a_binding_problem_names_the_action():
-    assert binding_problems({"xyz_sync": "F1", "tp_to_focused": "F2"}) == []
-    assert binding_problems({"xyz_sync": "Space"}) == [
-        "XYZ sync: Space can't be used. Choose F1–F24, a letter or a digit."
+    assert binding_problems({"tp_to_focused": "F2", "toggle_combat": "F4"}) == []
+    assert binding_problems({"tp_to_focused": "Space"}) == [
+        "Teleport to player: Space can't be used. Choose F1–F24, a letter or a digit."
     ]
-    assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == [
-        "Speed and XYZ sync both use F1. Choose another key for one of them."
+    assert binding_problems({"tp_to_focused": "F2", "toggle_speed": "F2"}) == [
+        "Speed and Teleport to player both use F2. Choose another key for one of them."
     ]
 
 
 def test_switched_off_speed_s_key_is_never_reported_as_a_problem():
     """Its row is hidden (Stage 0 of #322), so a problem with it could not be fixed."""
-    assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == []
+    assert binding_problems({"tp_to_focused": "F2", "toggle_speed": "F2"}) == []
 
 
 def test_the_hotkey_settings_fill_in_an_action_the_file_does_not_mention():
     sm = SettingsManager.instance()
-    sm.set("authoring", "hotkeys", value={"xyz_sync": "F9"})
+    sm.set("authoring", "hotkeys", value={"tp_to_focused": "F9"})
     assert sm.authoring_hotkeys == {
-        "xyz_sync": "F9",
-        "tp_to_focused": "F2",
+        "tp_to_focused": "F9",
         "toggle_speed": "F3",
         "toggle_combat": "F4",
         "toggle_dialogue": "F5",
@@ -55,7 +54,7 @@ def test_the_speed_multiplier_is_clamped_to_its_range(stored, read):
 def test_the_buttons_are_off_during_a_run_and_the_moves_need_two_players():
     for action in AuthoringAction:
         assert not authoring_enabled(action, clients=4, run_active=True, busy=False)
-    assert not authoring_enabled(AuthoringAction.XYZ_SYNC, clients=1, run_active=False, busy=False)
+    assert not authoring_enabled(AuthoringAction.TP_TO_FOCUSED, clients=1, run_active=False, busy=False)
     assert not authoring_enabled(AuthoringAction.TP_TO_FOCUSED, clients=4, run_active=False, busy=True)
     assert authoring_enabled(AuthoringAction.TOGGLE_SPEED, clients=1, run_active=False, busy=True)
     assert not authoring_enabled(AuthoringAction.TOGGLE_COMBAT, clients=0, run_active=False, busy=False)
@@ -63,7 +62,7 @@ def test_the_buttons_are_off_during_a_run_and_the_moves_need_two_players():
 
 def test_a_tooltip_names_the_button_its_key_and_whether_it_is_on():
     assert authoring_tooltip(AuthoringAction.TOGGLE_SPEED, "F3", on=True).startswith("Speed (on) [F3] — ")
-    assert authoring_tooltip(AuthoringAction.XYZ_SYNC, "").startswith("XYZ sync — ")
+    assert authoring_tooltip(AuthoringAction.TP_TO_FOCUSED, "").startswith("Teleport to player — ")
 
 
 def test_only_a_key_that_differs_from_its_default_is_stored():
@@ -73,16 +72,16 @@ def test_only_a_key_that_differs_from_its_default_is_stored():
     sm.set("authoring", "hotkeys", value={})
     for action, binding in DEFAULT_AUTHORING_HOTKEYS.items():
         sm.set_authoring_hotkey(action, binding)
-    sm.set_authoring_hotkey("xyz_sync", "F9")
+    sm.set_authoring_hotkey("tp_to_focused", "F9")
     sm.set_authoring_hotkey("toggle_combat", "")
 
-    assert sm.get("authoring", "hotkeys") == {"xyz_sync": "F9", "toggle_combat": ""}
+    assert sm.get("authoring", "hotkeys") == {"tp_to_focused": "F9", "toggle_combat": ""}
 
 
 def test_a_key_set_back_to_its_default_is_dropped_from_the_file():
     sm = SettingsManager.instance()
-    sm.set("authoring", "hotkeys", value={"toggle_speed_authoring": "F5", "xyz_sync": "F9"})
+    sm.set("authoring", "hotkeys", value={"toggle_speed_authoring": "F5", "tp_to_focused": "F9"})
     sm.set_authoring_hotkey("toggle_speed_authoring", DEFAULT_AUTHORING_HOTKEYS["toggle_speed_authoring"])
 
-    assert sm.get("authoring", "hotkeys") == {"xyz_sync": "F9"}
+    assert sm.get("authoring", "hotkeys") == {"tp_to_focused": "F9"}
     assert sm.authoring_hotkeys["toggle_speed_authoring"] == "F6"

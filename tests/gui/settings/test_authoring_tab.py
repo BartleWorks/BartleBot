@@ -57,7 +57,7 @@ _DEFAULTS = """<Objects>
 def test_a_hotkey_on_a_game_key_is_flagged_and_its_modifiers_matter():
     game = game_bindings(parse_binding_file(_DEFAULTS))
     # The defaults: F4 is free, since the game's F4 binding is Alt+F4.
-    assert binding_problems({"xyz_sync": "F1", "toggle_combat": "F4"}, game) == []
+    assert binding_problems({"tp_to_focused": "F2", "toggle_combat": "F4"}, game) == []
     assert binding_problems({"toggle_speed": "F12"}, game) == [
         "Speed: F12 is the game's key for Print Screen, which won't work in the game while this is set."
     ]

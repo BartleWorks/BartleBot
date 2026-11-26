@@ -62,6 +62,7 @@ from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     VariableModel,
 )
+from bartlebot.clients import authoring_tools
 from bartlebot.content.subgraphs.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
 from bartlebot.content.templates.setup_steps import value_empty
 from bartlebot.game import zone_names
@@ -72,7 +73,7 @@ from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
 from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
-from bartlebot.nodes import walking, zone_navigation
+from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import (
     NODE_PARAM_SCHEMAS,
@@ -461,9 +462,11 @@ class _XyzField(ThemedMixin, QWidget):
         fill_btn.setToolTip("Fill current: a connected player's live position. Right-click a box to copy or paste.")
         fill_btn.clicked.connect(lambda _checked, b=fill_btn: self._show_fill_menu(b))
         row.addWidget(fill_btn)
-        self._tp_btn = _row_action("teleport", "Teleport all connected players to these coordinates")
-        self._tp_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._teleport()))
-        row.addWidget(self._tp_btn)
+        # The pin glyph: go to this spot. It walks there, since nothing but walking.hop writes a
+        # position (Stage 7 of #322).
+        self._go_btn = _row_action("teleport", "Walk every connected player to these coordinates")
+        self._go_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._go_to()))
+        row.addWidget(self._go_btn)
         self._fill_btn = fill_btn
         self._update_buttons()
         self.refresh_theme_styles()
@@ -477,11 +480,11 @@ class _XyzField(ThemedMixin, QWidget):
         return self._fill_btn
 
     @property
-    def teleport_button(self) -> QPushButton:
-        return self._tp_btn
+    def go_to_button(self) -> QPushButton:
+        return self._go_btn
 
     def can_copy(self) -> bool:
-        """Whether the boxes hold a whole coordinate, which is what Copy and TP need."""
+        """Whether the boxes hold a whole coordinate, which is what Copy and Go to need."""
         return self.value() is not None
 
     def box_menu(self, edit: QLineEdit) -> QMenu:
@@ -578,7 +581,7 @@ class _XyzField(ThemedMixin, QWidget):
         self.changed.emit()
 
     def _update_buttons(self) -> None:
-        self._tp_btn.setEnabled(self.can_copy())
+        self._go_btn.setEnabled(self.can_copy())
 
     def _copy(self) -> None:
         value = self.value()
@@ -604,20 +607,17 @@ class _XyzField(ThemedMixin, QWidget):
         except Exception:
             pass
 
-    async def _teleport(self) -> None:
-        from wizwalker import XYZ
-
+    async def _go_to(self) -> None:
+        """Walk every connected player to the coordinate, through the authoring tools."""
+        tools = authoring_tools.current()
         clients = self._get_clients()
         value = self.value()
-        if not clients or value is None:
+        if tools is None or not clients or value is None:
             return
-        target = XYZ(value["x"], value["y"], value["z"])
         try:
-            await asyncio.gather(
-                *[walking.teleport(c, target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
-            )
+            await tools.walk_to(clients, (value["x"], value["y"], value["z"]))
         except Exception:
-            pass
+            logger.exception("Go to failed")
 
 
 class _ZoneLineEdit(QLineEdit):
