@@ -6,6 +6,7 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.movement.walk import WalkEnd
 from bartleby.runtime.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from wizwalker import XYZ
 
@@ -193,6 +194,61 @@ async def test_only_stragglers_are_walked_again_on_retry():
     # `left` is teleported into the trigger box once, on the first attempt, and never
     # re-teleported (to the trigger or to reset_xyz) on any later retry.
     assert left.walk_to.call_count == 1
+
+
+async def test_a_walk_into_the_trigger_that_fails_ends_the_node_without_a_retry():
+    """A wall the walk met is still there, and planning the walk again holds the planner as
+    long again: the arena walk with no route was planned twice, half a minute each."""
+    client = FakeClient()
+    client.zone_name.return_value = "Src"
+    client.walk_to = AsyncMock(return_value=WalkEnd.NO_ROUTE)
+    machine = FakeMachine()
+    params = {**_PARAMS, "reset_xyz": {"x": 1.0, "y": 1.0, "z": 1.0}}
+
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)) as recovery,
+    ):
+        result = await gtz.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert client.walk_to.call_count == 1
+    recovery.assert_not_awaited()
+    assert ("FAILURE: P1 could not walk there", logging.WARNING) in machine.logs
+
+
+async def test_one_players_failed_walk_ends_the_node_for_the_group():
+    walks = FakeClient()
+    walks.zone_name.return_value = "Src"
+    blocked = FakeClient()
+    blocked.zone_name.return_value = "Src"
+    blocked.walk_to = AsyncMock(return_value=WalkEnd.BLOCKED)
+    machine = FakeMachine()
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(machine, [walks, blocked], _PARAMS)
+
+    assert result == "FAILURE"
+    assert ("FAILURE: P2 could not walk there", logging.WARNING) in machine.logs
+
+
+async def test_a_failed_walk_back_to_reset_ends_the_node():
+    """The trigger walk arrived but never fired; the walk back to reset finds no route."""
+    client = FakeClient()
+    client.zone_name.return_value = "Src"
+    client.walk_to = AsyncMock(side_effect=[WalkEnd.ARRIVED, WalkEnd.NO_ROUTE])
+    machine = FakeMachine()
+    params = {**_PARAMS, "reset_xyz": {"x": 1.0, "y": 1.0, "z": 1.0}}
+
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)) as recovery,
+    ):
+        result = await gtz.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [0.0, 1.0]
+    recovery.assert_not_awaited()
 
 
 async def test_a_loading_client_is_not_walked_to_the_trigger_again():

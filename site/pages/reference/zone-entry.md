@@ -90,7 +90,7 @@ The bot stops after 10 consecutive failures on this node.
 **Returns**
 
 - **SUCCESS**: Every player is in To Zone.
-- **FAILURE**: A player wasn't in From Zone at the start, or not every player reached To Zone.
+- **FAILURE**: A player wasn't in From Zone at the start, couldn't walk to the trigger, or didn't reach To Zone.
 
 **Bot options** it adds to the bot's **Options** tab:
 
