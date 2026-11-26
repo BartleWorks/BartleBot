@@ -21,7 +21,7 @@ from bartleby.runtime import run_trace
 from bartleby.runtime.arbiter import LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
-from bartleby.runtime.movement.walk import ARRIVE_GOAL, RouteWalker, WalkEnd, WalkResult
+from bartleby.runtime.movement.walk import ARRIVE_GOAL, Point, RouteWalker, WalkEnd, WalkResult
 
 from bartlebot.nodes.param_schema import BotOptionSpec
 from bartlebot.options.option_groups import GROUP_GENERAL
@@ -90,7 +90,19 @@ def point(goal) -> tuple[float, float, float]:
     return (float(goal[0]), float(goal[1]), float(goal[2]))
 
 
-async def _walk_one(machine, client, number: int, goal, avoid: bool) -> Walked:
+def _in_front(result: WalkResult) -> Point | None:
+    """Where an interaction walks instead, when its goal lies on a closed gate's own floor: the
+    last open floor before that gate, on the way to it (the gate's ``Crossing.before``)."""
+    why = result.no_route
+    if result.end is not WalkEnd.NO_ROUTE or why is None or why.gate is None or why.crossing is None:
+        return None
+    if _flat(why.crossing.after, result.goal) > ARRIVED_WITHIN:
+        return None  # the gate stands between, not under the goal: in front of it is not there
+    before = why.crossing.before
+    return (float(before[0]), float(before[1]), float(before[2]))
+
+
+async def _walk_one(machine, client, number: int, goal, avoid: bool, approach: bool = False) -> Walked:
     goal = point(goal)
     if await client.is_loading():
         # On its way somewhere already: a walk would start from where it was (#70).
@@ -107,6 +119,14 @@ async def _walk_one(machine, client, number: int, goal, avoid: bool) -> Walked:
         try:
             async with machine.arbiter.acquire(client, Owner.MOVEMENT, detail="walking") as lease:
                 result = await walker.walk(lease, goal)
+                if approach and (front := _in_front(result)) is not None:
+                    # The point is inside the object the client lists, so it is closed: stand
+                    # at its edge instead, where its prompt shows (Stage 4 of #322).
+                    machine.log(
+                        f"P{number}: the point is inside {result.no_route.gate}; walking to its edge",
+                        logging.DEBUG,
+                    )
+                    result = await walker.walk(lease, front)
         except LeaseLost as lost:
             # Another owner took the client (a stop, or a higher priority): the walk is over.
             pos = await client.body.position()
@@ -132,7 +152,9 @@ def _flat(a, b) -> float:
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
 
-async def walk_clients(machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None) -> list[Walked]:
+async def walk_clients(
+    machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None, approach: bool = False
+) -> list[Walked]:
     """Walk every one of *clients* to *goal* at once, each from where it stands.
 
     Returns a :class:`Walked` per client, in order. A failed walk is logged under the node
@@ -143,11 +165,17 @@ async def walk_clients(machine, clients: Sequence, goal, *, numbers: Sequence[in
     preempts the node, fights it out and runs the node again. So this waits, up to
     :data:`FIGHT_PREEMPT_WAIT`, for that cancel to arrive, and only then returns.
 
+    *approach* is for a walk to an object's interact point: one that sits inside the object
+    itself, which the client lists and so the walk closes, is walked to the object's edge
+    instead (:func:`_in_front`), where its prompt shows.
+
     *numbers* labels the clients in the log, 1-based, for a caller walking a subset.
     """
     labels = list(numbers) if numbers is not None else list(range(1, len(clients) + 1))
     avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
-    walked = list(await asyncio.gather(*[walk_one(machine, c, n, goal, avoid) for c, n in zip(clients, labels)]))
+    walked = list(
+        await asyncio.gather(*[walk_one(machine, c, n, goal, avoid, approach) for c, n in zip(clients, labels)])
+    )
     for number, w in zip(labels, walked):
         if not w.ok and w.result.end is not WalkEnd.FIGHT:
             machine.log(f"P{number}: {w.describe()}", logging.WARNING)
@@ -179,9 +207,11 @@ async def warm_lookups(client) -> None:
         logger.debug("the first read of the key bindings failed", exc_info=True)
 
 
-async def walk_all(machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None) -> bool:
+async def walk_all(
+    machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None, approach: bool = False
+) -> bool:
     """:func:`walk_clients`, and whether every walk did what was asked."""
-    return all(w.ok for w in await walk_clients(machine, clients, goal, numbers=numbers))
+    return all(w.ok for w in await walk_clients(machine, clients, goal, numbers=numbers, approach=approach))
 
 
 def _players(numbers: Sequence[int]) -> str:

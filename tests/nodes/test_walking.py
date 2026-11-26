@@ -240,3 +240,57 @@ async def test_warming_a_client_that_cannot_be_read_raises_nothing():
     client.in_battle = AsyncMock(side_effect=OSError("closed"))
 
     await walking.warm_lookups(client)
+
+
+class _GateUnderGoal:
+    """A walker whose first walk finds its goal on a closed gate's floor, as core's does for an
+    interact point inside the object the client lists."""
+
+    walks: list = []
+
+    def __init__(self, client, planner, **kwargs):
+        self.client = client
+
+    async def walk(self, lease, goal):
+        from bartleby.runtime.movement.gates import Crossing, NoRoute  # noqa: PLC0415
+
+        _GateUnderGoal.walks.append(tuple(goal))
+        if len(_GateUnderGoal.walks) == 1:
+            crossing = Crossing(before=(1300.0, 1000.0, 0.0), after=self.after(goal), length=40.0)
+            why = NoRoute(ZONE, (200.0, 1000.0, 0.0), tuple(goal), gate="Pedestal", crossing=crossing)
+            return WalkResult(WalkEnd.NO_ROUTE, ZONE, (200.0, 1000.0, 0.0), tuple(goal), no_route=why)
+        return WalkResult(WalkEnd.ARRIVED, ZONE, (200.0, 1000.0, 0.0), tuple(goal), position=tuple(goal))
+
+    @staticmethod
+    def after(goal):
+        return tuple(goal)
+
+
+@pytest.fixture
+def gate_under_goal(real_walks, monkeypatch):
+    _GateUnderGoal.walks = []
+    monkeypatch.setattr(walking, "RouteWalker", _GateUnderGoal)
+    return _GateUnderGoal
+
+
+async def test_an_interact_point_inside_its_object_is_walked_to_the_objects_edge(gate_under_goal):
+    walked = await walking.walk_clients(_machine(), [_client()], (1340.0, 1000.0, 0.0), approach=True)
+
+    assert walked[0].ok
+    assert gate_under_goal.walks == [(1340.0, 1000.0, 0.0), (1300.0, 1000.0, 0.0)]
+
+
+async def test_a_walk_that_is_no_approach_stops_at_the_gate(gate_under_goal):
+    walked = await walking.walk_clients(_machine(), [_client()], (1340.0, 1000.0, 0.0))
+
+    assert walked[0].result.end is WalkEnd.NO_ROUTE
+    assert gate_under_goal.walks == [(1340.0, 1000.0, 0.0)]
+
+
+async def test_a_gate_between_and_not_under_the_point_is_not_walked_up_to(gate_under_goal, monkeypatch):
+    monkeypatch.setattr(gate_under_goal, "after", staticmethod(lambda goal: (900.0, 1000.0, 0.0)))
+
+    walked = await walking.walk_clients(_machine(), [_client()], (1340.0, 1000.0, 0.0), approach=True)
+
+    assert walked[0].result.end is WalkEnd.NO_ROUTE
+    assert gate_under_goal.walks == [(1340.0, 1000.0, 0.0)]

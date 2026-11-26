@@ -712,6 +712,25 @@ async def test_reach_prompt_stands_at_reset_first_even_with_no_prompt_showing():
     assert [call.args[0] for call in client.walk_to.call_args_list] == [_RESET, _SIGIL]
 
 
+async def test_only_the_walk_to_the_prompt_approaches_an_object_never_the_reset(monkeypatch, walk_double):
+    """An interact point inside its object is walked to the object's edge (walking._in_front);
+    the reset is open floor, and walked to as it is."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    asked = []
+
+    async def _walk(machine, client, number, goal, avoid, approach=False):
+        asked.append((tuple(goal), approach))
+        return await walk_double(machine, client, number, goal, avoid, approach)
+
+    monkeypatch.setattr(walking, "walk_one", _walk)
+    client = FakeClient()
+    prompt_at(client, _SIGIL)
+
+    assert await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
+    assert asked == [(tuple(_RESET), False), (tuple(_SIGIL), True)]
+
+
 async def test_reach_prompt_clears_a_stale_prompt_first():
     """A prompt already on screen is not the one this run raised, and pressing X on it
     would use whatever the client happens to be standing next to."""

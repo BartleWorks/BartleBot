@@ -61,6 +61,12 @@ the Skeleton Key unlocker's own moves (Stage 6) still teleport; nothing new may 
 - **A walk that ran into a fight is not the node's failure.** `walk_clients` waits for
   ambient combat to preempt the node (`FIGHT_PREEMPT_WAIT`), which fights it out and runs
   the node again. A node never handles that fight itself.
+- **An interact point may lie inside its own object** (a pedestal, a chest, a brazier: six in
+  the shipped bots, by `check_bot_routes.py`). The client lists the object, so the walker closes
+  it, and a goal on a closed gate has no route. `walk_clients(..., approach=True)` then walks to
+  the object's edge, the gate's `Crossing.before`, where the prompt shows. `reach_prompt` and
+  `take_turns` pass it for the walk to the prompt only; a reset, or a zone change's trigger,
+  never does, since standing in front of a trigger fires nothing.
 - **A walk arrives within `walking.ARRIVED_WITHIN` (50) of its goal, not on it.** A check of
   "is the client at the point" uses that margin, as Mark Location's does; one of a few units
   sends the client walking again every pass.

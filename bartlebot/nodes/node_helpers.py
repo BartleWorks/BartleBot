@@ -559,7 +559,7 @@ async def take_turns(
 
         prompted = False
         for attempt in range(1, MAX_RETRIES + 1):
-            if not await walking.walk_all(machine, [client], interact_xyz, numbers=[number]):
+            if not await walking.walk_all(machine, [client], interact_xyz, numbers=[number], approach=True):
                 break
             if await poll_until(lambda c=client: all_in_npc_range([c]), safety_delay, poll_interval):
                 prompted = True
@@ -1636,7 +1636,7 @@ async def reach_prompt(
 
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(f"Attempt {attempt}/{MAX_RETRIES}: walking to the {prompt.name}", logging.DEBUG)
-        if not await walking.walk_all(machine, clients, point, numbers=numbers):
+        if not await walking.walk_all(machine, clients, point, numbers=numbers, approach=True):
             machine.log(f"FAILURE: could not walk to the {prompt.name}", logging.WARNING)
             return False
 
