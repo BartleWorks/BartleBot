@@ -42,7 +42,7 @@ Every player clicks unless Click Players narrows it. For a menu only some player
 
 ## Collect Item { #collect-item }
 
-Teleports one player to the nearest listed quest item and picks it up.
+Walks one player to the nearest listed quest item and picks it up.
 
 The bot stops after 5 consecutive failures on this node.
 
@@ -51,22 +51,24 @@ The bot stops after 5 consecutive failures on this node.
 | Parameter | What it does | Default |
 |---|---|---|
 | **Zone** | The zone every player must be in when the node starts. | required |
-| **Starting XYZ** | Where the Collecting Player teleports before searching. An item only shows to a player nearby, so choose a spot within range of where it spawns. | where the player stands |
+| **Starting XYZ** | Where the Collecting Player walks before searching. An item only shows to a player nearby, so choose a spot within range of where it spawns. | where the player stands |
 | **Entity IDs** | The IDs of the item, as the Entity Browser shows them, not its in-game name. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use \* and ? to match a pattern, such as \*Stone\*. | required |
 | **Collecting Player** | Which player picks the item up. In an instance one pickup counts for the whole group, so one player is enough. | Player 1 |
+| **Keep Away From** | The IDs of other objects whose prompt could show instead, such as a portal beside a spawn. A player picks up from the side away from the nearest of them, so only the pickup's own prompt shows. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use \* and ? to match a pattern, such as \*Stone\*. | none |
 
 **Returns**
 
 - **SUCCESS**: The Collecting Player picked up an item.
-- **FAILURE**: No item was in range of Starting XYZ, picking it up failed, a player wasn't in Zone, the Collecting Player isn't connected, or Entity IDs is empty.
+- **FAILURE**: No item was in range of Starting XYZ, the walk there or picking it up failed, a player wasn't in Zone, the Collecting Player isn't connected, or Entity IDs is empty.
 
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 !!! warning "Shown before a run"
 
-    This bot teleports to collect items. Run it on a quiet realm.
+    This bot walks to collect items. Run it on a quiet realm.
 
 **Usage notes**
 
@@ -74,7 +76,7 @@ Use it for a quest item that spawns in one of several places, such as a piece of
 
 Route FAILURE to the next place to search. An item shows only to a player nearby, so FAILURE means none was in range of Starting XYZ, and spawns far apart need a node for each area. The node waits up to Safety Delay for an item to show.
 
-Only the Collecting Player moves. The others stay where they are.
+Only the Collecting Player moves. The others stay where they are. An item inside a zone exit, such as a cave mouth, is picked up from the floor just outside it, or skipped when that is too far for its prompt to show.
 
 **See also:** [Collect Reagent](#collect-reagent), [Interact](#interact)
 
@@ -89,21 +91,27 @@ The bot stops after 5 consecutive failures on this node.
 | Parameter | What it does | Default |
 |---|---|---|
 | **Zone** | The zone every player must be in when the node starts. | required |
-| **Starting XYZ** | Where to teleport players before searching. | where players stand |
+| **Starting XYZ** | Where players walk before searching. | where players stand |
 | **Entity IDs** | The IDs of the reagents to collect, as the Entity Browser shows them, not their in-game names. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use \* and ? to match a pattern, such as \*Stone\*. | required |
+| **Keep Away From** | The IDs of other objects whose prompt could show instead, such as a portal beside a spawn. A player picks up from the side away from the nearest of them, so only the pickup's own prompt shows. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use \* and ? to match a pattern, such as \*Stone\*. | none |
 
 **Returns**
 
 - **SUCCESS**: The zone was searched, whether or not anything was found.
-- **FAILURE**: A player wasn't in Zone, or Entity IDs is empty.
+- **FAILURE**: A player wasn't in Zone, couldn't walk to Starting XYZ, or Entity IDs is empty.
 
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 !!! warning "Shown before a run"
 
-    This bot teleports to collect reagents. Run it on a quiet realm.
+    This bot walks to collect reagents. Run it on a quiet realm.
+
+**Usage notes**
+
+Each player walks to the reagents it sees, nearest first. A reagent inside a zone exit, such as a cave mouth, is picked up from the floor just outside it, or skipped when that is too far for its prompt to show, so no player leaves the zone.
 
 **See also:** [Collect Item](#collect-item)
 

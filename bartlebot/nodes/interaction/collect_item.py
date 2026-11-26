@@ -23,7 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Starting XYZ",
         help=(
-            "Where the Collecting Player teleports before searching. An item only shows to a player "
+            "Where the Collecting Player walks before searching. An item only shows to a player "
             "nearby, so choose a spot within range of where it spawns."
         ),
         default=None,
@@ -49,21 +49,35 @@ PARAM_SCHEMA: list[ParamField] = [
         default=1,
         required=False,
     ),
+    ParamField(
+        key="keep_away",
+        type="str_list",
+        label="Keep Away From",
+        help=(
+            "The IDs of other objects whose prompt could show instead, such as a portal beside a spawn. "
+            "A player picks up from the side away from the nearest of them, so only the pickup's own "
+            "prompt shows. " + ENTITY_ID_MATCHING
+        ),
+        default=[],
+        default_hint="none",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports one player to the nearest listed quest item and picks it up.",
+    description="Walks one player to the nearest listed quest item and picks it up.",
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "The Collecting Player picked up an item."),
         ReturnSpec(
             "FAILURE",
-            "No item was in range of Starting XYZ, picking it up failed, a player wasn't in Zone, "
-            "the Collecting Player isn't connected, or Entity IDs is empty.",
+            "No item was in range of Starting XYZ, the walk there or picking it up failed, a player "
+            "wasn't in Zone, the Collecting Player isn't connected, or Entity IDs is empty.",
         ),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=5,
     usage_notes=(
@@ -72,10 +86,12 @@ NODE_SPEC = NodeSpec(
         "Route FAILURE to the next place to search. An item shows only to a player nearby, so FAILURE "
         "means none was in range of Starting XYZ, and spawns far apart need a node for each area. The "
         "node waits up to Safety Delay for an item to show.\n\n"
-        "Only the Collecting Player moves. The others stay where they are."
+        "Only the Collecting Player moves. The others stay where they are. An item inside a zone "
+        "exit, such as a cave mouth, is picked up from the floor just outside it, or skipped when "
+        "that is too far for its prompt to show."
     ),
     see_also=["collect_reagent", "interact"],
-    safety_warning="This bot teleports to collect items. Run it on a quiet realm.",
+    safety_warning="This bot walks to collect items. Run it on a quiet realm.",
 )
 
 
@@ -109,15 +125,17 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
     client = clients[slot - 1]
 
-    # 3. Optional teleport to a spot the item can be seen from.
+    # 3. Optional walk to a spot the item can be seen from.
     xyz_data = params.get("xyz")
     if xyz_data is not None:
         start = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
         machine.log(
-            f"collect_item: P{slot} teleporting to XYZ({start.x:.1f}, {start.y:.1f}, {start.z:.1f})",
+            f"collect_item: P{slot} walking to XYZ({start.x:.1f}, {start.y:.1f}, {start.z:.1f})",
             logging.DEBUG,
         )
-        await walking.teleport(client, start)
+        if not await walking.walk_all(machine, [client], start, numbers=[slot]):
+            machine.log(f"FAILURE: P{slot} could not walk to Starting XYZ", logging.WARNING)
+            return "FAILURE"
 
     # 4. Wait for a match to show. That none is there is only known once the wait is over.
     found: list = []
@@ -145,12 +163,15 @@ async def run(machine, clients: list, params: dict) -> str:
         located.sort(key=lambda xyz: node_helpers.distance(here, xyz))
 
     # 6. Pick one up, trying the next if one does not take.
+    keep_away = [n.strip() for n in params.get("keep_away", []) if n.strip()]
     for i, xyz in enumerate(located, start=1):
         machine.log(
             f"collect_item: entity {i}/{len(located)} at ({xyz.x:.1f}, {xyz.y:.1f}, {xyz.z:.1f})",
             logging.DEBUG,
         )
-        outcome = await node_helpers.pick_up(client, xyz, safety_delay, POLL_INTERVAL)
+        outcome = await node_helpers.pick_up(
+            machine, client, slot, xyz, safety_delay, POLL_INTERVAL, keep_away=keep_away
+        )
         if outcome is node_helpers.Pickup.COLLECTED:
             machine.log(f"collect_item: P{slot} picked up an item — SUCCESS")
             return "SUCCESS"

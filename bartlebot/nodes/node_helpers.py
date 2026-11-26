@@ -18,7 +18,7 @@ from typing import NamedTuple
 
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.game.key_bindings import GameAction
-from wizwalker import ExceptionalTimeout, MemoryReadError
+from wizwalker import XYZ, ExceptionalTimeout, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
@@ -732,16 +732,77 @@ class Pickup(enum.Enum):
     NO_PROMPT = "no prompt"
     #: X was pressed, and the prompt stayed.
     NOT_DISMISSED = "not dismissed"
+    #: The walk there failed (no route, blocked), and said why.
+    NOT_REACHED = "not reached"
+    #: It lies inside a zone exit with no floor outside within PICKUP_REACH of it.
+    IN_AN_EXIT = "inside an exit"
 
 
-async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_INTERVAL) -> Pickup:
-    """Teleport *client* onto *xyz*, press Interact at the prompt there, and wait for the prompt to clear.
+#: How far from an entity a wizard can stand and still get its pickup prompt, a little inside
+#: the edge tools/probe_pickup_reach.py measured on 2026-11-25: on Nightside's FrostedFlax_01 the
+#: prompt came on no farther out than 285 and went off no nearer than 300, the game's flag lagging
+#: the walk both ways (Stage 5 of #322). A pickup stands off this far, less a walk's arrival
+#: margin, on the far side of an entity named in Keep Away From, and skips a spot inside an exit
+#: with no floor outside within this.
+PICKUP_REACH = 275.0
+
+
+async def pickup_spot(client, xyz, keep_away: Collection[str] = ()):
+    """Where *client* walks to pick up the entity at *xyz*, or None when nowhere in reach will do.
+
+    On the entity itself, unless one of the entities named in *keep_away* (Keep Away From, as
+    the Entity Browser shows them) is listed: then on the entity's far side from the nearest of
+    them, PICKUP_REACH less a walk's arrival margin off it, so its prompt shows and not the
+    other's (#35's Streamportal). And never inside a zone exit, which would leave the zone
+    (#35's cave): the nearest floor outside it instead, if that is within PICKUP_REACH.
+    """
+    sx, sy, sz = walking.point(xyz)
+    x, y, z = sx, sy, sz
+    others = []
+    for name in keep_away:
+        for entity in await find_entities_by_name(client, name):
+            try:
+                others.append(walking.point(await entity.location()))
+            except Exception:
+                continue  # freed since it was listed
+    if others:
+        ox, oy, _ = min(others, key=lambda o: math.hypot(o[0] - x, o[1] - y))
+        away = math.hypot(x - ox, y - oy)
+        if away > 0:
+            off = max(PICKUP_REACH - walking.ARRIVED_WITHIN, 0.0)
+            x, y = x + (x - ox) / away * off, y + (y - oy) / away * off
+    zone = await client.zone_name()
+    if zone and walking.has_map(zone):
+        planner = await walking.load_planner(zone)
+        clear = await asyncio.to_thread(planner.outside_exits, x, y, z)
+        if clear is None or math.hypot(clear[0] - sx, clear[1] - sy) > PICKUP_REACH:
+            return None
+        x, y, z = clear
+    return xyz if (x, y, z) == (sx, sy, sz) else XYZ(x, y, z)
+
+
+async def pick_up(
+    machine,
+    client,
+    number: int,
+    xyz,
+    safety_delay: float,
+    poll_interval: float = POLL_INTERVAL,
+    keep_away: Collection[str] = (),
+) -> Pickup:
+    """Walk *client* to the entity at *xyz* (:func:`pickup_spot`), press Interact at the prompt
+    there, and wait for the prompt to clear.
 
     The step collect_reagent and collect_item share. Each waits *safety_delay* for the prompt
     and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
-    is its own case to log.
+    is its own case to log. *number* is the client's 1-based player number, for the walk's log.
     """
-    await walking.teleport(client, xyz)
+    spot = await pickup_spot(client, xyz, keep_away)
+    if spot is None:
+        return Pickup.IN_AN_EXIT
+    walked = await walking.walk_clients(machine, [client], spot, numbers=[number])
+    if not walked[0].ok:
+        return Pickup.NOT_REACHED
     if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
         return Pickup.NO_PROMPT
     await game_keys.press(client, GameAction.INTERACT, 0.1)

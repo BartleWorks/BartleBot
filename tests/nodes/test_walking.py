@@ -251,7 +251,7 @@ class _GateUnderGoal:
     def __init__(self, client, planner, **kwargs):
         self.client = client
 
-    async def walk(self, lease, goal):
+    async def walk(self, lease, goal, **_kw):
         from bartleby.runtime.movement.gates import Crossing, NoRoute  # noqa: PLC0415
 
         _GateUnderGoal.walks.append(tuple(goal))
@@ -395,3 +395,140 @@ def test_every_position_write_goes_through_the_guard():
                     found.append(f"{path.relative_to(root)}:{node.lineno}")
     # walking.teleport's getattr(client, how) is the one write, and no attribute call.
     assert found == []
+
+
+# --- a walk into a fight (Stage 5 of #322) ---------------------------------------------------
+
+
+def _two_patrols():
+    """The hall with two ghosts on patrol: one at x 3000 across y 300 to 700, the fight's, and
+    one at x 1500 across y 800 to 1200, on the straight way there."""
+    import numpy as np  # noqa: PLC0415
+    from bartleby.runtime.movement.patrols import Patrol  # noqa: PLC0415
+
+    vertices = _floor(0, 0, 4000, 2000)
+    solid = Solid(MESH, WALKABLE, _IDENTITY, (0.0, 0.0, 0.0), 1.0, (), vertices, [(0, 1, 2), (3, 4, 5)])
+    ghosts = [
+        Patrol("Ghosts 01", "Ghost", 200, 1, np.array([(3000, 300, 0), (3000, 700, 0)], dtype=float)),
+        Patrol("Ghosts 02", "Ghost", 200, 1, np.array([(1500, 800, 0), (1500, 1200, 0)], dtype=float)),
+    ]
+    return build_planner(ZoneFiles(ZONE, [solid], ghosts, {}))
+
+
+@pytest.fixture
+def two_patrols(real_walks, monkeypatch):
+    built = _two_patrols()
+
+    async def _load(zone):
+        import dataclasses  # noqa: PLC0415
+
+        return dataclasses.replace(built, passable=built.passable.copy(), closed=[], blocks=[], _took={})
+
+    monkeypatch.setattr(walking, "load_planner", _load)
+    return built
+
+
+FIGHT_MOB, OTHER_MOB = (3000.0, 500.0, 0.0), (1500.0, 1000.0, 0.0)
+
+
+def _ghosts(client):
+    """The two ghosts standing on their paths, and a watch that starts a fight with whichever
+    the wizard comes within its trigger radius of, as the server would."""
+    from bartleby.runtime.testing.sim_client import SimEntity  # noqa: PLC0415
+
+    fight, other = SimEntity("Ghost", FIGHT_MOB, mob=True), SimEntity("Ghost", OTHER_MOB, mob=True)
+    client.entities = [fight, other]
+    started: list[tuple[float, float, float]] = []
+
+    async def _trigger():
+        while not started:
+            for mob in (FIGHT_MOB, OTHER_MOB):
+                if ((client.position[0] - mob[0]) ** 2 + (client.position[1] - mob[1]) ** 2) ** 0.5 < 200:
+                    started.append(mob)
+                    client.battle = True
+            await asyncio.sleep(0.01)
+
+    return fight, started, asyncio.create_task(_trigger())
+
+
+async def test_a_walk_into_a_fight_starts_that_fight_and_ends_there_with_no_wait(two_patrols):
+    client = _client()
+    fight, started, trigger = _ghosts(client)
+    machine = _machine()
+
+    walked = await walking.walk_clients(machine, [client], FIGHT_MOB, fight=True, spare=[fight.gid])
+    trigger.cancel()
+
+    assert walked[0].result.end is WalkEnd.FIGHT and walked[0].ok
+    assert started == [FIGHT_MOB]
+    assert not any("waiting for ambient combat" in m or m.startswith("FAILURE") for m, _ in machine.logs)
+    assert client.held == set()
+
+
+async def test_with_avoid_mobs_on_a_walk_to_anything_else_starts_no_fight(two_patrols):
+    client = _client()
+    _fight, started, trigger = _ghosts(client)
+
+    walked = await walking.walk_clients(_machine(), [client], (3800.0, 1800.0, 0.0))
+    trigger.cancel()
+
+    assert walked[0].result.arrived
+    assert started == []
+
+
+async def test_a_fight_met_during_ambient_combat_waits_for_no_preempt(real_walks):
+    client = _client()
+    client.battle = True
+    machine = _machine()
+    machine.is_ambient_combat_active = True
+
+    began = time.monotonic()
+    walked = await walking.walk_clients(machine, [client], (3000.0, 1000.0, 0.0))
+
+    assert walked[0].result.end is WalkEnd.FIGHT and not walked[0].ok
+    assert time.monotonic() - began < walking.FIGHT_PREEMPT_WAIT
+    assert any("during ambient combat" in m for m, _ in machine.logs)
+
+
+@pytest.mark.parametrize("avoid, clear", [(True, True), (False, False)])
+async def test_a_walk_is_clear_of_patrols_only_when_its_planned_route_stays_outside_every_trigger(
+    two_patrols, avoid, clear
+):
+    client = _client(at=(200.0, 1000.0, 0.0))
+
+    # Straight across is through the second ghost's path; avoiding, the plan goes around it.
+    assert (
+        await walking.passes_clear_of_patrols(_machine(**{walking.AVOID_MOBS: avoid}), client, (2800, 1000, 0)) is clear
+    )
+
+
+async def test_a_walk_with_no_map_counts_as_clear_of_patrols(real_walks):
+    client = _client()
+    client.zone = "Test/T_Unmapped"
+
+    assert await walking.passes_clear_of_patrols(_machine(), client, (2800, 1000, 0))
+
+
+async def test_a_walks_span_says_whether_it_was_into_a_fight_and_what_watching_mobs_cost(
+    two_patrols, monkeypatch, tmp_path
+):
+    import json  # noqa: PLC0415
+
+    from bartleby.runtime import run_trace  # noqa: PLC0415
+
+    monkeypatch.setenv("BARTLEBOT_DEV", "1")
+    client = _client()
+    _fight, _started, trigger = _ghosts(client)
+    path = run_trace.start(lambda c: 1, tmp_path)
+    try:
+        await walking.walk_clients(_machine(), [client], (3800.0, 1800.0, 0.0))
+    finally:
+        run_trace.stop()
+        trigger.cancel()
+
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    walk = next(r for r in records if r.get("kind") == "span" and r.get("name") == "walk")
+    assert walk["attrs"]["fight"] is False
+    assert walk["attrs"]["mob_reads"] > 0
+    for field in ("mob_read_s", "mob_read_max", "list_read_s"):
+        assert walk["attrs"][field] >= 0, field

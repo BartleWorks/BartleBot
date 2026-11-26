@@ -124,7 +124,7 @@ Walks plan around the mobs' patrols, and wait for or step around a mob in the wa
 
 - **Default:** On
 - **App setting:** **Settings › Bot › Avoid mobs**
-- **Added by:** [Enter Dungeon](zone-entry.md#enter-dungeon), [Enter Zone](zone-entry.md#enter-zone), [Enter Zone via Object](zone-entry.md#enter-zone-via-object), [Open Skeleton Key Door](zone-entry.md#open-skeleton-key-door), [Mark Location](teleportation.md#mark-location), [Sync in Zone](teleportation.md#sync-in-zone), [Handle Potions](combat-and-healing.md#handle-potions), [Interact](interaction.md#interact), [Interact Menu](interaction.md#interact-menu), [Handle Level Scaling](utility.md#handle-level-scaling)
+- **Added by:** [Enter Dungeon](zone-entry.md#enter-dungeon), [Enter Zone](zone-entry.md#enter-zone), [Enter Zone via Object](zone-entry.md#enter-zone-via-object), [Open Skeleton Key Door](zone-entry.md#open-skeleton-key-door), [Mark Location](teleportation.md#mark-location), [Sync in Zone](teleportation.md#sync-in-zone), [Collect Wisps](combat-and-healing.md#collect-wisps), [Handle Combat](combat-and-healing.md#handle-combat), [Handle Potions](combat-and-healing.md#handle-potions), [Collect Item](interaction.md#collect-item), [Collect Reagent](interaction.md#collect-reagent), [Interact](interaction.md#interact), [Interact Menu](interaction.md#interact-menu), [Handle Level Scaling](utility.md#handle-level-scaling)
 
 ### Favorite Realm { #favorite-realm }
 

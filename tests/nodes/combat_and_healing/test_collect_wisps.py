@@ -43,16 +43,16 @@ def _client(health: float = 1.0, mana: float = 1.0) -> FakeClient:
     return client
 
 
-def _refill_on_teleport(client: FakeClient, health: float | None = None, mana: float | None = None) -> None:
-    """Make a teleport raise the client's ratios, as landing on a wisp would."""
+def _refill_on_walk(client: FakeClient, health: float | None = None, mana: float | None = None) -> None:
+    """Make a walk raise the client's ratios, as reaching a wisp would."""
 
-    async def _teleport(_location):
+    async def _walk(_location):
         if health is not None:
             client.calc_health_ratio.return_value = health
         if mana is not None:
             client.calc_mana_ratio.return_value = mana
 
-    client.teleport.side_effect = _teleport
+    client.walk_to.side_effect = _walk
 
 
 def _serve_once(mock: AsyncMock, entities: list) -> None:
@@ -60,9 +60,9 @@ def _serve_once(mock: AsyncMock, entities: list) -> None:
     mock.side_effect = [entities] + [[]] * 50
 
 
-def _teleport_targets(client: FakeClient) -> list[tuple[float, float, float]]:
-    """Where each teleport went, as tuples: XYZ compares by identity, not by value."""
-    return [(c.args[0].x, c.args[0].y, c.args[0].z) for c in client.teleport.call_args_list]
+def _walk_targets(client: FakeClient) -> list[tuple[float, float, float]]:
+    """Where each walk went, as tuples: XYZ compares by identity, not by value."""
+    return [(c.args[0].x, c.args[0].y, c.args[0].z) for c in client.walk_to.call_args_list]
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ async def test_full_health_mana_moves_nobody():
 
     assert result == "SUCCESS"
     client.get_health_wisps.assert_not_called()
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_zero_collect_threshold_skips_that_resource():
@@ -92,7 +92,7 @@ async def test_zero_collect_threshold_skips_that_resource():
 
     assert result == "SUCCESS"
     client.get_health_wisps.assert_not_called()
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -105,24 +105,24 @@ async def test_collects_health_wisp_until_threshold():
     client = _client(health=0.6)
     wisp = _entity(300)
     client.get_health_wisps.return_value = [wisp]
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    assert _teleport_targets(client) == [(300, 0, 0)]
+    assert _walk_targets(client) == [(300, 0, 0)]
 
 
 async def test_only_wanted_kind_is_scanned():
     """Only mana is low → mana wisps are scanned, health wisps are not."""
     client = _client(mana=0.3)
     _serve_once(client.get_mana_wisps, [_entity(200)])
-    _refill_on_teleport(client, mana=1.0)
+    _refill_on_walk(client, mana=1.0)
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     client.get_health_wisps.assert_not_called()
-    assert _teleport_targets(client) == [(200, 0, 0)]
+    assert _walk_targets(client) == [(200, 0, 0)]
 
 
 async def test_health_and_mana_candidates_are_merged():
@@ -133,7 +133,7 @@ async def test_health_and_mana_candidates_are_merged():
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
-    assert _teleport_targets(client)[0] == (400, 0, 0)
+    assert _walk_targets(client)[0] == (400, 0, 0)
 
 
 async def test_visited_wisp_is_excluded_from_the_next_scan():
@@ -151,7 +151,7 @@ async def test_visited_wisp_is_excluded_from_the_next_scan():
     # The node keeps adding to one set, so every call shows its final contents.
     assert all(ids == {first_id, second_id} for ids in scanned_with)
     assert client.get_health_wisps.call_count == 3
-    assert _teleport_targets(client) == [(100, 0, 0), (200, 0, 0)]
+    assert _walk_targets(client) == [(100, 0, 0), (200, 0, 0)]
 
 
 async def test_no_wisps_above_fail_threshold_succeeds():
@@ -162,7 +162,7 @@ async def test_no_wisps_above_fail_threshold_succeeds():
 
     assert result == "SUCCESS"
     client.get_health_wisps.assert_called_once()
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_no_wisps_below_fail_threshold_fails():
@@ -172,19 +172,19 @@ async def test_no_wisps_below_fail_threshold_fails():
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_collected_but_still_below_fail_threshold_fails():
     """A wisp is collected but health stays under the fail threshold → FAILURE."""
     client = _client(health=0.3)
     _serve_once(client.get_health_wisps, [_entity(100)])
-    _refill_on_teleport(client, health=0.4)
+    _refill_on_walk(client, health=0.4)
 
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
 
 
 async def test_mana_failure_fails():
@@ -211,12 +211,12 @@ async def test_wisp_that_appears_late_is_collected():
     client = _client(health=0.3)
     wisp = _entity(300)
     client.get_health_wisps.side_effect = [[], [], [wisp]] + [[]] * 50
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     result = await cw.run(_patient(2.0), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    assert _teleport_targets(client) == [(300, 0, 0)]
+    assert _walk_targets(client) == [(300, 0, 0)]
 
 
 async def test_waits_the_safety_delay_then_fails_when_no_wisp_comes():
@@ -227,7 +227,7 @@ async def test_waits_the_safety_delay_then_fails_when_no_wisp_comes():
 
     assert result == "FAILURE"
     assert client.get_health_wisps.call_count > 2
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_below_full_but_above_the_fail_threshold_does_not_wait():
@@ -268,7 +268,7 @@ async def test_waits_only_before_the_first_hop():
     """Once a wisp has been collected, running out of them ends the node: no second wait."""
     client = _client(health=0.3)
     _serve_once(client.get_health_wisps, [_entity(100)])
-    _refill_on_teleport(client, health=0.4)  # still below the fail threshold
+    _refill_on_walk(client, health=0.4)  # still below the fail threshold
 
     result = await cw.run(_patient(0.2), [client], _DEFAULT_PARAMS)
 
@@ -280,12 +280,12 @@ async def test_a_wait_ends_as_soon_as_a_wisp_is_in_sight():
     """The first scan finds a wisp → no polling at all."""
     client = _client(health=0.3)
     client.get_health_wisps.return_value = [_entity(300)]
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     await cw.run(_patient(2.0), [client], _DEFAULT_PARAMS)
 
     client.get_health_wisps.assert_called_once()
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
 
 
 async def test_a_direct_call_without_fail_thresholds_never_waits():
@@ -297,8 +297,8 @@ async def test_a_direct_call_without_fail_thresholds_never_waits():
     client.get_health_wisps.assert_called_once()
 
 
-def test_the_node_declares_safety_delay():
-    assert [option.name for option in cw.NODE_SPEC.required_bot_options] == ["Safety Delay"]
+def test_the_node_declares_safety_delay_and_avoid_mobs():
+    assert [option.name for option in cw.NODE_SPEC.required_bot_options] == ["Safety Delay", "Avoid Mobs"]
 
 
 # ---------------------------------------------------------------------------
@@ -312,11 +312,11 @@ async def test_wisp_near_an_enemy_is_skipped():
     near, far = _entity(100), _entity(5000)
     client.get_health_wisps.return_value = [near, far]
     client.get_mobs.return_value = [_entity(100 + node_helpers.SAFE_RADIUS - 1)]
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
-    assert _teleport_targets(client) == [(5000, 0, 0)]
+    assert _walk_targets(client) == [(5000, 0, 0)]
 
 
 async def test_radius_is_wider_than_the_measured_trigger_distance():
@@ -328,11 +328,11 @@ async def test_wisp_exactly_at_the_radius_is_safe():
     client = _client(health=0.6)
     client.get_health_wisps.return_value = [_entity(0)]
     client.get_mobs.return_value = [_entity(node_helpers.SAFE_RADIUS)]
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
 
 
 async def test_no_safe_wisp_moves_nobody():
@@ -344,7 +344,7 @@ async def test_no_safe_wisp_moves_nobody():
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_mobs_are_rescanned_every_hop():
@@ -357,7 +357,7 @@ async def test_mobs_are_rescanned_every_hop():
     params = {**_DEFAULT_PARAMS, "fail_if_health_below": 0.0}
     await cw.run(FakeMachine(), [client], params)
 
-    assert _teleport_targets(client) == [(0, 0, 0)]
+    assert _walk_targets(client) == [(0, 0, 0)]
     assert client.get_mobs.call_count == 2
 
 
@@ -365,38 +365,105 @@ async def test_only_safe_off_takes_wisps_near_enemies():
     client = _client(health=0.6)
     client.get_health_wisps.return_value = [_entity(100)]
     client.get_mobs.return_value = [_entity(110)]
-    _refill_on_teleport(client, health=1.0)
+    _refill_on_walk(client, health=1.0)
 
     await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "only_safe": False})
 
     client.get_mobs.assert_not_called()
-    assert _teleport_targets(client) == [(100, 0, 0)]
+    assert _walk_targets(client) == [(100, 0, 0)]
 
 
 # ---------------------------------------------------------------------------
-# Moving as a group
+# Who walks
 # ---------------------------------------------------------------------------
 
 
-async def test_full_client_moves_with_the_group():
-    """One client needs health, the other is full → both land on the same wisp."""
+async def test_a_full_client_stays_still_while_the_needy_one_walks():
+    """Only simultaneous arrivals share a wisp, and walking players never arrive at once; a
+    player standing still keeps its ghost window after a fight."""
     needy, full = _client(health=0.6), _client()
     wisp = _entity(300)
     needy.get_health_wisps.return_value = [wisp]
-    _refill_on_teleport(needy, health=1.0)
+    _refill_on_walk(needy, health=1.0)
 
     result = await cw.run(FakeMachine(), [needy, full], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    assert _teleport_targets(needy) == _teleport_targets(full) == [(300, 0, 0)]
+    assert _walk_targets(needy) == [(300, 0, 0)]
+    assert _walk_targets(full) == []
+
+
+async def test_every_client_short_of_that_kind_walks_to_the_wisp_at_once():
+    low_health, low_mana, full = _client(health=0.6), _client(mana=0.6), _client()
+    low_health.get_health_wisps.return_value = [_entity(300)]
+    low_health.get_mana_wisps.return_value = []
+    _refill_on_walk(low_health, health=1.0)
+    second = _client(health=0.7)
+    _refill_on_walk(second, health=1.0)
+
+    await cw.collect_as_group(FakeMachine(), [low_health, second, low_mana, full], 1.0, 0.0, None, True)
+
+    assert _walk_targets(low_health) == _walk_targets(second) == [(300, 0, 0)]
+    assert _walk_targets(low_mana) == _walk_targets(full) == []
+
+
+async def test_a_client_that_missed_a_wisp_goes_on_to_the_next():
+    """It reached the wisp after the other took it: still short, so the next scan sends it on."""
+    first, late = _client(health=0.6), _client(health=0.6)
+    near, far = _entity(300), _entity(900)
+    first.get_health_wisps.side_effect = [[near, far], [far], []]
+    _refill_on_walk(first, health=1.0)  # the first to arrive takes it; the late one gets nothing
+
+    await cw.collect_as_group(FakeMachine(), [first, late], 1.0, 0.0, None, True)
+
+    assert _walk_targets(first) == [(300, 0, 0)]
+    assert _walk_targets(late) == [(300, 0, 0), (900, 0, 0)]
+
+
+async def test_only_safe_skips_a_wisp_whose_walk_passes_inside_a_patrols_range(monkeypatch):
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    client = _client(health=0.6)
+    behind, open_ = _entity(300), _entity(900)
+    client.get_health_wisps.side_effect = [[behind, open_], [open_], []]
+    _refill_on_walk(client, health=1.0)
+    asked: list = []
+
+    async def clear(_machine, _client, goal):
+        asked.append(walking.point(goal))
+        return walking.point(goal)[0] != 300  # a patrol walks between the player and the near one
+
+    monkeypatch.setattr(walking, "passes_clear_of_patrols", clear)
+    machine = FakeMachine()
+
+    await cw.collect_as_group(machine, [client], 1.0, 0.0, None, True)
+
+    assert _walk_targets(client) == [(900, 0, 0)]
+    assert asked == [(300, 0, 0), (900, 0, 0)]
+    assert any("passes inside a patrol's range" in m for m, _ in machine.logs)
+
+
+async def test_with_only_safe_off_no_route_is_checked_for_patrols(monkeypatch):
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    client = _client(health=0.6)
+    client.get_health_wisps.return_value = [_entity(300)]
+    _refill_on_walk(client, health=1.0)
+    check = AsyncMock(return_value=False)
+    monkeypatch.setattr(walking, "passes_clear_of_patrols", check)
+
+    await cw.collect_as_group(FakeMachine(), [client], 1.0, 0.0, None, False)
+
+    check.assert_not_awaited()
+    assert _walk_targets(client) == [(300, 0, 0)]
 
 
 async def test_scan_is_read_from_the_first_client():
     """Every client shares the zone, so one entity list serves the group."""
     lead, other = _client(health=0.6), _client(health=0.6)
     lead.get_health_wisps.return_value = [_entity(300)]
-    _refill_on_teleport(lead, health=1.0)
-    _refill_on_teleport(other, health=1.0)
+    _refill_on_walk(lead, health=1.0)
+    _refill_on_walk(other, health=1.0)
 
     await cw.run(FakeMachine(), [lead, other], _DEFAULT_PARAMS)
 
@@ -404,18 +471,31 @@ async def test_scan_is_read_from_the_first_client():
     other.get_mobs.assert_not_called()
 
 
-async def test_nearest_wisp_is_measured_from_the_whole_group():
-    """Two clients apart → the wisp with the least total distance wins, not the lead's nearest."""
-    lead, other = _client(health=0.6), _client()
+async def test_nearest_wisp_is_measured_from_every_client_that_walks():
+    """Two needy clients apart → the wisp with the least total distance wins, not the lead's nearest."""
+    lead, other = _client(health=0.6), _client(health=0.6)
     lead.body.position.return_value = XYZ(0, 0, 0)
     other.body.position.return_value = XYZ(1000, 0, 0)
     # Beside the lead but far from the other (total 1200), vs. midway (total 1000).
     lead.get_health_wisps.return_value = [_entity(-100), _entity(500)]
-    _refill_on_teleport(lead, health=1.0)
+    _refill_on_walk(lead, health=1.0)
+    _refill_on_walk(other, health=1.0)
 
     await cw.run(FakeMachine(), [lead, other], _DEFAULT_PARAMS)
 
-    assert _teleport_targets(lead) == [(500, 0, 0)]
+    assert _walk_targets(lead) == [(500, 0, 0)]
+
+
+async def test_a_full_client_does_not_pull_the_pick_toward_itself():
+    lead, full = _client(health=0.6), _client()
+    lead.body.position.return_value = XYZ(0, 0, 0)
+    full.body.position.return_value = XYZ(1000, 0, 0)
+    lead.get_health_wisps.return_value = [_entity(-100), _entity(500)]
+    _refill_on_walk(lead, health=1.0)
+
+    await cw.run(FakeMachine(), [lead, full], _DEFAULT_PARAMS)
+
+    assert _walk_targets(lead) == [(-100, 0, 0)]
 
 
 # ---------------------------------------------------------------------------
@@ -432,7 +512,7 @@ async def test_timeout_stops_collection():
     result = await cw.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    assert client.teleport.call_count > 0
+    assert client.walk_to.call_count > 0
 
 
 async def test_zero_timeout_does_not_limit_collection():
@@ -442,7 +522,7 @@ async def test_zero_timeout_does_not_limit_collection():
 
     await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 0.0})
 
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
 
 
 async def test_challenge_mode_reads_the_fail_threshold_against_the_scaled_max():

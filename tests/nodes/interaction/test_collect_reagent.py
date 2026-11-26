@@ -46,7 +46,7 @@ async def test_wrong_zone_fails():
     result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -68,7 +68,7 @@ async def test_blank_entity_names_fails():
     result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": []})
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_no_entities_found_succeeds():
@@ -83,11 +83,11 @@ async def test_no_entities_found_succeeds():
     result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_plain_name_skips_entities_whose_id_only_contains_it():
-    """#144: "Stone" teleported a player to ZF-STONE-NPC10, and would take Sandstone too."""
+    """#144: "Stone" sent a player to ZF-STONE-NPC10, and would take Sandstone too."""
     client = FakeClient()
     _spawn(
         client,
@@ -107,7 +107,7 @@ async def test_plain_name_skips_entities_whose_id_only_contains_it():
         result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["Stone"]})
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once_with(_XYZ_B)
+    client.walk_to.assert_called_once_with(_XYZ_B)
     # WizSprinter's vague-name search is the substring match this replaced.
     client.get_base_entities_with_vague_name.assert_not_called()
 
@@ -125,7 +125,7 @@ async def test_plain_name_ignores_case():
         result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["black lotus"]})
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
 
 
 async def test_wildcard_entity_name_matches_part_of_an_id():
@@ -143,7 +143,7 @@ async def test_wildcard_entity_name_matches_part_of_an_id():
         result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["*Stone*"]})
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once_with(_XYZ_A)
+    client.walk_to.assert_called_once_with(_XYZ_A)
     client.get_base_entities_with_vague_name.assert_not_called()
 
 
@@ -161,7 +161,7 @@ async def test_success_immediate_prompt():
         result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
@@ -207,7 +207,7 @@ async def test_success_multiple_entities():
         result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.teleport.call_count == 3
+    assert client.walk_to.call_count == 3
     from wizwalker import Keycode
 
     x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
@@ -228,7 +228,7 @@ async def test_multiple_entity_names_combined():
         result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["FungusWort", "Mushroom"]})
 
     assert result == "SUCCESS"
-    assert client.teleport.call_count == 2
+    assert client.walk_to.call_count == 2
     from wizwalker import Keycode
 
     x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
@@ -236,7 +236,7 @@ async def test_multiple_entity_names_combined():
 
 
 async def test_entity_found_no_prompt_still_succeeds():
-    """Entity found but no prompt appears — the reagent was taken by someone else mid-teleport.
+    """Entity found but no prompt appears — the reagent was taken by someone else mid-walk.
 
     Also an ordinary outcome in a shared realm, so it does not fail the node.
     """
@@ -251,7 +251,7 @@ async def test_entity_found_no_prompt_still_succeeds():
         result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    client.walk_to.assert_called_once()
     client.send_key.assert_not_called()
 
 
@@ -276,7 +276,7 @@ async def test_partial_collection_counts_as_success():
         result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.teleport.call_count == 2
+    assert client.walk_to.call_count == 2
     from wizwalker import Keycode
 
     x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
@@ -395,3 +395,52 @@ async def test_hidden_chat_skips_drop_detection():
     assert result == "SUCCESS"
     assert machine.drops == []
     extract.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Walking to them (Stage 5 of #322)
+# ---------------------------------------------------------------------------
+
+
+async def test_each_reagent_is_walked_to_nearest_next_from_where_the_last_left_it():
+    client = FakeClient()
+    far, near, middle = XYZ(3000.0, 0.0, 0.0), XYZ(100.0, 0.0, 0.0), XYZ(1000.0, 0.0, 0.0)
+    _spawn(client, [_entity(far), _entity(near), _entity(middle)])
+    where = {"at": XYZ(0.0, 0.0, 0.0)}
+    client.body.position = AsyncMock(side_effect=lambda: where["at"])
+
+    async def walk(xyz):
+        where["at"] = xyz
+
+    client.walk_to.side_effect = walk
+
+    with patch.object(cr, "POLL_INTERVAL", 0), patch(_SNAP, new=AsyncMock(return_value="")):
+        assert await cr.run(FakeMachine(), [client], _PARAMS) == "SUCCESS"
+
+    assert [c.args[0] for c in client.walk_to.call_args_list] == [near, middle, far]
+
+
+async def test_keep_away_from_is_handed_to_every_pickup():
+    client = FakeClient()
+    _spawn(client, [_entity(_XYZ_A)])
+    picked = AsyncMock(return_value=cr.node_helpers.Pickup.NO_PROMPT)
+
+    with patch.object(cr, "POLL_INTERVAL", 0), patch.object(cr.node_helpers, "pick_up", picked):
+        await cr.run(FakeMachine(), [client], {**_PARAMS, "keep_away": [" Streamportal ", ""]})
+
+    assert picked.await_args.kwargs["keep_away"] == ["Streamportal"]
+
+
+async def test_a_walk_to_starting_xyz_that_fails_fails_the_node_before_any_pickup():
+    from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
+
+    client = FakeClient()
+    _spawn(client, [_entity(_XYZ_A)])
+    client.walk_to.return_value = WalkEnd.NO_ROUTE
+
+    with patch.object(cr, "POLL_INTERVAL", 0):
+        result = await cr.run(FakeMachine(), [client], {**_PARAMS, "xyz": {"x": 1.0, "y": 2.0, "z": 3.0}})
+
+    assert result == "FAILURE"
+    assert client.walk_to.call_count == 1
+    client.send_key.assert_not_called()

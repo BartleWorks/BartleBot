@@ -49,11 +49,11 @@ remember something for a later branch returns a value and lets an edge route on 
 (`bartlebot/nodes/walking.py`), never by writing its position. The server undoes a long
 written teleport, and the rule every stage of #322 keeps is that no teleport is longer than
 `HOP_MAX` and nothing but `walking.hop` writes a position (Stage 7). Until then
-`teleport_to_coordinates`, `pick_up` and the fights' and wisps' moves (Stage 5), and the Ride's,
-potions', level scaling's and the Skeleton Key unlocker's own moves (Stage 6) still write a
-position, and nothing new may join them. **Every one goes through `walking.teleport`, which
-refuses while `walking.TELEPORTS_ENABLED` is off**, as it ships until Stage 7 confirms the short
-radius (the user's call, 2026-11-25): the node fails with the move named. The suite turns it on
+`teleport_to_coordinates`, and the Ride's, potions', level scaling's and the Skeleton Key
+unlocker's own moves (Stage 6) still write a position, and nothing new may join them. **Every
+one goes through `walking.teleport`, which refuses while `walking.TELEPORTS_ENABLED` is off**,
+as it ships until Stage 7 confirms the short radius (the user's call, 2026-11-25): the node
+fails with the move named. The suite turns it on
 (`teleports_enabled` in `tests/conftest.py`); `test_every_position_write_goes_through_the_guard`
 fails on a `.teleport(` or `.tp_to(` call anywhere else.
 
@@ -72,6 +72,14 @@ fails on a `.teleport(` or `.tp_to(` call anywhere else.
   the object's edge, the gate's `Crossing.before`, where the prompt shows. `reach_prompt` and
   `take_turns` pass it for the walk to the prompt only; a reset, or a zone change's trigger,
   never does, since standing in front of a trigger fires nothing.
+- **A walk into a fight is `walk_clients(..., fight=True, spare=[mob id])`**, as
+  `combat_runner.join_fight` makes it: the walker leaves the mobs it means to meet out of its
+  watch, which would otherwise wait on them forever, and their patrols out of its plan, and the
+  fight starting ends the walk as done, with no wait for a preempt. Every other mob is avoided.
+  A walk that meets a fight while ambient combat is already running a session waits for nothing.
+- **A pickup walks to `node_helpers.pickup_spot`**, never onto the entity blindly: from outside
+  a zone exit that holds it (or not at all, past `PICKUP_REACH`), and from the far side of an
+  entity named in Keep Away From, whose prompt would show instead (#35).
 - **A walk arrives within `walking.ARRIVED_WITHIN` (50) of its goal, not on it.** A check of
   "is the client at the point" uses that margin, as Mark Location's does; one of a few units
   sends the client walking again every pass.

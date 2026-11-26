@@ -43,7 +43,7 @@ async def test_picks_up_the_item_and_succeeds():
         result = await ci.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once_with(_NEAR)
+    client.walk_to.assert_called_once_with(_NEAR)
     client.send_key.assert_called_once_with(Keycode.X, 0.1)
 
 
@@ -86,7 +86,7 @@ async def test_the_nearest_item_is_taken_first():
         result = await ci.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once_with(_NEAR)
+    client.walk_to.assert_called_once_with(_NEAR)
 
 
 async def test_an_item_that_will_not_pick_up_moves_on_to_the_next():
@@ -96,7 +96,7 @@ async def test_an_item_that_will_not_pick_up_moves_on_to_the_next():
     prompts = {_NEAR: False, _FAR: True}
     where = {"at": None}
 
-    async def _teleport(xyz):
+    async def _walk(xyz):
         where["at"] = xyz
 
     picked = {"done": False}
@@ -107,7 +107,7 @@ async def test_an_item_that_will_not_pick_up_moves_on_to_the_next():
     async def _send_key(key, seconds):
         picked["done"] = True
 
-    client.teleport.side_effect = _teleport
+    client.walk_to.side_effect = _walk
     client.is_in_npc_range.side_effect = _in_range
     client.send_key.side_effect = _send_key
 
@@ -115,7 +115,7 @@ async def test_an_item_that_will_not_pick_up_moves_on_to_the_next():
         result = await ci.run(FakeMachine(options={"Safety Delay": 0.05}), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert [c.args[0] for c in client.teleport.call_args_list] == [_NEAR, _FAR]
+    assert [c.args[0] for c in client.walk_to.call_args_list] == [_NEAR, _FAR]
 
 
 async def test_a_pickup_that_never_takes_fails():
@@ -139,8 +139,8 @@ async def test_only_the_collecting_player_moves():
         result = await ci.run(FakeMachine(), [stays, collects], {**_PARAMS, "collect_client": 2, "xyz": start})
 
     assert result == "SUCCESS"
-    stays.teleport.assert_not_called()
-    first = collects.teleport.call_args_list[0].args[0]
+    stays.walk_to.assert_not_called()
+    first = collects.walk_to.call_args_list[0].args[0]
     assert (first.x, first.y, first.z) == (1.0, 2.0, 3.0)
 
 
@@ -150,7 +150,7 @@ async def test_a_collecting_player_who_is_not_connected_fails():
     result = await ci.run(FakeMachine(), [client], {**_PARAMS, "collect_client": 3})
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_wrong_zone_fails():
@@ -160,7 +160,7 @@ async def test_wrong_zone_fails():
     result = await ci.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -181,7 +181,7 @@ async def test_blank_entity_names_fails():
     result = await ci.run(FakeMachine(), [client], {**_PARAMS, "entity_names": [" "]})
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_a_pickup_records_no_drop():

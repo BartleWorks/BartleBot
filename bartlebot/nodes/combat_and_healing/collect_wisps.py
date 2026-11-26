@@ -63,8 +63,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Only Collect Safe Wisps",
         help=(
-            f"When on, skips wisps within {SAFE_RADIUS:.0f} units of an enemy, so collecting doesn't start a fight. "
-            "Turn off only where enemies are always nearby."
+            f"When on, skips wisps within {SAFE_RADIUS:.0f} units of an enemy, and wisps the walk to "
+            "would pass inside a patrolling enemy's range, so collecting doesn't start a fight. Turn "
+            "off only where enemies are always nearby."
         ),
         default=True,
         default_hint="skip wisps near enemies",
@@ -78,7 +79,7 @@ NODE_SPEC = NodeSpec(
         "route to a potion node."
     ),
     params=PARAM_SCHEMA,
-    required_bot_options=[SAFETY_DELAY_OPTION],
+    required_bot_options=[SAFETY_DELAY_OPTION, walking.AVOID_MOBS_OPTION],
     returns=[
         ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds."),
         ReturnSpec(
@@ -89,12 +90,13 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=15,
     usage_notes=(
         (
-            "Players move together, teleporting to the same wisp, so a player who's already full "
-            "passes through without using it up."
+            "Only the players below a threshold walk, all to the same wisp at once. The rest stay "
+            "where they are, which keeps them safe from enemies for a while after a fight. A player "
+            "who arrives after the wisp is taken goes on to the next one."
         )
         + "\n\n"
         + (
-            "Place it right after a fight or a teleport. Wisps take a moment to appear, so when "
+            "Place it right after a fight or a zone change. Wisps take a moment to appear, so when "
             "none is in sight and a player is below a fail threshold, the node waits up to Safety "
             "Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait."
         )
@@ -111,20 +113,22 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: scaled_ratios.ratios() (SprintyClient.calc_health_ratio(), calc_mana_ratio()),
           SprintyClient.get_health_wisps(), SprintyClient.get_mana_wisps(),
-          SprintyClient.get_mobs(), SprintyClient.teleport()
+          SprintyClient.get_mobs(), walking.walk_clients()
 
-    Flow, one hop at a time with a fresh scan each hop:
+    Flow, one wisp at a time with a fresh scan each time:
       1. Read every client's ratios. Health wisps are wanted if any client is below
          if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
          stop — nobody moves.
       2. List the wanted wisps not visited yet, drop any within SAFE_RADIUS of an
-         enemy (when only_safe), and pick the one nearest the group. On the first hop,
-         when nothing qualifies and a client is below a fail threshold for a wanted
-         resource, keep scanning for up to Safety Delay: wisps spawn after a fight and
-         load in after a teleport, and failing before they do sends the group to the
-         potion route for health a wisp was about to give.
-      3. Teleport every client to it at once. Stop when no wisp is left or the timeout
-         expires.
+         enemy (when only_safe), and pick the one nearest the clients that need one. On
+         the first, when nothing qualifies and a client is below a fail threshold for a
+         wanted resource, keep scanning for up to Safety Delay: wisps spawn after a fight
+         and load in after a move, and failing before they do sends the group to the
+         potion route for health a wisp was about to give. With only_safe, a wisp whose
+         route passes inside a patrol's trigger radius is skipped too.
+      3. Walk the clients below the threshold for that wisp's kind to it, all at once; the
+         rest stay still, keeping their ghost window. Stop when no wisp is left or the
+         timeout expires.
       4. Re-check all ratios. Return FAILURE if any client's health is still below
          fail_if_health_below or mana is still below fail_if_mana_below.
 
@@ -212,13 +216,16 @@ async def collect_as_group(
     fail_if_mana_below: float = 0.0,
     safety_delay: float = 0.0,
 ) -> None:
-    """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
+    """Walk the players who need a wisp from wisp to wisp until nobody needs one, none is left,
+    or time runs out.
 
-    Every client lands on the same wisp at the same moment. The game gives a wisp to each
-    wizard that reaches it together, and a wizard already full of that resource doesn't
-    take it, so moving as one lets every client that needs it collect it. Each hop's DEBUG
-    line records the ratios before it; the next hop's line, or the post-collection one,
-    shows what it gave — which is how to tell whether arriving together is close enough.
+    The game gives a wisp to each wizard that reaches it together, and only to the first
+    otherwise. Walking, the players no longer arrive at one moment, so only those below the
+    threshold for a wisp's kind walk to it, all at once from where they stand, and the rest stay
+    still: a player after a fight is safe from mobs for 30 s only while it keeps completely
+    still. A player that arrives after the wisp is taken still needs one, so the next scan sends
+    it to another. Each hop's DEBUG line records the ratios before it; the next hop's line, or the
+    post-collection one, shows what it gave.
 
     `scaled_to` is the Challenge Mode level the ratios are read against (scaled_ratios), or
     None for the plain ratios.
@@ -244,34 +251,54 @@ async def collect_as_group(
         short_of_fail = (
             want_health and 0.0 < fail_if_health_below and any(h < fail_if_health_below for h in health)
         ) or (want_mana and 0.0 < fail_if_mana_below and any(m < fail_if_mana_below for m in mana))
+        needy = [
+            c
+            for c, h, m in zip(clients, health, mana)
+            if (want_health and h < if_health_below) or (want_mana and m < if_mana_below)
+        ]
         if short_of_fail and safety_delay > 0.0 and not visited:
             machine.log(f"collect_wisps: no wisp in sight yet, waiting up to {safety_delay}s", logging.DEBUG)
-            pick = await _await_wisp(clients, want_health, want_mana, visited, only_safe, safety_delay)
+            pick = await _await_wisp(clients, needy, want_health, want_mana, visited, only_safe, safety_delay)
         else:
-            pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+            pick = await _pick_wisp(clients, needy, want_health, want_mana, visited, only_safe)
         if pick is None:
             machine.log("collect_wisps: no wanted wisp left to collect", logging.DEBUG)
             return
-        wisp_id, location, note = pick
+        wisp_id, location, note, kind = pick
         visited.add(wisp_id)
+        below = if_health_below if kind == HEALTH else if_mana_below
+        ratios = health if kind == HEALTH else mana
+        walkers = [i for i, (c, r) in enumerate(zip(clients, ratios)) if r < below]
+        if only_safe and not await walking.passes_clear_of_patrols(machine, clients[walkers[0]], location):
+            machine.log(
+                f"collect_wisps: skipping a {kind} wisp ({note}): the walk there passes inside a patrol's range",
+                logging.DEBUG,
+            )
+            continue
         hop += 1
         machine.log(
-            f"collect_wisps: hop {hop} ({note}); before — "
-            f"health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
+            f"collect_wisps: hop {hop} to a {kind} wisp ({note}) for {', '.join(f'P{i + 1}' for i in walkers)};"
+            f" before — health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
             logging.DEBUG,
         )
-        await asyncio.gather(*[walking.teleport(c, location) for c in clients])
+        await walking.walk_clients(machine, [clients[i] for i in walkers], location, numbers=[i + 1 for i in walkers])
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
 
 async def _await_wisp(
-    clients: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool, safety_delay: float
-) -> tuple[int, XYZ, str] | None:
+    clients: list,
+    needy: list,
+    want_health: bool,
+    want_mana: bool,
+    visited: set[int],
+    only_safe: bool,
+    safety_delay: float,
+) -> tuple[int, XYZ, str, str] | None:
     """Scan for a wanted wisp until one qualifies or `safety_delay` seconds pass, and return it or None."""
-    found: list[tuple[int, XYZ, str]] = []
+    found: list[tuple[int, XYZ, str, str]] = []
 
     async def _seen() -> bool:
-        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        pick = await _pick_wisp(clients, needy, want_health, want_mana, visited, only_safe)
         if pick is not None:
             found.append(pick)
         return pick is not None
@@ -280,37 +307,41 @@ async def _await_wisp(
     return found[0] if found else None
 
 
+HEALTH = "health"
+MANA = "mana"
+
+
 async def _pick_wisp(
-    clients: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool
-) -> tuple[int, XYZ, str] | None:
-    """Return (id, location, log note) for the wanted wisp nearest the group, or None.
+    clients: list, needy: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool
+) -> tuple[int, XYZ, str, str] | None:
+    """Return (id, location, log note, kind) for the wanted wisp nearest the needy clients, or None.
 
     Every client is in the same zone, so the first one's entity list stands for all.
-    Nearest means the smallest total distance from every client, so the pick is the same
-    whether or not the group already stands together.
+    Nearest means the smallest total distance from every client in *needy* (all of them when
+    none is), since only they walk to it.
     """
     lead = clients[0]
     wisps = []
     if want_health:
-        wisps += await lead.get_health_wisps(visited)
+        wisps += [(w, HEALTH) for w in await lead.get_health_wisps(visited)]
     if want_mana:
-        wisps += await lead.get_mana_wisps(visited)
+        wisps += [(w, MANA) for w in await lead.get_mana_wisps(visited)]
     if not wisps:
         return None
 
-    located = [(w, await w.location()) for w in wisps]
+    located = [(w, kind, await w.location()) for w, kind in wisps]
     if only_safe:
-        clearances = await mob_clearances(lead, [loc for _w, loc in located])
-        located = [(w, loc, c) for (w, loc), c in zip(located, clearances) if c >= SAFE_RADIUS]
+        clearances = await mob_clearances(lead, [loc for _w, _k, loc in located])
+        located = [(w, kind, loc, c) for (w, kind, loc), c in zip(located, clearances) if c >= SAFE_RADIUS]
         if not located:
             return None
     else:
-        located = [(w, loc, None) for w, loc in located]
+        located = [(w, kind, loc, None) for w, kind, loc in located]
 
-    positions = [await c.body.position() for c in clients]
-    wisp, location, clearance = min(located, key=lambda wl: sum(wl[1].distance(p) for p in positions))
+    positions = [await c.body.position() for c in (needy or clients)]
+    wisp, kind, location, clearance = min(located, key=lambda wl: sum(wl[2].distance(p) for p in positions))
     if only_safe:
         note = f"{len(located)} of {len(wisps)} wisps safe, nearest enemy {clearance:.0f}"
     else:
         note = f"{len(wisps)} wisps, safety check off"
-    return await wisp.global_id_full(), location, note
+    return await wisp.global_id_full(), location, note, kind

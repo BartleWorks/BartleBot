@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -21,7 +22,7 @@ from bartleby.runtime import run_trace
 from bartleby.runtime.arbiter import LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
-from bartleby.runtime.movement.walk import ARRIVE_GOAL, Point, RouteWalker, WalkEnd, WalkResult
+from bartleby.runtime.movement.walk import ARRIVE_GOAL, ClientRead, Point, RouteWalker, WalkEnd, WalkResult
 
 from bartlebot.nodes.param_schema import BotOptionSpec
 from bartlebot.options.option_groups import GROUP_GENERAL
@@ -84,16 +85,21 @@ async def teleport(client, xyz, *args, how: str = "teleport", **kwargs) -> None:
 
 @dataclass
 class Walked:
-    """One client's walk: core's result, and whether the goal lay in one of the zone's exits."""
+    """One client's walk: core's result, whether the goal lay in one of the zone's exits, and
+    whether it was a walk into a fight."""
 
     result: WalkResult
     into_exit: bool = False
+    fight: bool = False
 
     @property
     def ok(self) -> bool:
         """Whether the walk did what was asked. A walk into an exit has done its part once it
-        stands there, since the server moves the wizard a moment after, or once it has moved."""
+        stands there, since the server moves the wizard a moment after, or once it has moved.
+        A walk into a fight has done it once the fight has started."""
         if self.result.arrived:
+            return True
+        if self.fight and self.result.end is WalkEnd.FIGHT:
             return True
         return self.into_exit and self.result.end is WalkEnd.ZONE_CHANGED
 
@@ -126,7 +132,45 @@ def _in_front(result: WalkResult) -> Point | None:
     return (float(before[0]), float(before[1]), float(before[2]))
 
 
-async def _walk_one(machine, client, number: int, goal, avoid: bool, approach: bool = False) -> Walked:
+class _TimedRead(ClientRead):
+    """The client's entity list, as the walker reads it, timing each read: what watching mobs
+    and reading gates costs a walk, noted on its span (Stage 5 of #322)."""
+
+    def __init__(self, client) -> None:
+        super().__init__(client)
+        self.mob_reads = 0
+        self.mob_seconds = 0.0
+        self.mob_longest = 0.0
+        self.list_seconds = 0.0
+
+    async def refresh(self):
+        began = time.perf_counter()
+        try:
+            return await super().refresh()
+        finally:
+            self.list_seconds += time.perf_counter() - began
+
+    async def mobs(self):
+        began = time.perf_counter()
+        try:
+            return await super().mobs()
+        finally:
+            took = time.perf_counter() - began
+            self.mob_reads += 1
+            self.mob_seconds += took
+            self.mob_longest = max(self.mob_longest, took)
+
+
+async def _walk_one(
+    machine,
+    client,
+    number: int,
+    goal,
+    avoid: bool,
+    approach: bool = False,
+    fight: bool = False,
+    spare: Sequence[int] = (),
+) -> Walked:
     goal = point(goal)
     if await client.is_loading():
         # On its way somewhere already: a walk would start from where it was (#70).
@@ -138,11 +182,12 @@ async def _walk_one(machine, client, number: int, goal, avoid: bool, approach: b
         return Walked(_not_walked(WalkEnd.NO_ROUTE, zone, start, goal, "the zone has no walking map"))
     planner = await load_planner(zone)
     into_exit = bool(planner.exits_at(*goal))
-    walker = RouteWalker(client, planner, avoid=avoid, watch_mobs=avoid, label=f"P{number}")
-    with run_trace.span("walk", client=client, zone=zone, goal=[round(v) for v in goal]):
+    read = _TimedRead(client)
+    walker = RouteWalker(client, planner, avoid=avoid, watch_mobs=avoid, read=read, label=f"P{number}")
+    with run_trace.span("walk", client=client, zone=zone, goal=[round(v) for v in goal], fight=fight):
         try:
             async with machine.arbiter.acquire(client, Owner.MOVEMENT, detail="walking") as lease:
-                result = await walker.walk(lease, goal)
+                result = await walker.walk(lease, goal, fight=fight, spare=spare)
                 if approach and (front := _in_front(result)) is not None:
                     # The point is inside the object the client lists, so it is closed: stand
                     # at its edge instead, where its prompt shows (Stage 4 of #322).
@@ -163,8 +208,12 @@ async def _walk_one(machine, client, number: int, goal, avoid: bool, approach: b
             stalls=result.recoveries,
             detours=result.detours,
             replans=result.replans,
+            mob_reads=read.mob_reads,
+            mob_read_s=round(read.mob_seconds, 3),
+            mob_read_max=round(read.mob_longest, 3),
+            list_read_s=round(read.list_seconds, 3),
         )
-    return Walked(result, into_exit)
+    return Walked(result, into_exit, fight)
 
 
 #: One client's walk: what :func:`walk_clients` calls, and what the suite's walking double
@@ -177,7 +226,14 @@ def _flat(a, b) -> float:
 
 
 async def walk_clients(
-    machine, clients: Sequence, goal, *, numbers: Sequence[int] | None = None, approach: bool = False
+    machine,
+    clients: Sequence,
+    goal,
+    *,
+    numbers: Sequence[int] | None = None,
+    approach: bool = False,
+    fight: bool = False,
+    spare: Sequence[int] = (),
 ) -> list[Walked]:
     """Walk every one of *clients* to *goal* at once, each from where it stands.
 
@@ -193,26 +249,64 @@ async def walk_clients(
     itself, which the client lists and so the walk closes, is walked to the object's edge
     instead (:func:`_in_front`), where its prompt shows.
 
+    *fight* makes it a walk into a fight at *goal* (core's ``RouteWalker.walk(fight=True)``): the
+    mobs there, and those in *spare* by global id, are walked up to, not around, and the fight
+    starting is what it is for, so it ends the walk as done and nothing waits for a preempt.
+    Every other mob is avoided as on any walk.
+
+    A walk that ends in a fight while ambient combat is already running a session (a wisp or
+    the move after a fight, walked by the session itself) waits for nothing: nothing will
+    preempt it.
+
     *numbers* labels the clients in the log, 1-based, for a caller walking a subset.
     """
     labels = list(numbers) if numbers is not None else list(range(1, len(clients) + 1))
     avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
     walked = list(
-        await asyncio.gather(*[walk_one(machine, c, n, goal, avoid, approach) for c, n in zip(clients, labels)])
+        await asyncio.gather(
+            *[walk_one(machine, c, n, goal, avoid, approach, fight, spare) for c, n in zip(clients, labels)]
+        )
     )
     for number, w in zip(labels, walked):
         if not w.ok and w.result.end is not WalkEnd.FIGHT:
             machine.log(f"P{number}: {w.describe()}", logging.WARNING)
-    if any(w.result.end is WalkEnd.FIGHT for w in walked):
-        fought = [n for n, w in zip(labels, walked) if w.result.end is WalkEnd.FIGHT]
-        machine.log(f"P{fought}: a fight started on the walk; waiting for ambient combat to take over", logging.INFO)
+    unplanned = [n for n, w in zip(labels, walked) if w.result.end is WalkEnd.FIGHT and not w.fight]
+    if unplanned and _in_ambient_session(machine):
+        machine.log(f"{_players(unplanned)}: a fight started on the walk, during ambient combat", logging.WARNING)
+    elif unplanned:
+        machine.log(
+            f"{_players(unplanned)}: a fight started on the walk; waiting for ambient combat to take over",
+            logging.INFO,
+        )
         await asyncio.sleep(FIGHT_PREEMPT_WAIT)
         machine.log(
-            f"FAILURE: a fight started on the walk of {_players(fought)}, and nothing took it over "
+            f"FAILURE: a fight started on the walk of {_players(unplanned)}, and nothing took it over "
             f"in {FIGHT_PREEMPT_WAIT:.0f}s",
             logging.WARNING,
         )
     return walked
+
+
+def _in_ambient_session(machine) -> bool:
+    """Whether ambient combat is running a session, so a fight met now has no preempt to wait for."""
+    return getattr(machine, "is_ambient_combat_active", False) is True
+
+
+async def passes_clear_of_patrols(machine, client, goal) -> bool:
+    """Whether a walk from where *client* stands to *goal*, planned as the walk would be (Avoid
+    Mobs), keeps outside every patrol's trigger radius: what Collect Wisps' Only Safe asks of a
+    wisp before walking to it. A walk that cannot be planned here (no map, no route) counts as
+    clear: the walk itself meets that, and says where."""
+    zone = await client.zone_name()
+    if not zone or not has_map(zone):
+        return True
+    planner = await load_planner(zone)
+    pos = await client.body.position()
+    avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
+    route = await asyncio.to_thread(planner.route, (pos.x, pos.y, pos.z), point(goal), avoid)
+    if route is None:
+        return True
+    return min(float(planner.clearance[j, i]) for _, j, i in route.nodes) >= 0
 
 
 async def warm_lookups(client) -> None:
@@ -252,6 +346,7 @@ __all__ = [
     "FIGHT_PREEMPT_WAIT",
     "WALKS_WRITE_SPEED",
     "Walked",
+    "passes_clear_of_patrols",
     "walk_all",
     "walk_clients",
     "warm_lookups",

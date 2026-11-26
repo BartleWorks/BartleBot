@@ -447,7 +447,8 @@ https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
 long written teleports held again on Ahmarra's live build, and taken up again on 2026-11-24 by
 choice. Core's stages land in bartleby-core, and BartleBot pins each core release Stages 1 and 2 cut, and 0.12.0, the fixes from
 reviewing them and walking the walker in game. 0.12.1 carries Stage 3.1's gates, pinned with
-the r815378 update's wizwalker, and 0.13.0 Stage 3.2's gate read, pinned by Stage 4. **No BartleBot
+the r815378 update's wizwalker, 0.13.0 Stage 3.2's gate read, pinned by Stage 4, and 0.14.0 a walk
+into a fight and the floor outside an exit, pinned by Stage 5. **No BartleBot
 release is cut until Stages 7 and 8 land** (the user's call, 2026-11-25): Stage 4's walks can fail
 in the bots `tools/check_bot_routes.py` lists, where a gate or a placed floor is in the way.
 **Nothing teleports until Stage 7 confirms the short radius** (the user's call, the same day):
@@ -462,7 +463,7 @@ walks it.
 | 2 | core #15 | walking a route in core | landed |
 | 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | landed |
 | 4 | #323 | the run's helpers walk | landed |
-| 5 | #324 | fights and pickups by walking | |
+| 5 | #324 | fights and pickups by walking | landed |
 | 6 | #325 | the other movers walk | |
 | 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
 | 8 | core #17 | verified links | |

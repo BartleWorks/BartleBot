@@ -92,12 +92,15 @@ Players are named by number in every log line (P1, P2), never by name.
 3. **Record each helper's start before it moves:** its zone, its position, and `mob_clearance`
    there. After the fight everyone stands in the duel circle, which may be too far away to have
    those mobs loaded, so their clearance has to be read now.
-4. **Join.** Each helper runs `combat_runner.join_fight` to its fight's center, retrying every
-   `COMBAT_TP_RETRY_INTERVAL` and giving up at `ENTER_COMBAT_TIMEOUT`, or once the fight is over.
-   A helper a port has already landed in the duel is not teleported.
-   A center the game will not let a player stand on (an obstacle the fight cleared leaves its spot
-   invalid) puts the helper straight back where it started; that marks the center blocked for the
-   whole fight, and every later attempt teleports to a player already in it instead (#157).
+4. **Join.** Each helper runs `combat_runner.join_fight`, which walks it into its fight's center
+   (`walking.walk_clients(..., fight=True)`: stepping on an active duel circle pulls a wizard in),
+   aiming again every `COMBAT_TP_RETRY_INTERVAL` and giving up once `ENTER_COMBAT_TIMEOUT` has passed
+   in waits, the walking not counted, or once the fight is over. A fight walk leaves the mobs at
+   the circle out of its watch, which would otherwise wait on them forever, and avoids every other.
+   A helper a port has already landed in the duel does not walk.
+   A center the walk cannot reach, or reaches without being taken in (an obstacle the fight
+   cleared is still solid in the zone's map), marks the center blocked for the whole fight, and
+   every later attempt walks to a player already in it instead (#157).
 5. **Hold the fighter's first cast** until every helper for its fight is in or has given up, or
    `AMBIENT_HELP_HOLD` (20s) has passed since the **anchor**: the later of the fighter's first
    `planning` phase and the most recent join, since each join restarts the game's timer. If the
@@ -120,8 +123,11 @@ Players are named by number in every log line (P1, P2), never by name.
 window instead of the 30s one.
 
 1. **Wisps.** Anyone under 50% health or mana (`WISP_BELOW`, `collect_wisps`' own thresholds) makes
-   the fight's players collect as a group: to full, `WISP_COLLECT_TIMEOUT`, safe wisps only. A
-   player defeated in a won fight is at 1 health, so it always does.
+   the fight's players collect: to full, `WISP_COLLECT_TIMEOUT`, safe wisps only. A player
+   defeated in a won fight is at 1 health, so it always does. Only the players short of a wisp's
+   kind walk to it, all at once; the rest stand still and keep the 30s window. Only simultaneous
+   arrivals share a wisp, and walking players never arrive at one moment, so one that arrives
+   after the wisp is taken goes on to the next.
 2. **Choose where each player goes.**
    - **A helper still in the zone it started in goes back to its own start.** The bot put it there
      and it stood there through the whole fight without being pulled in, which is the strongest
@@ -130,11 +136,15 @@ window instead of the 30s one.
    - **Everyone else** -- the fighter, and a helper ported in from another zone, whose start is
      coordinates in a zone it has left -- goes to **the nearest anchor in its zone**: a helper's
      start in this zone, or where any client that fought nobody stands now, **on any realm**, each
-     at least `SAFE_RADIUS` (1500) clear of mobs. A teleport to coordinates keeps the player on its
-     own realm, so another realm's spot is fair.
+     at least `SAFE_RADIUS` (1500) clear of mobs. A walk keeps the player on its own realm, so
+     another realm's spot is fair.
    - **No anchor: the world hub.**
-3. **Check on arrival.** Within `SAFE_RADIUS` of a mob at the arrival point sends that player to
-   the hub. It has to be quick, inside the 4-5s window.
+3. **Walk there, and check on arrival.** Each player walks to its spot (`AmbientSession._move`),
+   around the mobs with Avoid Mobs on. A walk that fails (no route, blocked), or ends within
+   `SAFE_RADIUS` of a mob, sends that player to the hub. A fight met on the way waits for no
+   preempt, since the session is the one running: the player goes to the hub, which fails while
+   it is in battle, and the session ends in recovery. Walking, the 4-5s window is long gone by the
+   time a far spot is reached, which is why the walk itself avoids the mobs.
 
 A helper that never got into the fight goes through the same choice if it had moved.
 

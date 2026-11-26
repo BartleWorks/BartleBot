@@ -1,11 +1,15 @@
 """Tests for combat_runner.join_fight and FightCenter, shared by handle_combat and the ambient watcher.
 
 handle_combat's own tests cover joining with a mob to aim at; these cover what the ambient
-watcher relies on: never teleporting before a center exists, and giving up on a fight that
-has already ended.
+watcher relies on: never walking before a center exists, and giving up on a fight that has
+already ended. Every walk is the suite's walking double (``walk_double``), recorded on
+``FakeClient.walk_to``.
 """
 
+import asyncio
+
 import pytest
+from bartleby.runtime.movement.walk import WalkEnd
 from wizwalker import XYZ
 
 from bartlebot.nodes import combat_runner, node_helpers
@@ -20,29 +24,48 @@ def fast(monkeypatch):
     monkeypatch.setattr(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01)
 
 
-async def test_with_nothing_to_aim_at_a_client_never_teleports_before_a_center_exists():
+async def test_with_nothing_to_aim_at_a_client_never_walks_before_a_center_exists():
     client = FakeClient()
     joined = await join_fight(FakeMachine(), client, 1, FightCenter(), timeout=0.1)
 
     assert joined is False
+    client.walk_to.assert_not_awaited()
     client.teleport.assert_not_awaited()
     client.tp_to.assert_not_awaited()
 
 
-async def test_with_nothing_to_aim_at_a_client_teleports_to_a_published_center():
+async def test_with_nothing_to_aim_at_a_client_walks_into_a_published_center():
     machine = FakeMachine()
     fighter, helper = FakeClient(), FakeClient()
     fighter.in_battle.return_value = True
     fight = FightCenter()
     await fight.publish(machine, fighter, 0)
 
-    async def teleport(_where):
+    async def walk(_where):
         helper.in_battle.return_value = True
+        return WalkEnd.FIGHT
 
-    helper.teleport.side_effect = teleport
+    helper.walk_to.side_effect = walk
     assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
-    (where,) = helper.teleport.await_args.args
+    (where,) = helper.walk_to.await_args.args
     assert (where.x, where.y, where.z) == (500.0, 600.0, 0.0)  # the fighter's duel center
+    helper.teleport.assert_not_awaited()
+
+
+async def test_the_time_spent_walking_is_not_counted_against_the_timeout():
+    """A mob across the room takes seconds to reach; the timeout was sized for a teleport."""
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fighter.in_battle.return_value = True
+    fight = FightCenter()
+    await fight.publish(machine, fighter, 0)
+
+    async def walk(_where):
+        await asyncio.sleep(0.3)  # longer than the whole timeout
+        asyncio.get_running_loop().call_later(0.02, setattr, helper.in_battle, "return_value", True)
+
+    helper.walk_to.side_effect = walk
+    assert await join_fight(machine, helper, 1, fight, timeout=0.1) is True
 
 
 async def test_a_client_gives_up_once_the_fight_is_over():
@@ -54,7 +77,7 @@ async def test_a_client_gives_up_once_the_fight_is_over():
     fighter.in_battle.return_value = False  # the fight ended before the late client arrived
 
     assert await join_fight(machine, late, 1, fight, timeout=5.0) is False
-    late.teleport.assert_not_awaited()
+    late.walk_to.assert_not_awaited()
     assert any("fight ended before it could join" in msg for msg, _ in machine.logs)
 
 
@@ -83,7 +106,7 @@ async def test_a_center_is_never_shared_across_realms():
 
     assert fight.center_for(elsewhere) is None
     assert await join_fight(machine, elsewhere, 1, fight, timeout=0.05) is False
-    elsewhere.teleport.assert_not_awaited()
+    elsewhere.walk_to.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------
@@ -103,35 +126,45 @@ async def _fight_with(machine, *members, seat=_SEAT) -> FightCenter:
     return fight
 
 
-def _put_back_from_the_center(client, *, joins_at=None):
-    """The game puts *client* back on _START after a teleport to the center; *joins_at* gets it in."""
-    client.body.position.return_value = _START
+def _not_taken_in_at_the_center(client, *, joins_at=None, end=None):
+    """The walk to the center arrives (or ends *end*) and the circle does not take *client* in;
+    a walk to *joins_at* gets it into the fight."""
 
-    async def teleport(where):
+    async def walk(where):
         if joins_at is not None and tuple(where) == tuple(joins_at):
             client.in_battle.return_value = True
-            return
-        # Seen at the center for one read, then back where it started.
-        client.body.position.side_effect = [where, *([_START] * 1000)]
+            return WalkEnd.FIGHT
+        return end
 
-    client.teleport.side_effect = teleport
+    client.walk_to.side_effect = walk
 
 
-async def test_a_center_that_puts_the_client_back_is_blocked_and_it_joins_by_a_player(monkeypatch):
-    # Seeing the put-back takes two reads in one attempt: at the center, then on the start.
-    # A window of many polls, so a poll that overruns under load cannot end the attempt
-    # between them; on the next attempt the re-teleport's log line takes the first read.
-    monkeypatch.setattr(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.5)
+_CENTER = (500.0, 600.0, 0.0)
+
+
+async def test_a_center_reached_without_being_taken_in_is_blocked_and_it_joins_by_a_player():
     machine = FakeMachine()
     fighter, helper = FakeClient(), FakeClient()
     fight = await _fight_with(machine, fighter)
-    _put_back_from_the_center(helper, joins_at=_SEAT)
+    _not_taken_in_at_the_center(helper, joins_at=_SEAT)
 
     assert await join_fight(machine, helper, 1, fight, timeout=5.0) is True
-    targets = [tuple(c.args[0]) for c in helper.teleport.await_args_list]
-    assert targets == [(500.0, 600.0, 0.0), tuple(_SEAT)]
+    targets = [tuple(c.args[0]) for c in helper.walk_to.await_args_list]
+    assert targets == [_CENTER, tuple(_SEAT)]
     assert fight.is_center_blocked(helper)
-    assert any("put it back where it started" in msg for msg, _ in machine.logs)
+    assert any("the fight center did not take it in (arrived)" in msg for msg, _ in machine.logs)
+
+
+async def test_a_center_the_walk_cannot_reach_is_blocked_too():
+    """The obstacle the fight cleared (#157) is still solid in the zone's map."""
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    _not_taken_in_at_the_center(helper, joins_at=_SEAT, end=WalkEnd.NO_ROUTE)
+
+    assert await join_fight(machine, helper, 1, fight, timeout=5.0) is True
+    assert [tuple(c.args[0]) for c in helper.walk_to.await_args_list] == [_CENTER, tuple(_SEAT)]
+    assert any("did not take it in (no route)" in msg for msg, _ in machine.logs)
 
 
 async def test_once_the_center_is_blocked_a_later_joiner_goes_straight_to_a_player():
@@ -139,54 +172,26 @@ async def test_once_the_center_is_blocked_a_later_joiner_goes_straight_to_a_play
     fighter, late = FakeClient(), FakeClient()
     fight = await _fight_with(machine, fighter)
     fight.mark_center_blocked(late)
-    late.teleport.side_effect = lambda _where: setattr(late.in_battle, "return_value", True)
+    _not_taken_in_at_the_center(late, joins_at=_SEAT)
 
     assert await join_fight(machine, late, 1, fight, timeout=1.0) is True
-    (where,) = late.teleport.await_args.args
+    (where,) = late.walk_to.await_args.args
     assert tuple(where) == tuple(_SEAT)
-
-
-async def test_a_client_that_never_seems_to_move_does_not_block_the_center():
-    """Back on the start with no move seen is not the sign: the teleport may simply not have landed."""
-    machine = FakeMachine()
-    fighter, helper = FakeClient(), FakeClient()
-    fight = await _fight_with(machine, fighter)
-    helper.body.position.return_value = _START
-
-    assert await join_fight(machine, helper, 1, fight, timeout=0.05) is False
-    assert not fight.is_center_blocked(helper)
-    assert all(tuple(c.args[0]) == (500.0, 600.0, 0.0) for c in helper.teleport.await_args_list)
-
-
-async def test_a_client_left_somewhere_else_does_not_block_the_center():
-    machine = FakeMachine()
-    fighter, helper = FakeClient(), FakeClient()
-    fight = await _fight_with(machine, fighter)
-    helper.body.position.return_value = _START
-
-    async def teleport(where):
-        helper.body.position.side_effect = [where, *([XYZ(11.0, 20.0, 30.0)] * 1000)]
-
-    helper.teleport.side_effect = teleport
-
-    assert await join_fight(machine, helper, 1, fight, timeout=0.05) is False
-    assert not fight.is_center_blocked(helper)
 
 
 async def test_a_center_that_works_never_falls_back_to_a_player():
     machine = FakeMachine()
     fighter, helper = FakeClient(), FakeClient()
     fight = await _fight_with(machine, fighter)
-    helper.body.position.return_value = _START
-    helper.teleport.side_effect = lambda _where: setattr(helper.in_battle, "return_value", True)
+    _not_taken_in_at_the_center(helper, joins_at=_CENTER)
 
     assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
-    assert helper.teleport.await_count == 1
+    assert helper.walk_to.await_count == 1
     assert not fight.is_center_blocked(helper)
 
 
 async def test_each_attempt_after_a_blocked_center_tries_the_next_player():
-    # The second teleport gets it in, so the run ends on the attempt count, not on a timeout
+    # The second walk gets it in, so the run ends on the attempt count, not on a timeout
     # a loaded worker could reach after the first attempt (#199).
     machine = FakeMachine()
     first, second, late = FakeClient(), FakeClient(), FakeClient()
@@ -194,13 +199,13 @@ async def test_each_attempt_after_a_blocked_center_tries_the_next_player():
     second.body.position.return_value = XYZ(480.0, 600.0, 0.0)
     fight.mark_center_blocked(late)
 
-    async def teleport(_where):
-        late.in_battle.return_value = late.teleport.await_count >= 2
+    async def walk(_where):
+        late.in_battle.return_value = late.walk_to.await_count >= 2
 
-    late.teleport.side_effect = teleport
+    late.walk_to.side_effect = walk
 
     assert await join_fight(machine, late, 1, fight, timeout=5.0) is True
-    targets = [tuple(c.args[0]) for c in late.teleport.await_args_list]
+    targets = [tuple(c.args[0]) for c in late.walk_to.await_args_list]
     assert targets == [tuple(_SEAT), (480.0, 600.0, 0.0)]
 
 
@@ -222,8 +227,8 @@ async def test_with_no_player_position_readable_a_blocked_center_is_tried_again(
     fight.mark_center_blocked(late)
 
     await join_fight(machine, late, 1, fight, timeout=0.02)
-    (where,) = late.teleport.await_args.args
-    assert tuple(where) == (500.0, 600.0, 0.0)
+    (where,) = late.walk_to.await_args.args
+    assert tuple(where) == _CENTER
 
 
 # ---------------------------------------------------------------------------

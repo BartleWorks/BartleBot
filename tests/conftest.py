@@ -176,9 +176,13 @@ class FakeClient:
 class FakeEntity:
     """Minimal stub for a WizWalker entity (mob / NPC / reagent)."""
 
+    _next_gid = 9000
+
     def __init__(self, name: str = "TestEnemy/TestEnemy"):
         self.object_name = AsyncMock(return_value=name)
         self.location = AsyncMock(return_value=XYZ(100.0, 200.0, 0.0))
+        FakeEntity._next_gid += 1
+        self.global_id_full = AsyncMock(return_value=FakeEntity._next_gid)
         # Real entities expose their name through the template, not directly; predicate
         # searches read it that way, so the two must report the same name.
         template = MagicMock()
@@ -561,14 +565,14 @@ def walk_double(monkeypatch):
 
     from bartlebot.nodes import walking  # noqa: PLC0415
 
-    async def walk(machine, client, number, goal, avoid, approach=False):
+    async def walk(machine, client, number, goal, avoid, approach=False, fight=False, spare=()):
         target = goal if isinstance(goal, XYZ) else XYZ(*walking.point(goal))
         ended = None
         if (walk_to := getattr(client, "walk_to", None)) is not None:
             ended = await walk_to(target)
         end = ended if isinstance(ended, WalkEnd) else WalkEnd.ARRIVED
         start = tuple(target)
-        return walking.Walked(WalkResult(end, "TestZone", start, start, position=start), into_exit=False)
+        return walking.Walked(WalkResult(end, "TestZone", start, start, position=start), into_exit=False, fight=fight)
 
     monkeypatch.setattr(walking, "walk_one", walk)
     return walk

@@ -23,7 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Starting XYZ",
-        help="Where to teleport players before searching.",
+        help="Where players walk before searching.",
         default=None,
         default_hint="where players stand",
         required=False,
@@ -38,6 +38,19 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=[],
         required=True,
+    ),
+    ParamField(
+        key="keep_away",
+        type="str_list",
+        label="Keep Away From",
+        help=(
+            "The IDs of other objects whose prompt could show instead, such as a portal beside a spawn. "
+            "A player picks up from the side away from the nearest of them, so only the pickup's own "
+            "prompt shows. " + ENTITY_ID_MATCHING
+        ),
+        default=[],
+        default_hint="none",
+        required=False,
     ),
 ]
 
@@ -54,20 +67,28 @@ NODE_SPEC = NodeSpec(
         ),
         ReturnSpec(
             "FAILURE",
-            "A player wasn't in Zone, or Entity IDs is empty.",
+            "A player wasn't in Zone, couldn't walk to Starting XYZ, or Entity IDs is empty.",
         ),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=5,
-    safety_warning="This bot teleports to collect reagents. Run it on a quiet realm.",
+    usage_notes=(
+        "Each player walks to the reagents it sees, nearest first. A reagent inside a zone exit, "
+        "such as a cave mouth, is picked up from the floor just outside it, or skipped when that "
+        "is too far for its prompt to show, so no player leaves the zone."
+    ),
+    safety_warning="This bot walks to collect reagents. Run it on a quiet realm.",
     implies_tags=["Reagents"],
     see_also=["collect_item"],
 )
 
 
-async def _collect_for_client(machine, client, client_idx: int, entity_names: list[str], safety_delay: float) -> int:
+async def _collect_for_client(
+    machine, client, client_idx: int, entity_names: list[str], safety_delay: float, keep_away: list[str] = ()
+) -> int:
     """Find and collect all matching reagent entities for a single client. Returns collected count."""
     from bartlebot.game.drop_detection import chat_available, poll_new_drops, snapshot_chat  # noqa: PLC0415
 
@@ -108,20 +129,31 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         for item_name in drops:
             machine.on_drop(item_name, 1, client_idx)
 
+    located = []
     for i, entity in enumerate(entities, start=1):
         try:
-            xyz = await entity.location()
+            located.append(await entity.location())
         except Exception as exc:
             machine.log(
                 f"Client {client_idx + 1}: entity {i} — stale reference, skipping ({exc})",
                 logging.DEBUG,
             )
-            continue
+
+    # Nearest next, from wherever the last pickup left it: each one is a walk now.
+    i = 0
+    while located:
+        here = await _position(client)
+        xyz = located.pop(
+            0 if here is None else min(range(len(located)), key=lambda k: node_helpers.distance(here, located[k]))
+        )
+        i += 1
         machine.log(
             f"Client {client_idx + 1}: entity {i}/{len(entities)} at ({xyz.x:.1f}, {xyz.y:.1f}, {xyz.z:.1f})",
             logging.DEBUG,
         )
-        outcome = await node_helpers.pick_up(client, xyz, safety_delay, POLL_INTERVAL)
+        outcome = await node_helpers.pick_up(
+            machine, client, client_idx + 1, xyz, safety_delay, POLL_INTERVAL, keep_away=keep_away
+        )
         if outcome is node_helpers.Pickup.COLLECTED:
             collected += 1
             if track_drops:
@@ -132,10 +164,7 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
                 logging.DEBUG,
             )
         else:
-            machine.log(
-                f"Client {client_idx + 1}: entity {i} — no prompt after teleport, skipping",
-                logging.DEBUG,
-            )
+            machine.log(f"Client {client_idx + 1}: entity {i} — {outcome.value}, skipping", logging.DEBUG)
 
     # One last look: the final pickup has no following iteration to catch a late
     # message, and a single pickup that yields two items announces them on
@@ -144,6 +173,14 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         await _report_drops()
 
     return collected
+
+
+async def _position(client):
+    """Where *client* stands, or None when it cannot be read: the list's own order then."""
+    try:
+        return await client.body.position()
+    except Exception:
+        return None
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -161,22 +198,25 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: entity_names is empty", logging.WARNING)
         return "FAILURE"
 
-    # 3. Optional pre-teleport to spawn area.
+    # 3. Optional walk to the spawn area.
     xyz_data = params.get("xyz")
     if xyz_data is not None:
         target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
         machine.log(
-            f"collect_reagent: teleporting to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
+            f"collect_reagent: walking to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
             logging.DEBUG,
         )
-        await asyncio.gather(*[walking.teleport(c, target) for c in clients])
+        if not await walking.walk_all(machine, clients, target):
+            machine.log("FAILURE: a player could not walk to Starting XYZ", logging.WARNING)
+            return "FAILURE"
 
     # 4. Wait for entities to load.
     await asyncio.sleep(safety_delay)
 
     # 5. Each client independently finds and collects its own entity list.
+    keep_away = [n.strip() for n in params.get("keep_away", []) if n.strip()]
     counts = await asyncio.gather(
-        *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
+        *[_collect_for_client(machine, c, i, entity_names, safety_delay, keep_away) for i, c in enumerate(clients)]
     )
     # Reagent spawns are random, so an empty pass is a normal outcome rather than an
     # error. Reporting it as FAILURE made it indistinguishable from a real problem

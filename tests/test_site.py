@@ -423,8 +423,8 @@ def _quoted_messages() -> list[tuple[str, str, str]]:
         ),
         (guide + "safety.md", "This bot's author has it sell", safety.declared_sales_message(["Sell Pets"])),
         (guide + "safety.md", "With quicksell off, nothing is sold.", quicksell.SAFETY_WARNING_DISABLED),
-        (guide + "safety.md", "This bot teleports to collect", NODE_SPECS["collect_reagent"].safety_warning),
-        (guide + "safety.md", "This bot teleports to collect", NODE_SPECS["collect_item"].safety_warning),
+        (guide + "safety.md", "This bot walks to collect", NODE_SPECS["collect_reagent"].safety_warning),
+        (guide + "safety.md", "This bot walks to collect", NODE_SPECS["collect_item"].safety_warning),
         (
             guide + "safety.md",
             "This bot teleports your players to another wizard",
