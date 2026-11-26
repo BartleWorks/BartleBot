@@ -102,7 +102,7 @@
       "node_type": "check_health_and_mana",
       "label": "Check health and mana",
       "position": {
-        "x": 4840,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -150,7 +150,7 @@
       "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 2640,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -162,9 +162,9 @@
           "z": 589.13
         },
         "reset_xyz": {
-          "x": 3749.85,
-          "y": 4042.05,
-          "z": 646.21
+          "x": 3752.03,
+          "y": 4534.29,
+          "z": 645.49
         },
         "stagger": true
       }
@@ -174,7 +174,7 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 3080,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -186,8 +186,8 @@
           "z": -247.98
         },
         "reset_xyz": {
-          "x": 10247.5,
-          "y": 5475.56,
+          "x": 10276.92,
+          "y": 5952.8,
           "z": -247.97
         },
         "stagger": true
@@ -198,7 +198,7 @@
       "node_type": "walk_to_xyz",
       "label": "Go to final boss fight",
       "position": {
-        "x": 3520,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -215,7 +215,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 3960,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -229,11 +229,187 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 4400,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
         "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the first door",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
+        "start_xyz": {
+          "x": -2258.39,
+          "y": -4882.4,
+          "z": 265.4
+        },
+        "end_xyz": {
+          "x": -2258.39,
+          "y": -4722.4,
+          "z": 314.01
+        }
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the second door",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
+        "start_xyz": {
+          "x": -6.9,
+          "y": -3086.9,
+          "z": 959.0
+        },
+        "end_xyz": {
+          "x": -6.9,
+          "y": -2926.9,
+          "z": 958.99
+        }
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the third door",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
+        "start_xyz": {
+          "x": 2082.83,
+          "y": -235.7,
+          "z": 958.99
+        },
+        "end_xyz": {
+          "x": 2242.83,
+          "y": -235.7,
+          "z": 959.0
+        }
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the Temple of Water door",
+      "position": {
+        "x": 3960,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
+        "start_xyz": {
+          "x": 3752.03,
+          "y": 4374.29,
+          "z": 646.21
+        },
+        "end_xyz": {
+          "x": 3752.03,
+          "y": 4534.29,
+          "z": 645.49
+        }
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the first door",
+      "position": {
+        "x": 4840,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
+        "start_xyz": {
+          "x": 5880.79,
+          "y": -4236.57,
+          "z": 197.78
+        },
+        "end_xyz": {
+          "x": 5880.79,
+          "y": -4076.57,
+          "z": 197.84
+        }
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the second door",
+      "position": {
+        "x": 5280,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
+        "start_xyz": {
+          "x": 7926.41,
+          "y": 560.93,
+          "z": 64.8
+        },
+        "end_xyz": {
+          "x": 8086.41,
+          "y": 560.93,
+          "z": 64.8
+        }
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the third door",
+      "position": {
+        "x": 5720,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
+        "start_xyz": {
+          "x": 10263.67,
+          "y": 1842.9,
+          "z": -247.99
+        },
+        "end_xyz": {
+          "x": 10263.67,
+          "y": 2002.9,
+          "z": -247.99
+        }
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "teleport_to_xyz",
+      "label": "Teleport past the boss room door",
+      "position": {
+        "x": 6160,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
+        "start_xyz": {
+          "x": 10276.92,
+          "y": 5792.8,
+          "z": -247.97
+        },
+        "end_xyz": {
+          "x": 10276.92,
+          "y": 5952.8,
+          "z": -247.97
+        }
       }
     }
   ],
@@ -311,6 +487,46 @@
     {
       "trigger": "advance",
       "source": "state_4",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
@@ -321,6 +537,46 @@
     {
       "trigger": "advance",
       "source": "state_5",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
@@ -422,6 +678,7 @@
     "version": 1
   },
   "history": [
+    "ce994b47523c056ce8b61c3f3984aacacb23fbbebd87fc7ab65d6a3fdfbbd27f",
     "e0d2bf0b2afb0c7198f683fbcba13700f2ddf34eace3338428fdb35bc51dcf1e"
   ]
 }
