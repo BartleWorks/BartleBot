@@ -6,7 +6,7 @@ import time
 
 from bartleby.runtime.combat.fight import FightEnd, run_fight
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.combat_runner import (
     FightCenter,
     duel_center,
@@ -68,8 +68,13 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Teleports every player to an enemy and fights until the battle ends. Drops are recorded "
-        "as chat announces them."
+        "Walks every player to an enemy and fights until the battle ends. Drops are recorded as chat announces them."
+    ),
+    usage_notes=(
+        "Players walk up to the enemy, and once a fight has started, to its duel circle. With "
+        "Avoid Mobs on, the walk keeps clear of every other enemy, so it starts no other fight. "
+        "The time spent walking does not count toward entering combat, but it does count toward "
+        "Max Duration."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -82,7 +87,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
-    required_bot_options=[player_realms.SPEC],
+    required_bot_options=[player_realms.SPEC, walking.AVOID_MOBS_OPTION],
     max_consecutive_retries=5,
 )
 
@@ -92,7 +97,7 @@ from bartleby.runtime.timing import ENTER_COMBAT_TIMEOUT, TARGET_ACQUIRE_DELAY, 
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: node_helpers.find_closest_fight_target(), SprintyClient.find_closest_mob(),
-          SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
+          walking.walk_clients(fight=True), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
       1. Resolve combat DSL through the four levels of combat_resolution: the user's Bot
@@ -103,14 +108,15 @@ async def run(machine, clients: list, params: dict) -> str:
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
       3. If max_duration is set and has elapsed, return FAILURE.
       4. Snapshot chat to enable drop detection after combat.
-      5. Teleport clients to their targets:
+      5. Walk clients to their targets, each walk into the fight (combat_runner.join_fight):
          - If the resolved Duel Combat Strategy sets a combat order: send clients one at
            a time in that order, waiting for each to report in_battle().
-         - Otherwise: teleport all clients simultaneously, retrying every COMBAT_TP_RETRY_INTERVAL
-           until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
+         - Otherwise: walk all clients at once, aiming again every COMBAT_TP_RETRY_INTERVAL
+           until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires,
+           counting the waits and not the walks.
          Either way, once any client is in battle its fight center is published, and every
-         later teleport goes there instead of to the mob (see combat_runner.FightCenter).
-         Player Realms: Together -- before anyone teleports, ensure_together() ports anyone not
+         later walk goes there instead of to the mob (see combat_runner.FightCenter).
+         Player Realms: Together -- before anyone walks, ensure_together() ports anyone not
          confirmed with the others to the leader; FAILURE if that port fails. Once all are in
          battle, one realm and one duel circle are checked; a split is fought out, then
          repaired after step 7 (FAILURE if that port fails).
@@ -195,7 +201,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # that fight's poll window is still ahead of the baseline and gets caught below.
     await seed_chat_baselines(machine, clients)
 
-    # 3. Teleport clients to their target (sequential or simultaneous). A Together bot
+    # 3. Walk clients to their target (sequential or simultaneous). A Together bot
     # does everything it can not to fight split: anyone not confirmed with the others ports
     # to the leader before anyone engages, and the node fails if that port fails. A Separate
     # bot shares a fight center only between players seen on one realm, so look before
@@ -230,8 +236,8 @@ async def run(machine, clients: list, params: dict) -> str:
                 )
                 return "FAILURE"
     else:
-        # 4. Teleport all clients to their targets, retrying until in combat
-        machine.log("Teleporting all clients to target (retrying until in combat)…", logging.DEBUG)
+        # 4. Walk all clients to their targets, aiming again until in combat
+        machine.log("Walking all clients to the target (aiming again until in combat)…", logging.DEBUG)
         results = await asyncio.gather(
             *[
                 join_fight(machine, c, i, fight, ENTER_COMBAT_TIMEOUT, find_target=find_target)

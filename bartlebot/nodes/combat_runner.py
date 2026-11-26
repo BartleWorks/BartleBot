@@ -14,6 +14,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, NamedTuple
 
+from bartleby.runtime.movement.walk import WalkEnd
 from bartleby.runtime.timing import (
     COMBAT_DROP_MESSAGE_POLL,
     COMBAT_DROP_MESSAGE_TIMEOUT,
@@ -204,7 +205,7 @@ class _Fight:
     members: list = field(default_factory=list)
     """Every client seen in battle in this fight, the publisher first."""
     center_blocked: bool = False
-    """The center put a client back where it started instead of into the fight (#157)."""
+    """The center did not take a client into the fight (#157): unreachable, or reached and not pulled in."""
 
 
 class FightCenter:
@@ -212,8 +213,8 @@ class FightCenter:
 
     Once a fight starts its mob walks to its seat, or is hidden or swapped, so a late client
     re-aiming at the mob aims at a moving or absent target (#110). The center of the duel
-    circle stays put, and teleporting there joins the fight just as teleporting onto an
-    engaged mob does.
+    circle stays put, and walking onto it joins the fight just as walking into an engaged
+    mob does.
 
     The center is read from the duel the client is in, and only once in_battle() has read
     true: outside a fight the duel struct still holds the last fight's data.
@@ -221,13 +222,14 @@ class FightCenter:
     *share* says whether one client's center is any use to another. None shares it with
     everybody, which is right when every player is on one realm. Otherwise pass the machine's
     record of who shares a realm: a center on another realm is the coordinates of a fight the
-    client is not in, and teleporting there starts a second one. Each group then publishes a
+    client is not in, and walking there starts a second one. Each group then publishes a
     center of its own.
 
     Some centers cannot be stood on (#157). A zone can have an obstacle in its duel area that
-    the fight clears, and the spot it took stays invalid afterwards: a player teleported there
-    is put straight back at its last valid position, outside the circle. Once a client sees
-    that, the center is marked blocked for the whole fight, and every later attempt aims at a
+    the fight clears, and the spot it took stays solid in the zone's map afterwards: a walk
+    there finds no route, or ends beside it without being pulled in. (Teleported there, a
+    player was put straight back at its last valid position.) Once a client sees that, the
+    center is marked blocked for the whole fight, and every later attempt aims at a
     player already in it instead. A seat is a spot inside the circle a player stands on.
     """
 
@@ -315,7 +317,7 @@ class FightCenter:
         """Whether the fight *client* would join has ended: nobody seen in it is still in battle.
 
         False while *client* has no center to aim at, and False when a read fails: giving up on
-        a fight still going leaves a player out of it, which is worse than one wasted teleport.
+        a fight still going leaves a player out of it, which is worse than one wasted walk.
         """
         fight = self._fight_for(client)
         if fight is None:
@@ -352,27 +354,32 @@ async def join_fight(
     *,
     find_target: Callable[[object], Awaitable[object]] | None = None,
 ) -> bool:
-    """Teleport *client* into a fight, retrying every COMBAT_TP_RETRY_INTERVAL until it is in battle.
+    """Walk *client* into a fight, aiming again every COMBAT_TP_RETRY_INTERVAL until it is in battle.
 
-    Once *fight* has a center for the client, each attempt teleports there, and a client that
-    gets in first publishes its own center for the rest. A center that puts the client back
-    exactly where it started is marked blocked (see FightCenter), and from then on attempts aim
-    at a player in the fight instead, a different one each time, or at the center again when
-    no member's position can be read. Before that, *find_target* says what
-    to aim at: handle_combat passes its find-the-mob, which is how a fight starts at all. The
-    ambient watcher passes nothing, so a client only ever teleports to a published center: a
-    teleport to "the closest mob" could start a second fight.
+    Each attempt is a walk into a fight (``walking.walk_clients(..., fight=True)``): the mobs at
+    its goal, and the mob it was sent to by its id, are walked up to, not around, and the fight
+    starting ends the walk. Every other mob is avoided as on any walk (Avoid Mobs), so a walk to
+    one fight starts no other. After the trigger the run to the duel circle is the server's.
 
-    Gives up, returning False, at *timeout* or once the fight it would join is over (see
-    FightCenter.is_over): a late client teleporting onto an empty circle joins nothing.
+    Once *fight* has a center for the client, each attempt walks there, since stepping on an
+    active duel circle pulls a wizard in, and a client that gets in first publishes its own
+    center for the rest. A center the walk cannot reach, or reaches without being pulled in,
+    is marked blocked (see FightCenter), and from then on attempts aim at a player in the
+    fight instead, a different one each time, or at the center again when no member's
+    position can be read. Before that, *find_target* says what to aim at: handle_combat passes
+    its find-the-mob, which is how a fight starts at all, and each attempt walks to where the
+    mob stands then. The ambient watcher passes nothing, so a client only ever walks to a
+    published center: a walk to "the closest mob" could start a second fight.
+
+    Gives up, returning False, once *timeout* has passed in waits, or once the fight it would
+    join is over (see FightCenter.is_over): a late client walking onto an empty circle joins
+    nothing. The time spent walking is not counted against *timeout*, which was sized for a
+    teleport's instant arrival: a mob across the room takes seconds to reach. Each walk is
+    bounded by its own time budget (core's ``RouteWalker``), and every attempt waits up to
+    COMBAT_TP_RETRY_INTERVAL afterwards, so the attempts still end.
 
     A target that disappears is waited out rather than given up on: an encounter that swaps
     or hides its mob as its fight starts may still pull the player in before the timeout.
-    Giving up at once also said nothing, which left a player standing still for the rest
-    of the wait with no line in the log to say why.
-
-    Each re-teleport logs how far it moved the player. Zero means the player was already
-    on the mob or the center, so the retry could not have started the fight.
     """
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
@@ -383,36 +390,31 @@ async def join_fight(
     waiting_noted = False
     while True:
         attempt += 1
-        start = None  # where the client stood before a teleport to the center, to see it put back
+        walked = None
+        to_center = False
+        began = loop.time()
         if (center := fight.center_for(client)) is not None:
             if await fight.is_over(client):
                 machine.log(f"Client {index}: the fight ended before it could join", logging.DEBUG)
                 return False
-            target, aim = center, "the fight center"
+            target, aim, spare = center, "the fight center", ()
             if fight.is_center_blocked(client):
                 if (seat := await fight.member_position(client, member_attempts)) is not None:
                     target, aim = seat, "a player in the fight"
                     member_attempts += 1
+            to_center = target is center
             if aim != aimed_at:
-                machine.log(f"Client {index}: teleporting to {aim} on attempt {attempt}", logging.DEBUG)
+                machine.log(f"Client {index}: walking to {aim} on attempt {attempt}", logging.DEBUG)
                 aimed_at = aim
-            before = await _position(client)
-            try:
-                await walking.teleport(client, target)
-            except Exception as exc:
-                machine.log(f"Client {index}: teleport to {aim} failed ({exc!r})", logging.DEBUG)
-            else:
-                await _log_re_teleport(machine, client, index, attempt, before if attempt > 1 else None)
-                if target is center:
-                    start = before
+            walked = await _walk_in(machine, client, index, target, spare)
         elif find_target is None:
             if not waiting_noted:
-                machine.log(f"Client {index}: no fight center yet; waiting without teleporting", logging.DEBUG)
+                machine.log(f"Client {index}: no fight center yet; waiting without walking", logging.DEBUG)
                 waiting_noted = True
-        elif (target := await find_target(client)) is None:
+        elif (target := await _mob_spot(await find_target(client))) is None:
             if not target_lost:
                 machine.log(
-                    f"Client {index}: target not found on attempt {attempt}; waiting for the fight without teleporting",
+                    f"Client {index}: target not found on attempt {attempt}; waiting for the fight without walking",
                     logging.DEBUG,
                 )
                 target_lost = True
@@ -420,38 +422,64 @@ async def join_fight(
             if target_lost:
                 machine.log(f"Client {index}: target found again on attempt {attempt}", logging.DEBUG)
                 target_lost = False
-            before = await _position(client) if attempt > 1 else None
-            await walking.teleport(client, target, how="tp_to")
-            await _log_re_teleport(machine, client, index, attempt, before)
+            spot, mob = target
+            if aimed_at != "the mob":
+                machine.log(f"Client {index}: walking to the mob on attempt {attempt}", logging.DEBUG)
+                aimed_at = "the mob"
+            walked = await _walk_in(machine, client, index, spot, () if mob is None else (mob,))
 
-        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time). After a
-        # teleport to the center, also watch for the game putting the client back where it
-        # started: seen away from the start, then on it exactly. No distance threshold: the game
-        # restores the stored last valid position, so the coordinates come back identical.
+        if walked is not None:
+            # Walking was not waiting: the timeout counts only the waits it was sized for.
+            deadline += loop.time() - began
+            if walked.result.end is WalkEnd.FIGHT or await client.in_battle():
+                await fight.publish(machine, client, index)
+                return True
+
+        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or the time left): the server
+        # pulls a wizard in a moment after its trigger, and in_battle() turns true later still.
         retry_at = min(loop.time() + COMBAT_TP_RETRY_INTERVAL, deadline)
-        moved = False
         while loop.time() < retry_at:
             if await client.in_battle():
                 await fight.publish(machine, client, index)
                 return True
-            if start is not None and (now := await _position(client)) is not None:
-                if not _same_place(now, start):
-                    moved = True
-                elif moved:
-                    if not fight.is_center_blocked(client):  # known already if no seat could be read
-                        fight.mark_center_blocked(client)
-                        machine.log(
-                            f"Client {index}: the fight center put it back where it started;"
-                            " joining by a player in the fight instead",
-                            logging.INFO,
-                        )
-                    break
             await asyncio.sleep(POLL_INTERVAL)
+
+        if to_center and walked is not None and not fight.is_center_blocked(client):
+            # Walked to the circle, or as near as the floor allows, and not pulled in (#157).
+            fight.mark_center_blocked(client)
+            machine.log(
+                f"Client {index}: the fight center did not take it in ({walked.result.end.value});"
+                " joining by a player in the fight instead",
+                logging.INFO,
+            )
 
         if loop.time() >= deadline:
             break
 
     return False
+
+
+async def _walk_in(machine, client, index: int, target, spare) -> walking.Walked:
+    """One walk into a fight, logged by the client's 1-based player number."""
+    walked = await walking.walk_clients(machine, [client], target, numbers=[index + 1], fight=True, spare=spare)
+    return walked[0]
+
+
+async def _mob_spot(entity) -> tuple[object, int | None] | None:
+    """Where *entity*, the mob to start a fight with, stands now, and its global id, or None
+    when there is no entity or it is gone. The id is None when only it cannot be read: the
+    walk then spares the mob only while it stands at its goal."""
+    if entity is None:
+        return None
+    try:
+        spot = await entity.location()
+    except Exception:
+        return None
+    try:
+        mob = await entity.global_id_full()
+    except Exception:
+        mob = None
+    return spot, mob
 
 
 async def duel_center(client):
@@ -460,20 +488,6 @@ async def duel_center(client):
         return await client.duel.position()
     except Exception:
         return None
-
-
-async def _log_re_teleport(machine, client, index: int, attempt: int, before) -> None:
-    """Log how far a re-teleport moved the player; *before* is None on the first attempt."""
-    if before is not None and (after := await _position(client)) is not None:
-        machine.log(
-            f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
-            logging.DEBUG,
-        )
-
-
-def _same_place(a, b) -> bool:
-    """Whether two positions are identical. XYZ defines no equality of its own."""
-    return tuple(a) == tuple(b)
 
 
 async def _position(client):
