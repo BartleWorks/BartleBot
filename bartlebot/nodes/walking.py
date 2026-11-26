@@ -26,7 +26,15 @@ from bartleby.runtime import run_trace
 from bartleby.runtime.arbiter import Busy, LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
-from bartleby.runtime.movement.walk import ARRIVE_GOAL, ClientRead, Point, RouteWalker, WalkEnd, WalkResult
+from bartleby.runtime.movement.walk import (
+    ARRIVE_GOAL,
+    ClientRead,
+    Point,
+    RouteWalker,
+    WalkEnd,
+    WalkResult,
+    plan_in_thread,
+)
 from wizwalker import XYZ
 
 from bartlebot.nodes.param_schema import BotOptionSpec
@@ -437,7 +445,7 @@ async def passes_clear_of_patrols(machine, client, goal) -> bool:
     planner = await load_planner(zone)
     pos = await client.body.position()
     avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
-    route = await asyncio.to_thread(planner.route, (pos.x, pos.y, pos.z), point(goal), avoid)
+    route = await plan_in_thread(planner.route, (pos.x, pos.y, pos.z), point(goal), avoid)
     if route is None:
         return True
     return min(float(planner.clearance[j, i]) for _, j, i in route.nodes) >= 0

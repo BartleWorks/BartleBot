@@ -658,6 +658,33 @@ async def test_a_walk_with_no_map_counts_as_clear_of_patrols(real_walks):
     assert await walking.passes_clear_of_patrols(_machine(), client, (2800, 1000, 0))
 
 
+async def test_cancelling_a_patrol_check_stops_its_plan(real_walks, monkeypatch):
+    loop = asyncio.get_running_loop()
+    planning, ended = asyncio.Event(), asyncio.Event()
+    stopped: list[bool] = []
+
+    class _SlowPlanner:
+        def route(self, start, goal, avoid, stop=None):
+            loop.call_soon_threadsafe(planning.set)
+            # The deadline only bounds the failing case, where nothing ever stops the plan.
+            stopped.append(stop is not None and stop.wait(2.0))
+            loop.call_soon_threadsafe(ended.set)
+
+    async def _load(zone):
+        return _SlowPlanner()
+
+    monkeypatch.setattr(walking, "load_planner", _load)
+    check = asyncio.create_task(walking.passes_clear_of_patrols(_machine(), _client(), (2800, 1000, 0)))
+    await planning.wait()
+
+    check.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await check
+    await ended.wait()
+    assert stopped == [True]
+
+
 async def test_a_walks_span_says_whether_it_was_into_a_fight_and_what_watching_mobs_cost(
     two_patrols, monkeypatch, tmp_path
 ):
