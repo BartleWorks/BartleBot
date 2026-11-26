@@ -381,7 +381,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # Who shares whose realm, for straggler recovery in a Separate bot.
     await node_helpers.note_realm_peers(machine, clients)
 
-    numbers = list(range(1, len(clients) + 1))
+    numbers = walking.player_numbers(machine, clients)
     watcher = asyncio.create_task(watch_group(machine, clients, numbers))
     try:
         if stagger:

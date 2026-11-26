@@ -293,13 +293,24 @@ together.
 | in several zones | — | follow one client |
 
 The client that travels -- the leader -- is one already in the target zone that others can port to,
-then one in the largest group that already sees itself (see below), then the one the most others can
-port to, then the one with the cheapest route, then the one core's group record has leading the
-others (`_Trip.leads`: `members_led_by` on a recorded leader only, HUD reads and no window, and
-nothing learned for a tie), then the lowest player number. The group leader breaks a tie so that the others can take Teleport to Leader to
-it. A client already there
-outranks a larger group elsewhere: following the group costs a whole route and still moves the client
-that was there, where porting to it is one loading screen for everyone. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
+then any one someone can port to, then the one with the cheapest route; among clients already
+there, the one in the largest group that already sees itself (see below); then the one the most
+others can port to, then the one core's group record has leading the others (`_Trip.leads`:
+`members_led_by` on a recorded leader only, HUD reads and no window, and nothing learned for a
+tie), then the lowest player number. The group leader breaks a tie so that the others can take
+Teleport to Leader to it. A client already there outranks a larger group elsewhere: following the
+group costs a whole route and still moves the client that was there, where porting to it is one
+loading screen for everyone.
+
+**Among clients that travel, the cheapest route wins, whatever the size of its group** (settled
+2026-11-26). Every client but the leader ports at the end, the ones it leaves standing in its group
+as much as the rest, so following a larger group saves no port, while each zone more is walked,
+now that a wizard walks. A client only one other can port to still leads: the rest port to that
+one first, `port_map.reach`'s waves, and two ports are quicker than a longer route. A client nobody
+can port to goes last, since then everyone else would make the trip. It came from a Galleries run:
+three players together in Azteca's Zocalo outranked one alone in Khrysalis a few zones from the
+dungeon, and Player 2 walked across two worlds. Each choice is logged first, as `Who travels:` with
+every player's zone, its route's zone changes and how many can port to it. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
 

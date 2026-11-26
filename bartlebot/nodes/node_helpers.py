@@ -526,7 +526,7 @@ async def take_turns(
     reason to deny the object to everybody else. A client whose walk to `reset_xyz` fails
     takes no turn, logged with where its walk ended.
     """
-    labels = numbers if numbers is not None else list(range(1, len(clients) + 1))
+    labels = numbers if numbers is not None else walking.player_numbers(machine, clients)
     # Read at call time rather than bound as a default, so the constant stays patchable.
     gap = OBJECT_USE_DELAY if object_use_delay is None else object_use_delay
 
@@ -1563,8 +1563,8 @@ async def friend_profile_buttons(client) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _client_numbers(clients: list, numbers: list[int] | None) -> list[int]:
-    return list(numbers) if numbers is not None else list(range(1, len(clients) + 1))
+def _client_numbers(machine, clients: list, numbers: list[int] | None) -> list[int]:
+    return list(numbers) if numbers is not None else walking.player_numbers(machine, clients)
 
 
 async def clear_stale_prompt(
@@ -1591,7 +1591,7 @@ async def clear_stale_prompt(
     would carry that prompt along. *numbers* labels the clients in the log, 1-based, for
     a caller working on a subset of the party.
     """
-    labels = _client_numbers(clients, numbers)
+    labels = _client_numbers(machine, clients, numbers)
     showing = await asyncio.gather(*[prompt.showing(c) for c in clients])
     if any(showing):
         stale = [n for n, s in zip(labels, showing) if s]

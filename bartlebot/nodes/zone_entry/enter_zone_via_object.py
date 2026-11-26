@@ -163,7 +163,7 @@ async def _trigger_sequentially(
             lambda: _loading_or_arrived(client, to_zone), TRIGGER_TIMEOUT, POLL_INTERVAL
         )
 
-    numbers = list(range(1, len(clients) + 1))
+    numbers = walking.player_numbers(machine, clients)
     results = await node_helpers.take_turns(
         machine,
         clients,

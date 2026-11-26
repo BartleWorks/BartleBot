@@ -25,8 +25,8 @@ travels and the rest port to it on arrival. That also keeps every object to one 
 docs/ZONE_NAVIGATION.md, "Running a route with several clients".
 
 Arriving in one zone is not arriving on one realm (#133). A Together bot's players end up
-with one of them -- the leader: one already there, else one from the largest group that
-already sees itself -- on one realm and in one area: the leader hops to the realm it was
+with one of them -- the leader: one already there, else the one with the cheapest route --
+on one realm and in one area: the leader hops to the realm it was
 asked for, everyone it does not see ports to it, and the trip ends with a check by sight
 (#130). A Separate bot's players
 all travel, and nobody ports or hops (#132).
@@ -381,35 +381,51 @@ class _Trip:
         check: sightings.Sightings,
         leads: list[bool | None] | None = None,
     ):
-        """A client already there that others can port to, then the client in the largest group
-        that already sees itself, then the one the most others can port to, then the one with the
-        cheapest route, then the group's leader, then player order.
+        """A client already there that others can port to, then any client someone can port to,
+        then the one with the cheapest route; among clients already there, the one in the largest
+        group that already sees itself; then the one the most others can port to, then the
+        group's leader, then player order.
 
         One already there first because a port is one loading screen for any number of clients,
         while a leader that travels costs a whole route and still has the others port to it --
-        including the one that was already there. The largest group next because everyone the
-        leader does not see has to move; the rest is choose_navigator's old ranking, for who can
-        reach the target and be reached. Between clients that tie on all of that, the one the
-        group record has leading others (`leads`, from self.leads) travels, so they can take
-        Teleport to Leader to it (port_map.LEADER).
+        including the one that was already there. Among travelers the cheapest route next,
+        since every client but the leader ports at the end whoever travels: the ones it leaves
+        behind in its group as much as the rest, so the size of its group saves nothing, while a
+        longer route, walked, costs minutes. Two ports in a row (port_map.reach's waves) are
+        quicker still than an extra zone. A client nobody can port to goes last, as then
+        everyone else would have to make the trip. Among clients already there, the largest group
+        that sees itself, since those with the leader need not move. Between clients that tie on
+        all of that, the one the group record has leading others (`leads`, from self.leads)
+        travels, so they can take Teleport to Leader to it (port_map.LEADER).
         """
         best = None
+        seen = []
         for index, (client, zone) in enumerate(zip(self.clients, zones)):
             route = [] if self.arrived(zone) else self.plan(zone, 1)
             if route is None:
+                seen.append(f"P{index + 1} in {zone!r}: no route")
                 continue
+            there = route == []
             reach = ports.reach(client, self.clients)
             leading = bool(leads) and leads[index] is True
+            cost = route_cost(route)
+            seen.append(
+                f"P{index + 1} in {zone!r}: "
+                + ("there" if there else f"{cost.transitions} zone change{'' if cost.transitions == 1 else 's'}")
+                + f", {len(reach)} can port to it"
+            )
             key = (
-                not (route == [] and reach),
-                -len(check.group_of(index)),
+                not (there and reach),
+                not reach,
+                cost,
+                -len(check.group_of(index)) if there else 0,
                 -len(reach),
-                route_cost(route),
                 not leading,
                 index,
             )
             if best is None or key < best[0]:
                 best = (key, client)
+        self.machine.log("Who travels: " + "; ".join(seen))
         return None if best is None else best[1]
 
     async def solo(self, leader) -> Outcome:
