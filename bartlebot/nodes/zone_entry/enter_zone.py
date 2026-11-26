@@ -71,7 +71,7 @@ NODE_SPEC = NodeSpec(
         ),
         ReturnSpec(
             "FAILURE",
-            "A player wasn't in From Zone at the start, or not every player reached To Zone.",
+            "A player wasn't in From Zone at the start, couldn't walk to the trigger, or didn't reach To Zone.",
         ),
     ],
     required_bot_options=[
@@ -165,6 +165,15 @@ async def watch_group(machine, clients: list, numbers: list[int]) -> None:
         await asyncio.sleep(POLL_INTERVAL)
 
 
+def _walked_all(machine, walked: list, numbers: list[int]) -> bool:
+    """Whether every walk did what was asked; if not, says which failed. ``walk_clients`` has
+    already logged why each one ended."""
+    failed = [n for n, w in zip(numbers, walked) if not w.ok]
+    if failed:
+        machine.log(f"FAILURE: {_players(failed)} could not walk there", logging.WARNING)
+    return not failed
+
+
 async def fire_trigger(
     machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
 ) -> bool:
@@ -172,10 +181,12 @@ async def fire_trigger(
 
     Runs the walk → dismiss dungeon dialog → leave-from_zone (with reset retry) half of a
     transition for just the clients in `group`. A walk into the box ends when the zone
-    changes, or standing in the box, where the server's move follows a moment later; a
-    client whose walk fails is left where it stopped, logged, and retried from its reset. `numbers` is each client's player number and
-    `resets` its reset point, both in `group` order. False only when the game refused the
-    change, having logged it.
+    changes, or standing in the box, where the server's move follows a moment later.
+    `numbers` is each client's player number and `resets` its reset point, both in `group`
+    order. False when the game refused the change, or when a walk failed (no route, blocked),
+    having logged it: a failed walk ends the step and is never walked again, since whatever
+    stopped it is still there, and planning the same walk again holds a big zone's planner
+    for as long again.
 
     A client that never triggers the transition at all is not failed here: await_arrival runs
     regardless, and wait_for_zone_with_recovery can still port a client stuck in from_zone
@@ -203,8 +214,10 @@ async def fire_trigger(
         machine.log(f"Walking {len(to_move)} client(s) into the transition bounding box", logging.DEBUG)
         loading = await asyncio.gather(*[c.is_loading() for c in to_move])
         walkers = [c for c, busy in zip(to_move, loading) if not busy]
-        if walkers:
-            await walking.walk_clients(machine, walkers, target, numbers=_numbers(walkers))
+        if walkers and not _walked_all(
+            machine, await walking.walk_clients(machine, walkers, target, numbers=_numbers(walkers)), _numbers(walkers)
+        ):
+            return False
 
         # Answer the instance prompt if the transition raised one — leaving a dungeon asks
         # before it lets you go, and until that is answered the zone change never fires.
@@ -277,13 +290,12 @@ async def fire_trigger(
                 "resetting them and retrying…",
                 logging.WARNING,
             )
-            await asyncio.gather(
-                *[
-                    walking.walk_clients(machine, [group[i]], resets[i], numbers=[numbers[i]])
-                    for i in range(len(group))
-                    if i not in seen_left
-                ]
+            back = [i for i in range(len(group)) if i not in seen_left]
+            walked = await asyncio.gather(
+                *[walking.walk_clients(machine, [group[i]], resets[i], numbers=[numbers[i]]) for i in back]
             )
+            if not _walked_all(machine, [w for each in walked for w in each], [numbers[i] for i in back]):
+                return False
             to_move = stuck
             continue
 
