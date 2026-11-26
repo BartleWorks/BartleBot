@@ -424,7 +424,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
     async def _walk(goal: XYZ, approach: bool = False) -> bool:
         if await walking.walk_all(machine, clients, goal, approach=approach):
             return True
-        machine.log("FAILURE: could not walk to Hilda Brewer", logging.WARNING)
+        machine.log("FAILURE: a walk to or from Hilda Brewer failed", logging.WARNING)
         return False
 
     for attempt in range(1, MAX_RETRIES + 1):
