@@ -4,7 +4,7 @@
 running node and waits for the loop to park. Everything after that is here:
 
 1. Players proven to share a fighter's realm are its **helpers**. Each records where it stands
-   (zone, position, mob clearance) and teleports to the fight's center.
+   (zone, position, mob clearance) and walks to the fight's center, which pulls it in.
    Everyone else helps too, by **porting** to a fighter first -- which puts the porter on the
    fighter's realm -- unless the bot keeps its players to their own realms (Player Realms is
    Separate) or has no port routes. Then they are left where they are. A port that is
@@ -18,9 +18,10 @@ running node and waits for the loop to park. Everything after that is here:
 4. After a **won** fight, anyone low collects wisps, then helpers still in the zone they
    started in go back to where they started, and everyone else -- a helper that ported in from
    another zone included -- to the nearest spot a player has stood on without being pulled
-   in. Anyone who lands within SAFE_RADIUS of a mob, or has nowhere to go, goes to the hub.
-   Nobody moves before that: the ghost window after a fight lasts 30s only while a player
-   keeps completely still.
+   in, each walking there. Anyone whose walk fails, who stands within SAFE_RADIUS of a mob
+   there, or who has nowhere to go, goes to the hub. Nobody moves before that: the ghost window
+   after a fight lasts 30s only while a player keeps completely still, and only the players low
+   on health or mana walk to the wisps.
 5. After a **fled** fight the game has already put the players in their hub with empty mana,
    so they collect wisps there. A flee from the game's idle popup (#203) counts too: the
    machine's idle watcher clicks it and reports it here through :meth:`AmbientSession.note_fled`.
@@ -424,7 +425,7 @@ class AmbientSession:
         await self._settle([helper])
 
     async def _can_go_home(self, member) -> bool:
-        """Whether *member* is a helper still in the zone it started in, so it can teleport back.
+        """Whether *member* is a helper still in the zone it started in, so it can walk back.
 
         A helper that ported in from another zone cannot: its starting point is coordinates in
         a zone it has left. A helper that ported from another realm of this zone can, and lands
@@ -443,8 +444,8 @@ class AmbientSession:
         """The nearest spot in *member*'s zone a player has stood on without being pulled into a fight.
 
         Candidates are this zone's helpers' starting points, and where any bystander in the
-        zone stands now -- on any realm, since a teleport to coordinates keeps the player on
-        its own. Either must be SAFE_RADIUS clear of mobs, as read by a client standing there.
+        zone stands now -- on any realm, since a walk keeps the player on its own. Either must
+        be SAFE_RADIUS clear of mobs, as read by a client standing there.
         """
         zone = await _zone(member)
         here = await _position(member)
@@ -466,15 +467,21 @@ class AmbientSession:
         return min(candidates, key=lambda spot: node_helpers.distance(here, spot), default=None)
 
     async def _move(self, client, point, what: str) -> bool:
-        """Teleport *client* to *point*, then check it landed SAFE_RADIUS clear of every mob."""
+        """Walk *client* to *point*, then check it stands SAFE_RADIUS clear of every mob there."""
         try:
-            await walking.teleport(client, point)
+            walked = await walking.walk_clients(self.machine, [client], point, numbers=[self._slot[client] + 1])
+            if not walked[0].ok:
+                self._log(
+                    f"{self._p(client)} could not walk to {what} ({walked[0].result.end.value}); going to the hub",
+                    logging.WARNING,
+                )
+                return False
             clearance = await node_helpers.mob_clearance(client, point)
         except Exception as exc:
             self._log(f"{self._p(client)} could not move to {what} ({exc!r}); going to the hub", logging.WARNING)
             return False
         if clearance < node_helpers.SAFE_RADIUS:
-            self._log(f"{self._p(client)} landed {clearance:.0f} units from a mob at {what}; going to the hub")
+            self._log(f"{self._p(client)} stands {clearance:.0f} units from a mob at {what}; going to the hub")
             return False
         self._log(f"{self._p(client)} moved to {what}", logging.DEBUG)
         return True

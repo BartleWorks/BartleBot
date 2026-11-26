@@ -120,18 +120,18 @@ async def _session(machine: BotMachine, combat) -> None:
     await asyncio.wait_for(task, timeout=2.0)
 
 
-def _teleports(client) -> list[tuple[float, float, float]]:
-    return [(p.x, p.y, p.z) for (p,), _kw in client.teleport.call_args_list]
+def _walks(client) -> list[tuple[float, float, float]]:
+    return [(p.x, p.y, p.z) for (p,), _kw in client.walk_to.call_args_list]
 
 
-def _join_on_teleport(helper) -> None:
-    """A teleport to the fight's center (FakeClient's duel position) puts *helper* in the fight."""
+def _join_on_walk(helper) -> None:
+    """A walk to the fight's center (FakeClient's duel position) puts *helper* in the fight."""
 
-    async def teleport(where):
+    async def walk(where):
         if (where.x, where.y) == (500.0, 600.0):
             helper.in_battle.return_value = True
 
-    helper.teleport.side_effect = teleport
+    helper.walk_to.side_effect = walk
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +192,7 @@ async def test_the_strategy_is_resolved_per_slot_and_drops_are_credited_to_it(fa
 async def test_an_eligible_helper_joins_and_the_fighter_waits_for_it(fast, combat):
     fighter, helper = _client(), _client(x=2000.0)
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     helper_in_when_fighter_started: list[bool] = []
 
     def on_start(client, _watch):
@@ -206,7 +206,7 @@ async def test_an_eligible_helper_joins_and_the_fighter_waits_for_it(fast, comba
 
     assert set(combat.fights.fought()) == {fighter, helper}
     assert helper_in_when_fighter_started == [True]
-    assert _teleports(helper)[0] == (500.0, 600.0, 0.0)  # the fighter's duel center
+    assert _walks(helper)[0] == (500.0, 600.0, 0.0)  # the fighter's duel center
 
 
 async def test_a_client_on_another_realm_or_in_another_zone_is_left_alone(fast, combat):
@@ -221,8 +221,8 @@ async def test_a_client_on_another_realm_or_in_another_zone_is_left_alone(fast, 
     await _session(machine, combat)
 
     assert combat.fights.fought() == [fighter]
-    other_zone.teleport.assert_not_awaited()
-    other_realm.teleport.assert_not_awaited()
+    other_zone.walk_to.assert_not_awaited()
+    other_realm.walk_to.assert_not_awaited()
 
 
 async def test_a_client_that_walks_into_the_fight_on_its_own_gets_its_combat_run(fast, combat):
@@ -317,7 +317,7 @@ async def test_a_helper_from_another_zone_ports_in_joins_and_the_bot_recovers(fa
     see_each_other(helper)
     helper.zone_name.return_value = "Elsewhere"
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     helper_in_when_fighter_started: list[bool] = []
 
     def on_start(client, _watch):
@@ -335,7 +335,7 @@ async def test_a_helper_from_another_zone_ports_in_joins_and_the_bot_recovers(fa
     ports.assert_awaited_once()
     assert combat.fights.started == [(fighter, "dsl-0"), (helper, "dsl-1")]
     assert helper_in_when_fighter_started == [True]  # a porter counts toward the hold
-    assert (7777.0, 0.0, 0.0) not in _teleports(helper)
+    assert (7777.0, 0.0, 0.0) not in _walks(helper)
     assert machine.state == "recover"
 
 
@@ -345,7 +345,7 @@ async def test_a_helper_from_another_realm_of_the_zone_goes_home_and_the_state_r
     see_each_other(fighter)
     see_each_other(helper)
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
     machine.port_map = MagicMock()
     monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter))
@@ -353,12 +353,12 @@ async def test_a_helper_from_another_realm_of_the_zone_goes_home_and_the_state_r
     await _session(machine, combat)
 
     assert set(combat.fights.fought()) == {fighter, helper}
-    assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
+    assert _walks(helper)[-1] == (2000.0, 0.0, 0.0)
     combat.hub.assert_not_awaited()
     assert machine.state == "roam"
 
 
-async def test_a_helper_landed_in_the_fight_by_its_port_is_not_teleported(fast, combat, monkeypatch):
+async def test_a_helper_landed_in_the_fight_by_its_port_does_not_walk_to_it(fast, combat, monkeypatch):
     fighter, helper = _client(), _client()
     see_each_other(fighter)
     see_each_other(helper)
@@ -377,7 +377,7 @@ async def test_a_helper_landed_in_the_fight_by_its_port_is_not_teleported(fast, 
     await _session(machine, combat)
 
     assert set(combat.fights.fought()) == {fighter, helper}
-    assert (500.0, 600.0, 0.0) not in _teleports(helper)
+    assert (500.0, 600.0, 0.0) not in _walks(helper)
 
 
 async def test_a_refused_port_is_dropped_and_the_fight_goes_ahead(fast, combat, monkeypatch):
@@ -393,7 +393,7 @@ async def test_a_refused_port_is_dropped_and_the_fight_goes_ahead(fast, combat, 
     await _session(machine, combat)
 
     assert combat.fights.fought() == [fighter]
-    refused.teleport.assert_not_awaited()
+    refused.walk_to.assert_not_awaited()
 
 
 async def test_a_separate_bot_never_ports(fast, combat, monkeypatch):
@@ -412,7 +412,7 @@ async def test_a_separate_bot_never_ports(fast, combat, monkeypatch):
 
     ports.assert_not_awaited()
     assert combat.fights.fought() == [fighter]
-    other_realm.teleport.assert_not_awaited()
+    other_realm.walk_to.assert_not_awaited()
 
 
 async def test_no_port_map_skips_porting(fast, combat, monkeypatch):
@@ -440,19 +440,19 @@ async def test_no_port_map_skips_porting(fast, combat, monkeypatch):
 async def test_a_helper_returns_to_its_start_and_the_fighter_goes_to_the_nearest_anchor(fast, combat):
     fighter, helper = _client(x=0.0), _client(x=2000.0)
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
 
     await _session(machine, combat)
 
-    assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
-    assert _teleports(fighter) == [(2000.0, 0.0, 0.0)]  # the helper's starting point
+    assert _walks(helper)[-1] == (2000.0, 0.0, 0.0)
+    assert _walks(fighter) == [(2000.0, 0.0, 0.0)]  # the helper's starting point
     combat.hub.assert_not_awaited()
     assert machine.state == "roam"  # everyone is in its zone: the interrupted state runs again
 
 
 async def test_a_fighter_can_anchor_on_a_client_on_another_realm(fast, combat):
-    """A teleport to coordinates keeps the player on its own realm, so the other realm's spot is fair."""
+    """A walk keeps the player on its own realm, so the other realm's spot is fair."""
     fighter, far, near = _client(x=0.0), _client(x=6000.0), _client(x=3000.0)
     see_each_other(fighter)
     see_each_other(far, near)
@@ -461,7 +461,7 @@ async def test_a_fighter_can_anchor_on_a_client_on_another_realm(fast, combat):
 
     await _session(machine, combat)
 
-    assert _teleports(fighter) == [(3000.0, 0.0, 0.0)]
+    assert _walks(fighter) == [(3000.0, 0.0, 0.0)]
     assert machine.state == "roam"
 
 
@@ -478,20 +478,20 @@ async def test_an_anchor_near_a_mob_is_passed_over(fast, combat):
 
     await _session(machine, combat)
 
-    assert _teleports(fighter) == [(5000.0, 0.0, 0.0)]
+    assert _walks(fighter) == [(5000.0, 0.0, 0.0)]
 
 
 async def test_a_failed_arrival_check_sends_that_player_to_the_hub(fast, combat):
     fighter, helper = _client(x=0.0), _client(x=2000.0)
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     mob = FakeEntity()
     mob.location.return_value = XYZ(2500.0, 0.0, 0.0)  # walked up to the anchor during the fight
 
     async def arrive(_where):
         fighter.get_mobs.return_value = [mob]
 
-    fighter.teleport.side_effect = arrive
+    fighter.walk_to.side_effect = arrive
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
 
     await _session(machine, combat)
@@ -501,10 +501,28 @@ async def test_a_failed_arrival_check_sends_that_player_to_the_hub(fast, combat)
     assert machine.state == "recover"
 
 
+async def test_a_walk_to_a_safe_spot_that_fails_sends_that_player_to_the_hub(fast, combat):
+    """Ambient combat's move walks; one that cannot get there goes to the hub, as one with nowhere to go does."""
+    from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
+
+    fighter, helper = _client(x=0.0), _client(x=2000.0)
+    fighter.in_battle.return_value = True
+    _join_on_walk(helper)
+    fighter.walk_to.return_value = WalkEnd.NO_ROUTE  # the anchor is behind a gate, say
+    machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
+
+    await _session(machine, combat)
+
+    assert _walks(fighter) == [(2000.0, 0.0, 0.0)]  # it tried the helper's starting point
+    _machine, players, _hub = combat.hub.await_args.args
+    assert players == [fighter]
+    assert machine.state == "recover"
+
+
 async def test_a_low_player_collects_wisps_before_anyone_moves(fast, combat):
     fighter, helper = _client(x=0.0), _client(x=2000.0)
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     fighter.calc_health_ratio.return_value = 0.01  # defeated in a fight the group won: 1 health
     order: list[str] = []
     combat.wisps.side_effect = lambda *_a: order.append("wisps")
@@ -512,7 +530,7 @@ async def test_a_low_player_collects_wisps_before_anyone_moves(fast, combat):
     async def moved(_where):
         order.append("moved")
 
-    fighter.teleport.side_effect = moved
+    fighter.walk_to.side_effect = moved
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
 
     await _session(machine, combat)
@@ -538,7 +556,7 @@ async def test_a_fled_fight_collects_hub_wisps_then_goes_to_recovery(fast, comba
     await _session(machine, combat)
 
     combat.wisps.assert_awaited_once()
-    fighter.teleport.assert_not_awaited()
+    fighter.walk_to.assert_not_awaited()
     combat.hub.assert_not_awaited()
     assert machine.state == "recover"
 
@@ -699,13 +717,13 @@ async def test_a_helper_back_at_its_start_is_arrival_checked_too(fast, combat):
     mob = FakeEntity()
     mob.location.return_value = XYZ(2800.0, 0.0, 0.0)
 
-    async def teleport(where):
+    async def walk(where):
         if (where.x, where.y) == (500.0, 600.0):
             helper.in_battle.return_value = True
         else:  # home: a patrol has wandered within SAFE_RADIUS since it left
             helper.get_mobs.return_value = [mob]
 
-    helper.teleport.side_effect = teleport
+    helper.walk_to.side_effect = walk
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
 
     await _session(machine, combat)
@@ -721,17 +739,17 @@ async def test_a_helper_that_never_got_in_goes_home(fast, combat, monkeypatch):
     fighter.in_battle.return_value = True
     moved_to = XYZ(500.0, 600.0, 0.0)
 
-    async def teleport(where):
+    async def walk(where):
         helper.body.position.return_value = where  # moves, but the fight never takes it
 
-    helper.teleport.side_effect = teleport
+    helper.walk_to.side_effect = walk
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
 
     await _session(machine, combat)
 
     assert combat.fights.fought() == [fighter]
-    assert _teleports(helper)[0] == (moved_to.x, moved_to.y, moved_to.z)
-    assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
+    assert _walks(helper)[0] == (moved_to.x, moved_to.y, moved_to.z)
+    assert _walks(helper)[-1] == (2000.0, 0.0, 0.0)
 
 
 @pytest.mark.parametrize("hold", [PauseHold.USER, PauseHold.RECOVERY])
@@ -841,7 +859,7 @@ async def test_settle_fights_brings_a_relaunched_player_back_into_the_fight(fast
     see_each_other(relaunched)
     relaunched.zone_name.return_value = "Outside the dungeon"
     fighter.in_battle.return_value = True
-    _join_on_teleport(relaunched)
+    _join_on_walk(relaunched)
     machine = BotMachine(clients=[fighter, relaunched], config=_config(), node_registry={})
     machine.port_map = MagicMock()
     monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter))
@@ -876,7 +894,7 @@ async def test_settle_fights_hands_back_the_fighters_when_a_relaunched_player_ca
     combat.hub.assert_not_awaited()
     combat.wisps.assert_not_awaited()
     for fighter in fighters:
-        assert _teleports(fighter) == []
+        assert _walks(fighter) == []
 
 
 async def test_settle_fights_with_no_way_to_port_hands_back_the_fighters_at_once(fast, combat):
@@ -914,7 +932,7 @@ async def test_settle_fights_fights_on_for_a_player_no_recovery_relaunched(fast,
 
 
 async def test_a_stop_ends_the_settling_fight_and_moves_nobody(fast, combat):
-    """Stop hands the clients back to the user: no more casting, no teleports, no hub trip."""
+    """Stop hands the clients back to the user: no more casting, no walks, no hub trip."""
     fighter = _client()
     fighter.in_battle.return_value = True
     combat.fights.hold[fighter] = asyncio.Event()  # never released: only the stop ends it
@@ -927,7 +945,7 @@ async def test_a_stop_ends_the_settling_fight_and_moves_nobody(fast, combat):
     leaving = await asyncio.wait_for(settling, timeout=2.0)
 
     assert leaving == []
-    assert _teleports(fighter) == []
+    assert _walks(fighter) == []
     combat.hub.assert_not_awaited()
     combat.poll_drops.assert_not_awaited()
 
@@ -986,7 +1004,7 @@ async def test_a_session_that_fights_forgets_its_players_fresh_logins(fast, comb
     see_each_other(helper)
     helper.zone_name.return_value = "Elsewhere"
     fighter.in_battle.return_value = True
-    _join_on_teleport(helper)
+    _join_on_walk(helper)
     machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
     machine.port_map = MagicMock()
     monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter))
