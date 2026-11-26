@@ -24,7 +24,7 @@ The bot stops after 15 consecutive failures on this node.
 | **Timeout (s)** | The longest to spend collecting. 0 means no limit. | 10 seconds |
 | **Fail If Health Still Below** | After collecting, the node fails if any player's health is still below this. At 0%, it never fails on health. | 50% |
 | **Fail If Mana Still Below** | After collecting, the node fails if any player's mana is still below this. At 0%, it never fails on mana. | 50% |
-| **Only Collect Safe Wisps** | When on, skips wisps within 1500 units of an enemy, so collecting doesn't start a fight. Turn off only where enemies are always nearby. | skip wisps near enemies |
+| **Only Collect Safe Wisps** | When on, skips wisps within 1500 units of an enemy, and wisps the walk to would pass inside a patrolling enemy's range, so collecting doesn't start a fight. Turn off only where enemies are always nearby. | skip wisps near enemies |
 
 **Returns**
 
@@ -34,18 +34,19 @@ The bot stops after 15 consecutive failures on this node.
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 
-Players move together, teleporting to the same wisp, so a player who's already full passes through without using it up.
+Only the players below a threshold walk, all to the same wisp at once. The rest stay where they are, which keeps them safe from enemies for a while after a fight. A player who arrives after the wisp is taken goes on to the next one.
 
-Place it right after a fight or a teleport. Wisps take a moment to appear, so when none is in sight and a player is below a fail threshold, the node waits up to Safety Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait.
+Place it right after a fight or a zone change. Wisps take a moment to appear, so when none is in sight and a player is below a fail threshold, the node waits up to Safety Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait.
 
 With Challenge Mode on, a player outside the dungeon is measured against the lower maximum its next entry scales it to, as in Handle Potions.
 
 ## Handle Combat { #handle-combat }
 
-Teleports every player to an enemy and fights until the battle ends. Drops are recorded as chat announces them.
+Walks every player to an enemy and fights until the battle ends. Drops are recorded as chat announces them.
 
 The bot stops after 5 consecutive failures on this node.
 
@@ -66,6 +67,11 @@ The bot stops after 5 consecutive failures on this node.
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Player Realms](options.md#player-realms)
+- [Avoid Mobs](options.md#avoid-mobs)
+
+**Usage notes**
+
+Players walk up to the enemy, and once a fight has started, to its duel circle. With Avoid Mobs on, the walk keeps clear of every other enemy, so it starts no other fight. The time spent walking does not count toward entering combat, but it does count toward Max Duration.
 
 ## Handle Potions { #handle-potions }
 
