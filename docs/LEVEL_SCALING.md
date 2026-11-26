@@ -33,6 +33,32 @@ deleted outright, so no bot file can name it. Its elixir code, `apply_elixir`, l
 `SUCCESS` always means every selected player is scaled and the players are where the bot
 expects them.
 
+### At the station
+
+Every move at the Scales walks (`walking.walk_clients`; core's `docs/WALKING.md`), as every
+move in a zone does since Stage 6 of #322. Before it, the station teleported, and with
+teleports off until Stage 7 every scaling failed there.
+
+1. Every player taking the elixir walks to the entry's `reset_xyz` until no prompt shows
+   (`clear_stale_prompt`).
+2. One at a time, each walks to `interact_xyz`, presses X and clicks the elixir option, and
+   the menu closes before the next one starts: an open menu closes on every client that has
+   not clicked yet as soon as one does. The walk is `approach=True`, so an interact point
+   inside the Scales' own object stands at its edge, where the prompt shows.
+3. A player still lacking the elixir walks back to `reset_xyz`, out of the prompt, and the
+   round repeats for those players, up to `MAX_RETRIES` rounds.
+
+A walk that fails, to the Scales or back to reset, fails the node there, logged with where it
+ended. It is never retried the same way. A prompt or a menu that doesn't show is not a walk's
+failure: the round's elixir check decides, and drives the retry.
+
+Every station has a walking map, and every reset-to-interact walk in the table plans without
+crossing a gate (checked on r815378, 2026-11-25).
+`test_every_zone_on_the_map_has_a_walking_map_core_ships` fails on a Scales whose zones have no
+map. Before core 0.14.1, seven had none (six of them world defaults, Xibalba the seventh),
+because core's map build read only the navigation map and the bots, and no shipped bot farmed
+those dungeons.
+
 ### Mark and recall are decided by where the clients are
 
 There is no checkbox. Clients away from the Scales' dungeon mark, travel, scale and recall.

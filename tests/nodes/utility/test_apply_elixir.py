@@ -56,9 +56,9 @@ async def test_prompt_never_appears_fails():
         result = await _apply(machine, [client])
 
     assert result == "FAILURE"
-    # The first reset, walked, then teleport(interact) + teleport(reset) for each attempt
-    assert client.walk_to.call_count == 1
-    assert client.teleport.call_count == hls.MAX_RETRIES * 2
+    # The first reset, then a walk to the Scales and one back to reset for each attempt
+    assert client.walk_to.call_count == 1 + hls.MAX_RETRIES * 2
+    client.teleport.assert_not_called()
 
 
 async def test_menu_never_appears_fails():
@@ -105,7 +105,7 @@ async def test_clients_to_scale_subset():
     assert moves(c1) == []
     c1.send_key.assert_not_called()
     c2.walk_to.assert_called()
-    c2.teleport.assert_called()
+    c2.teleport.assert_not_called()
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
@@ -121,7 +121,7 @@ async def test_stale_prompt_cleared_before_interaction():
         result = await _apply(machine, [client])
 
     assert result == "SUCCESS"
-    # The walk to reset_xyz (x=1.0) first, then the teleport to interact_xyz (x=0.0).
+    # The walk to reset_xyz (x=1.0) first, then the walk to interact_xyz (x=0.0).
     first, second = moves(client)[:2]
     assert first[0] == 1.0  # reset_xyz
     assert second[0] == 0.0  # interact_xyz
@@ -133,12 +133,11 @@ async def test_prompt_retry_then_success():
     machine = FakeMachine()
     reset_visited: list[bool] = []
 
-    async def tracking_teleport(xyz):
+    async def tracking_walk(xyz):
         if xyz.x == 1.0:  # reset_xyz has x=1.0
             reset_visited.append(True)
 
-    client.teleport.side_effect = tracking_teleport
-    client.walk_to.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_walk
 
     async def npc_range():
         # Only at interact_xyz, and only once the client has been reset twice: the
@@ -163,7 +162,8 @@ async def test_prompt_retry_then_success():
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 2
-    assert len(moves(client)) == 4  # reset (walked), interact, reset, interact
+    assert len(moves(client)) == 4  # reset, interact, reset, interact: all walked
+    client.teleport.assert_not_called()
 
 
 async def test_missing_elixir_is_retried():
@@ -241,3 +241,44 @@ async def test_a_prompt_that_will_not_clear_at_reset_fails_without_using_the_sta
 
     assert result == "FAILURE"
     client.send_key.assert_not_called()
+
+
+async def test_a_walk_to_the_scales_that_fails_ends_the_node_without_pressing_x():
+    """A wall the walk met is still there: no retry round, and nobody else walks after."""
+    from bartleby.runtime.movement.walk import WalkEnd
+
+    c1, c2 = _ready_client(), _ready_client()
+    interact = tuple(XYZ(**_PARAMS["interact_xyz"]))
+
+    async def no_route_to_the_scales(xyz):
+        return WalkEnd.NO_ROUTE if tuple(xyz) == interact else None
+
+    c1.walk_to.side_effect = no_route_to_the_scales
+
+    with _patch_menu_visible(), _patch_menu_gone(), patch.object(hls, "POLL_INTERVAL", 0):
+        result = await _apply(FakeMachine(), [c1, c2])
+
+    assert result == "FAILURE"
+    assert moves(c1)[-1] == interact
+    c1.send_key.assert_not_called()
+    assert interact not in moves(c2)
+
+
+async def test_a_walk_back_to_reset_that_fails_ends_the_node():
+    from bartleby.runtime.movement.walk import WalkEnd
+
+    client = FakeClient()  # never gets the elixir, so a retry round walks back to reset
+    reset = tuple(XYZ(**_PARAMS["reset_xyz"]))
+    walks: list[tuple] = []
+
+    async def stuck_after_the_first_reset(xyz):
+        walks.append(tuple(xyz))
+        return WalkEnd.BLOCKED if tuple(xyz) == reset and walks.count(reset) > 1 else None
+
+    client.walk_to.side_effect = stuck_after_the_first_reset
+
+    with patch.object(hls, "POLL_INTERVAL", 0):
+        result = await _apply(FakeMachine(), [client])
+
+    assert result == "FAILURE"
+    assert walks == [reset, tuple(XYZ(**_PARAMS["interact_xyz"])), reset]

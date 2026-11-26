@@ -437,7 +437,10 @@ async def apply_elixir(
         for position, (number, client) in enumerate(pending):
             if position:
                 await asyncio.sleep(LEVEL_SCALING_STAGGER_DELAY)
-            await _use_station(machine, client, number, interact, safety_delay)
+            if not await _use_station(machine, client, number, interact, safety_delay):
+                # Logged with where the walk ended: the same way would meet the same wall.
+                machine.log(f"FAILURE: client {number} could not walk to the Scales", logging.WARNING)
+                return False
 
         # Give the elixirs time to apply server-side before reading the indicator.
         machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
@@ -452,12 +455,14 @@ async def apply_elixir(
             machine.log("SUCCESS: level scaling applied")
             return True
 
-        # Step out of NPC range so the next round's teleport re-triggers the prompt.
+        # Step out of NPC range so the next round's walk in raises the prompt again.
         machine.log(
             f"Elixir not active on client(s) {[n for n, _ in pending]}; resetting to retry",
             logging.DEBUG,
         )
-        await asyncio.gather(*[walking.teleport(c, reset) for _, c in pending])
+        if not await walking.walk_all(machine, [c for _, c in pending], reset, numbers=[n for n, _ in pending]):
+            machine.log("FAILURE: could not walk back to the Scales' reset point", logging.WARNING)
+            return False
 
     machine.log(
         f"FAILURE: level-scaling elixir not active on client(s) {[n for n, _ in pending]} after {MAX_RETRIES} attempts",
@@ -466,23 +471,25 @@ async def apply_elixir(
     return False
 
 
-async def _use_station(machine, client, client_number: int, interact: XYZ, safety_delay: float) -> None:
-    """Walk one client through a single use of the level-scaling station.
+async def _use_station(machine, client, client_number: int, interact: XYZ, safety_delay: float) -> bool:
+    """Take one client through a single use of the level-scaling station.
 
-    Teleports to the NPC, presses X, clicks the elixir option, and waits for the menu to
-    close again before returning, so no other client is sitting in the menu meanwhile.
+    Walks to the Scales (to its edge, when the interact point lies inside it), presses X,
+    clicks the elixir option, and waits for the menu to close again before returning, so no
+    other client is sitting in the menu meanwhile.
 
-    Reports problems and returns instead of raising — whether the elixir actually landed
-    is decided by the caller's indicator check, which also drives the retry, so there is
-    nothing useful to distinguish here between "the menu never opened" and "the click did
-    not take".
+    False only when the walk failed, which ends the node. Anything after it is reported and
+    returned past instead: whether the elixir actually landed is decided by the caller's
+    indicator check, which also drives the retry, so there is nothing useful to distinguish
+    here between "the menu never opened" and "the click did not take".
     """
-    await walking.teleport(client, interact)
+    if not await walking.walk_all(machine, [client], interact, numbers=[client_number], approach=True):
+        return False
 
     machine.log(f"Client {client_number}: waiting for interact prompt…", logging.DEBUG)
     if not await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range([client]), safety_delay, POLL_INTERVAL):
         machine.log(f"Client {client_number}: interact prompt did not appear", logging.DEBUG)
-        return
+        return True
 
     machine.log(f"Client {client_number}: pressing X to interact with level-scaling NPC", logging.DEBUG)
     await game_keys.press(client, GameAction.INTERACT, 0.1)
@@ -493,13 +500,14 @@ async def _use_station(machine, client, client_number: int, interact: XYZ, safet
             f"Client {client_number}: NPCServicesWin option button never appeared within {safety_delay}s",
             logging.DEBUG,
         )
-        return
+        return True
 
     machine.log(f"Client {client_number}: clicking level-scaling option button", logging.DEBUG)
     await node_helpers.click_by_path(client, LEVEL_SCALING_OPTION_BUTTON_PATH)
 
     machine.log(f"Client {client_number}: waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
     await node_helpers.poll_until(lambda: _none_menu_visible([client]), safety_delay, POLL_INTERVAL)
+    return True
 
 
 async def _all_menu_visible(clients: list) -> bool:
