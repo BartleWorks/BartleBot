@@ -15,6 +15,7 @@ from bartleby.qt.testing.widget_lifetime import (  # noqa: F401 - registers them
     parentless_shows,
     pytest_runtest_call,
 )
+from bartleby.runtime.arbiter import Arbiter
 from bartleby.runtime.clients import game_keys, sightings
 from bartleby.runtime.game.key_bindings import KeyMap
 from wizwalker import XYZ
@@ -106,6 +107,13 @@ class FakeClient:
         self.window_handle = FakeClient._next_handle
         self.zone_name = AsyncMock(return_value="TestZone")
         self.teleport = AsyncMock()
+        # Every walk a node makes, by goal, through the suite's walking double (walk_double).
+        # Return a WalkEnd from it, or set a side_effect, for a walk that does not arrive.
+        self.walk_to = AsyncMock(return_value=None)
+        # Both movers in the order they were called, whatever side_effect a test gives either.
+        self._movers = MagicMock()
+        self._movers.attach_mock(self.teleport, "teleport")
+        self._movers.attach_mock(self.walk_to, "walk_to")
         self.is_loading = AsyncMock(return_value=False)
         self.is_in_npc_range = AsyncMock(return_value=False)
         self.is_in_dialog = AsyncMock(return_value=False)
@@ -194,21 +202,27 @@ class FakeGidEntity:
         self.object_name = AsyncMock(return_value=template)
 
 
+def moves(client: "FakeClient") -> list[tuple]:
+    """Where *client* was sent, teleport or walk, in order, each as an ``(x, y, z)`` tuple."""
+    return [tuple(call.args[0]) for call in client._movers.mock_calls if call.args]
+
+
 def prompt_at(client: "FakeClient", *points, initially: bool = False) -> None:
-    """Make *client*'s interact prompt show only while its last teleport was to one of *points*.
+    """Make *client*'s interact prompt show only while its last move was to one of *points*.
 
     That is how the game behaves, so a test using this does not depend on how many times a
     node reads the prompt, only on where it sends the client. *initially* is the prompt
-    before the first teleport: True for a client that starts beside some other object.
+    before the first move: True for a client that starts beside some other object.
     Points are XYZs or the ``{"x", "y", "z"}`` dicts node params hold, compared by
     coordinates, since XYZ has no equality of its own.
     """
     wanted = [(p["x"], p["y"], p["z"]) if isinstance(p, dict) else tuple(p) for p in points]
 
     async def _showing() -> bool:
-        if not client.teleport.call_args_list:
+        sent = moves(client)
+        if not sent:
             return initially
-        return tuple(client.teleport.call_args_list[-1].args[0]) in wanted
+        return sent[-1] in wanted
 
     client.is_in_npc_range.side_effect = _showing
 
@@ -262,6 +276,8 @@ class FakeMachine:
         self.node_scratch: dict[str, object] = {}
         # The real record, retaining as it does mid-run, so node tests exercise its rules.
         self.together = sightings.TogetherRecord()
+        # The run's arbiter, as BotMachine has, for the movement lease every walk takes.
+        self.arbiter = Arbiter()
 
     def note_sightings(self, result) -> None:
         self.together.note(result)
@@ -512,6 +528,50 @@ def bartlebot_product(_bartlebot_product, monkeypatch):
 
     monkeypatch.setattr(product, "_current", _bartlebot_product)
     return _bartlebot_product
+
+
+@pytest.fixture(autouse=True)
+def teleports_enabled(monkeypatch):
+    """Let the nodes that still teleport do so in their tests, as they will once Stage 7's
+    short radius is confirmed. The app runs with ``walking.TELEPORTS_ENABLED`` off; a test of
+    the refusal asks for ``no_teleports``."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", True)
+
+
+@pytest.fixture
+def no_teleports(monkeypatch):
+    """The app as it runs today: every position write refused."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    monkeypatch.setattr(walking, "TELEPORTS_ENABLED", False)
+
+
+@pytest.fixture(autouse=True)
+def walk_double(monkeypatch):
+    """Walk every client on the client's own ``walk_to`` mock instead of core's route walker.
+
+    The walk "arrives", and moves nothing, as the teleport mock it replaced. A test makes one end
+    otherwise by having ``walk_to`` return a ``WalkEnd`` (NO_ROUTE, BLOCKED, FIGHT, ...). A
+    client without ``walk_to`` arrives with nothing recorded. ``tests/nodes/test_walking.py``
+    puts the real one back to walk simulated clients on planners of its own.
+    """
+    from bartleby.runtime.movement.walk import WalkEnd, WalkResult  # noqa: PLC0415
+
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    async def walk(machine, client, number, goal, avoid, approach=False):
+        target = goal if isinstance(goal, XYZ) else XYZ(*walking.point(goal))
+        ended = None
+        if (walk_to := getattr(client, "walk_to", None)) is not None:
+            ended = await walk_to(target)
+        end = ended if isinstance(ended, WalkEnd) else WalkEnd.ARRIVED
+        start = tuple(target)
+        return walking.Walked(WalkResult(end, "TestZone", start, start, position=start), into_exit=False)
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    return walk
 
 
 @pytest.fixture

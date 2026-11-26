@@ -38,7 +38,7 @@ from bartlebot.controller.run import Run
 from bartlebot.controller.sharing import Sharing
 from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.controller.templates import Templates
-from bartlebot.game import zone_names
+from bartlebot.game import walking_maps, zone_names, zone_nav
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.debug.game_hang_trace import GameHangTracer
@@ -48,6 +48,7 @@ from bartlebot.gui.dialogs.first_run_dialog import needs_asking, setup_pages
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops
 from bartlebot.gui.update_prompt import UpdatePrompt
+from bartlebot.nodes import walking
 from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
@@ -206,6 +207,8 @@ class AppController(QObject):
             self._stall_tracer.start()
         # A game window that stops answering, and what its thread was waiting on.
         self._hang_tracer = GameHangTracer(self._hooked_windows) if dev_mode() else None
+        # The clients whose first fight check and key read were made when they hooked.
+        self._walk_warmed: set[int] = set()
         if self._hang_tracer is not None:
             self._hang_tracer.start()
 
@@ -460,6 +463,10 @@ class AppController(QObject):
 
     async def run(self) -> None:
         self._client_manager.start()
+        # Every zone's walking map built and saved ahead of the walks that need it, on a
+        # thread of its own: the open bot's zones first, then Sync in Zone's network.
+        walking_maps.WARMER.start(network=(z for w in zone_nav.load().worlds.values() for z in w.zones))
+        self._app.aboutToQuit.connect(walking_maps.WARMER.stop)
         quit_event = asyncio.Event()
         # Nothing to flush here any more: combat edits used to sit in a 500 ms
         # debounce that a quit could beat, and now live behind the combat strategy
@@ -813,6 +820,11 @@ class AppController(QObject):
             self._window.set_start_enabled(self._documents.start_enabled())
 
     def _on_clients_changed(self, clients: list) -> None:
+        for client in clients:
+            if client.window_handle not in self._walk_warmed:
+                # Its first walk then starts at once (nodes/walking.py, warm_lookups).
+                self._walk_warmed.add(client.window_handle)
+                asyncio.ensure_future(walking.warm_lookups(client))
         self._window.set_start_enabled(self._documents.start_enabled())
         self._window.set_client_summary(len(clients))
         self._window.left_sidebar.combat_tab.set_client_count(len(clients))

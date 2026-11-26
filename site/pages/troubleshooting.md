@@ -38,6 +38,22 @@ If BartleBot itself freezes with the game, [open an issue](#opening-an-issue).
 
 BartleBot doesn't automate PvP, and nothing turns that off. To run the bot, make your own copy and take out the steps the message lists. [PvP](guides/running/pvp.md) has which zones are off limits.
 
+## "It names zones with no walking map" { #no-walking-map }
+
+**No Walking Map** lists each step that names a zone BartleBot has no walking map of. Players walk wherever a bot moves them inside a zone, along the zone's map, so a bot can't run in a zone without one. The bot canvas shows the same zones as warnings when the bot opens.
+
+Check the zone in the step: a zone typed by hand can be misspelled. If the zone is right, [open an issue](#opening-an-issue) naming it, so a map can be added.
+
+## "A walk failed" { #a-walk-failed }
+
+A step fails when a player can't walk where it's going. The log line starts with the player, then says where the walk was going and how it ended:
+
+- **no route**: nothing on the zone's floor joins the two spots. When a closed gate or door is why, the log names it. Your wizard's quests may not have opened it yet.
+- **blocked**: something the map doesn't know about stood in the way, and walking around it didn't work.
+- **out of time**: the walk took far longer than it should, usually because the player kept getting pushed back.
+
+The bot then takes the step's failure path, as for any failed step. It never teleports instead. If the same walk fails every pass, [open an issue](#opening-an-issue) with the log.
+
 ## "The bot was stopped: a client entered…"
 
 A player reached a PvP zone, or a PvP fight, during a run. BartleBot stopped the bot and unhooked every game.

@@ -230,6 +230,8 @@ async def test_run_recompose_swaps_config_before_machine_build(harness, library,
     harness._run._start_bot = fake_start
     harness._run._confirm_combat = lambda: True
     harness._run._confirm_recovery_gaps = lambda: True
+    # The definition's zone is a made-up input ("Mooshu"), with no walking map to check.
+    harness._run._check_walking_maps = lambda: True
     harness._client_manager.clients = [MagicMock(in_battle=AsyncMock(return_value=False))]
     monkeypatch.setattr(safety_warning_dialog, "collect_safety_warnings", lambda *a: [])
 

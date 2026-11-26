@@ -18,7 +18,7 @@ from bartleby.runtime.timing import (
 )
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import (
     ARRIVAL_NOTE,
     INTERACT_XYZ,
@@ -88,6 +88,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         player_realms.SPEC,
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     merges_players=True,
     max_consecutive_retries=5,
@@ -197,10 +198,10 @@ async def _enter_unlocker(door: _Door, unlocker, pressed_at: float) -> bool:
     tried = False
     while not going and left_until(KEY_DOOR_TELEPORT_CUTOFF) > 0:
         if tried:
-            await unlocker.teleport(door.reset)
+            await walking.teleport(unlocker, door.reset)
         tried = True
         machine.log(f"Teleporting P{number} to the door's trigger", logging.DEBUG)
-        await unlocker.teleport(door.trigger)
+        await walking.teleport(unlocker, door.trigger)
         wait = min(KEY_DOOR_RETRY_INTERVAL, left_until(KEY_DOOR_TELEPORT_CUTOFF))
         going = await node_helpers.poll_until(_on_its_way, wait, POLL_INTERVAL)
 
@@ -295,7 +296,7 @@ async def _unlock_and_enter(door: _Door, interact: XYZ) -> str:
         # is a rerun, after a fight, of a node that already got the door open.
         first = clients[0]
         machine.log(f"No player got the interact prompt after {MAX_RETRIES} attempts; trying the trigger", logging.INFO)
-        await first.teleport(door.trigger)
+        await walking.teleport(first, door.trigger)
 
         async def _first_is_going() -> bool:
             return await door.on_its_way(first)

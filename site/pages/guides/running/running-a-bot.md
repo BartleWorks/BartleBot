@@ -15,6 +15,7 @@ Select **Run bot**, the play button in the bot canvas's toolbar, or press F5 (**
 Before the first step, BartleBot checks the run. Some checks refuse to start and say what to fix. [Troubleshooting](../../troubleshooting.md) has each one:
 
 - **Restricted Zone**: the bot names a PvP zone or Beastmoon. [PvP](pvp.md) has why.
+- **No Walking Map**: the bot names a zone BartleBot can't walk in yet.
 - **Player Realms**: the bot's [Player Realms](../../reference/options.md#player-realms) option keeps players on separate realms, but the bot holds a step that brings them together.
 - **Players in a Fight**: a player is in a fight. Finish or flee it first.
 - **Run Bot**: a player has an action on a key BartleBot can't press.
@@ -37,6 +38,14 @@ A player inside a Challenge Mode dungeon keeps the deck it has, since the game w
 - **The Players tab** shows each player's zone and position.
 
 While a run goes on, the **Options** and **Combat** tabs are locked. Your clicks and keys still reach the game, and can throw the bot off, so leave the game windows alone unless you mean to step in. BartleBot keeps Windows from going to sleep until the run ends.
+
+## How players move
+
+Inside a zone, players walk. A step that sends them somewhere walks every player there at once, each from where it stands, at its own speed, around walls, and with [Avoid Mobs](../../reference/options.md#avoid-mobs) on, around the mobs too. A walk that can't get there fails the step, and the log says where it stopped ([A walk failed](../../troubleshooting.md#a-walk-failed)). A walk that runs into a fight anyway is handled like any [fight no step started](when-something-goes-wrong.md#fights-no-step-started).
+
+Between zones, players take the game's own way: a door, a teleporter, a list, or a teleport to a friend or the group leader.
+
+Leave the keyboard and mouse off a game window while its player walks. A key you press there steers it.
 
 ## Pause or stop
 

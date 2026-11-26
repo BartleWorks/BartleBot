@@ -47,7 +47,7 @@ async def test_success_menu_appears():
 
     assert result == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one approach.
-    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+    assert [tuple(call.args[0]) for call in client.walk_to.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
@@ -79,7 +79,7 @@ async def test_prompt_never_appears_fails():
 
     assert result == "FAILURE"
     # The first reset, then teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == 1 + im.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + im.MAX_RETRIES * 2
 
 
 async def test_wrong_zone_fails():
@@ -90,7 +90,7 @@ async def test_wrong_zone_fails():
     result = await im.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -113,8 +113,8 @@ async def test_one_client_wrong_zone_fails():
     result = await im.run(FakeMachine(), [good, bad], _PARAMS)
 
     assert result == "FAILURE"
-    good.teleport.assert_not_called()
-    bad.teleport.assert_not_called()
+    good.walk_to.assert_not_called()
+    bad.walk_to.assert_not_called()
 
 
 async def test_stale_prompt_cleared():
@@ -129,7 +129,7 @@ async def test_stale_prompt_cleared():
         result = await im.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    first_tp, second_tp = client.teleport.call_args_list[:2]
+    first_tp, second_tp = client.walk_to.call_args_list[:2]
     assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
@@ -143,12 +143,12 @@ async def test_prompt_retry_then_success():
         if xyz.x == 1.0:
             reset_visited.append(True)
 
-    client.teleport.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_teleport
 
     async def npc_range():
         # Only at interact_xyz, and only once the client has been reset twice: the
         # reset every run starts with, and the one after the first miss.
-        calls = client.teleport.call_args_list
+        calls = client.walk_to.call_args_list
         return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
@@ -161,7 +161,7 @@ async def test_prompt_retry_then_success():
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 2
-    assert client.teleport.call_count == 4  # reset, interact, reset, interact
+    assert client.walk_to.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_interact_clients_subset():
@@ -177,9 +177,9 @@ async def test_interact_clients_subset():
         result = await im.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
-    c1.teleport.assert_not_called()
+    c1.walk_to.assert_not_called()
     c1.send_key.assert_not_called()
-    c2.teleport.assert_called()
+    c2.walk_to.assert_called()
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
@@ -193,7 +193,7 @@ async def test_all_clients_filtered_succeeds():
     result = await im.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
     client.send_key.assert_not_called()
 
 
@@ -233,7 +233,7 @@ def _positional_client() -> FakeClient:
     async def _in_range():
         return state["at_interact"]
 
-    c.teleport.side_effect = _teleport
+    c.walk_to.side_effect = _teleport
     c.is_in_npc_range.side_effect = _in_range
     c.at_interact = state
     return c

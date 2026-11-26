@@ -213,7 +213,7 @@ def test_every_node_declared_option_has_an_entry_naming_its_app_setting_and_its_
     text = pages[OPTIONS_PAGE]
     options = node_options()
 
-    assert len(options) == 14
+    assert len(options) == 15
     for option in options:
         section = _section(text, slug(option.spec.name))
         row = SETTING_ROWS.get(option.spec.name)
@@ -236,7 +236,7 @@ def test_every_declaration_of_one_option_agrees_on_what_its_entry_says():
 
 
 def test_every_app_setting_names_the_row_the_settings_dialog_draws():
-    from bartlebot.gui.settings.bot_tab import FRIEND_NAME_TITLE
+    from bartlebot.gui.settings.bot_tab import AVOID_MOBS_TITLE, FRIEND_NAME_TITLE
     from bartlebot.gui.settings.players_rows import REFILL_POTIONS_TITLE
     from bartlebot.gui.settings.quicksell_group import (
         ENABLE_TITLE,
@@ -250,6 +250,7 @@ def test_every_app_setting_names_the_row_the_settings_dialog_draws():
         "Safety Delay": SAFETY_DELAY_TITLE,
         "Level Scaling Players": None,
         "Refill Potions": REFILL_POTIONS_TITLE,
+        "Avoid Mobs": AVOID_MOBS_TITLE,
         "Quicksell": ENABLE_TITLE,
         "Sell Pets": SELL_PETS_TITLE,
         "Sell Socket Wrenches": SELL_SOCKET_WRENCHES_TITLE,

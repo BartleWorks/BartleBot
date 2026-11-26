@@ -36,14 +36,14 @@ async def test_wrong_source_zone_fails():
     result = await gtz.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_success_single_client():
-    """Happy path: one client teleports from Src and arrives in Dst."""
+    """Happy path: one client walks into the trigger in Src and arrives in Dst."""
     client = FakeClient()
     # step 1 pre-check → "Src"; step 3 first poll → "Src" (still leaving,
-    # so poll_each_until_seen re-teleports); step 3 second poll → "Dst" (left Src);
+    # so poll_each_until_seen waits on); step 3 second poll → "Dst" (left Src);
     # step 5 post-check → "Dst".
     client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
 
@@ -51,8 +51,8 @@ async def test_success_single_client():
         result = await gtz.run(machine=FakeMachine(), clients=[client], params=_PARAMS)
 
     assert result == "SUCCESS"
-    # teleport(target) called once in step 2, once by poll_each_until_seen for the straggler.
-    assert client.teleport.call_count == 2
+    # One walk into the box: the client stands there while the poll waits for the zone to change.
+    assert client.walk_to.call_count == 1
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -67,7 +67,7 @@ async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
 
 
 async def test_success_multiple_clients():
-    """All clients must teleport and arrive — verified with two clients."""
+    """All clients must walk in and arrive — verified with two clients."""
 
     def _make_client():
         c = FakeClient()
@@ -81,7 +81,7 @@ async def test_success_multiple_clients():
 
     assert result == "SUCCESS"
     for c in clients:
-        assert c.teleport.call_count == 2
+        assert c.walk_to.call_count == 1
 
 
 async def test_a_client_in_the_challenge_mode_copy_of_from_zone_has_not_left_it():
@@ -96,8 +96,8 @@ async def test_a_client_in_the_challenge_mode_copy_of_from_zone_has_not_left_it(
         result = await gtz.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    # The opening teleport, and the retry while it still stood in the copy.
-    assert client.teleport.call_count == 2
+    # The one walk in: it stands in the box while it still reads the copy.
+    assert client.walk_to.call_count == 1
 
 
 async def test_timeout_leaving_source_zone_fails():
@@ -153,7 +153,7 @@ async def test_stuck_client_still_gets_a_recovery_attempt():
     assert recovery.await_args[0][1] == [stuck]
 
 
-async def test_only_stragglers_are_reteleported_on_retry():
+async def test_only_stragglers_are_walked_again_on_retry():
     """A client that already left from_zone is not disturbed by a later retry attempt —
     only the client(s) still stuck get sent back to the trigger and reset."""
     left = FakeClient()
@@ -171,12 +171,12 @@ async def test_only_stragglers_are_reteleported_on_retry():
 
     # `left` is teleported into the trigger box once, on the first attempt, and never
     # re-teleported (to the trigger or to reset_xyz) on any later retry.
-    assert left.teleport.call_count == 1
+    assert left.walk_to.call_count == 1
 
 
-async def test_a_loading_client_is_not_re_teleported_to_the_trigger():
+async def test_a_loading_client_is_not_walked_to_the_trigger_again():
     """A client on a loading screen still reads from_zone, so the leave-check cannot see it
-    go. Re-teleporting it there lands the teleport when it arrives and drops it back at the
+    go. Sending it there again lands the move when it arrives and drops it back at the
     bounding box in the zone it just reached (#70)."""
     loading = FakeClient()
     # pre-check -> "Src"; still reading "Src" while the screen is up; then in Dst.
@@ -190,12 +190,13 @@ async def test_a_loading_client_is_not_re_teleported_to_the_trigger():
         result = await gtz.run(FakeMachine(), [loading], _PARAMS)
 
     assert result == "SUCCESS"
-    # Only the opening teleport into the bounding box; no retry fired during the load.
-    assert loading.teleport.call_count == 1
+    # At most the opening walk into the bounding box (none, if it reads loading by then);
+    # nothing is walked during the load.
+    assert loading.walk_to.call_count <= 1
 
 
-async def test_a_client_already_loading_gets_no_opening_teleport():
-    """The game moved it before the node started: the teleport would land after it does (#284)."""
+async def test_a_client_already_loading_gets_no_opening_walk():
+    """The game moved it before the node started: a move would land after it does (#284)."""
     client = FakeClient()
     client.zone_name.side_effect = ["Src", "Dst", "Dst"]
     client.is_loading.side_effect = [True, False, False]
@@ -204,7 +205,7 @@ async def test_a_client_already_loading_gets_no_opening_teleport():
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_confirmed_arrival_stops_remaining_trigger_retries():
@@ -229,7 +230,7 @@ async def test_confirmed_arrival_stops_remaining_trigger_retries():
     assert result == "SUCCESS"
     recovery.assert_awaited_once()
     # Only the initial teleport into the trigger box — no reset_xyz retry was ever attempted.
-    assert stuck.teleport.call_count == 1
+    assert stuck.walk_to.call_count == 1
 
 
 async def test_post_condition_wrong_zone_fails():
@@ -304,7 +305,7 @@ async def test_a_prompt_the_first_answer_missed_is_confirmed_while_waiting_to_le
     assert result == "SUCCESS"
     assert screen.clicked == [MESSAGE_BOX_CENTER]
     # Answering stood in for a re-teleport: the opening one is the only one.
-    assert client.teleport.call_count == 1
+    assert client.walk_to.call_count == 1
 
 
 async def test_a_refusal_found_while_waiting_to_leave_fails_the_node():
@@ -339,7 +340,7 @@ async def test_stagger_disabled_by_default():
 
     assert result == "SUCCESS"
     for c in clients:
-        assert c.teleport.call_count == 2
+        assert c.walk_to.call_count == 1
 
 
 async def test_stagger_with_four_clients_sequences_lead_first():
@@ -354,15 +355,15 @@ async def test_stagger_with_four_clients_sequences_lead_first():
         assert lead.zone_name.call_count == 4
 
     for c in rest:
-        c.teleport.side_effect = _rest_teleport_side_effect
+        c.walk_to.side_effect = _rest_teleport_side_effect
 
     with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), clients, params)
 
     assert result == "SUCCESS"
-    assert lead.teleport.call_count == 2
+    assert lead.walk_to.call_count == 1
     for c in rest:
-        assert c.teleport.call_count == 2
+        assert c.walk_to.call_count == 1
 
 
 async def test_stagger_ignored_with_three_clients():
@@ -375,7 +376,7 @@ async def test_stagger_ignored_with_three_clients():
 
     assert result == "SUCCESS"
     for c in clients:
-        assert c.teleport.call_count == 2
+        assert c.walk_to.call_count == 1
 
 
 async def test_stagger_lead_failure_short_circuits():
@@ -394,7 +395,7 @@ async def test_stagger_lead_failure_short_circuits():
 
     assert result == "FAILURE"
     for c in rest:
-        c.teleport.assert_not_called()
+        c.walk_to.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -421,9 +422,9 @@ async def _run_stuck(clients, params):
         return await gtz.run(FakeMachine(), clients, params)
 
 
-def _teleport_targets(client):
-    """Where the client was teleported, as tuples: XYZ has no __eq__, so two equal points compare unequal."""
-    return [tuple(call.args[0]) for call in client.teleport.call_args_list]
+def _walk_targets(client):
+    """Where the client walked to, as tuples: XYZ has no __eq__, so two equal points compare unequal."""
+    return [tuple(call.args[0]) for call in client.walk_to.call_args_list]
 
 
 async def test_without_a_reset_each_client_retries_from_where_it_started():
@@ -432,9 +433,9 @@ async def test_without_a_reset_each_client_retries_from_where_it_started():
 
     await _run_stuck([a, b], _PARAMS)
 
-    assert (10.0, 20.0, 30.0) in _teleport_targets(a)
-    assert (-5.0, 6.0, 7.0) in _teleport_targets(b)
-    assert (10.0, 20.0, 30.0) not in _teleport_targets(b)
+    assert (10.0, 20.0, 30.0) in _walk_targets(a)
+    assert (-5.0, 6.0, 7.0) in _walk_targets(b)
+    assert (10.0, 20.0, 30.0) not in _walk_targets(b)
 
 
 async def test_a_trigger_is_retried_up_to_max_retries_without_a_reset():
@@ -443,7 +444,7 @@ async def test_a_trigger_is_retried_up_to_max_retries_without_a_reset():
 
     await _run_stuck([client], _PARAMS)
 
-    assert _teleport_targets(client).count((10.0, 20.0, 30.0)) == gtz.MAX_RETRIES - 1
+    assert _walk_targets(client).count((10.0, 20.0, 30.0)) == gtz.MAX_RETRIES - 1
 
 
 async def test_a_configured_reset_is_used_for_every_client():
@@ -453,8 +454,8 @@ async def test_a_configured_reset_is_used_for_every_client():
     await _run_stuck([a, b], {**_PARAMS, "reset_xyz": {"x": 1.0, "y": 2.0, "z": 3.0}})
 
     for client in (a, b):
-        assert (1.0, 2.0, 3.0) in _teleport_targets(client)
-    assert (10.0, 20.0, 30.0) not in _teleport_targets(a)
+        assert (1.0, 2.0, 3.0) in _walk_targets(client)
+    assert (10.0, 20.0, 30.0) not in _walk_targets(a)
 
 
 async def test_an_all_zero_reset_is_never_teleported_to():
@@ -464,8 +465,8 @@ async def test_an_all_zero_reset_is_never_teleported_to():
 
     await _run_stuck([client], params)
 
-    assert (0.0, 0.0, 0.0) not in _teleport_targets(client)
-    assert (10.0, 20.0, 30.0) in _teleport_targets(client)
+    assert (0.0, 0.0, 0.0) not in _walk_targets(client)
+    assert (10.0, 20.0, 30.0) in _walk_targets(client)
 
 
 def test_reset_xyz_is_required_in_the_editor():
@@ -493,7 +494,7 @@ def _door_client(opens: bool):
         if opens:
             state["zone"] = "Dst"
 
-    client.teleport.side_effect = _teleport
+    client.walk_to.side_effect = _teleport
     return client
 
 
@@ -539,6 +540,9 @@ async def test_the_watcher_logs_a_players_change_once_with_where_it_stood():
     assert logged.count("P3: zone=Dst loading=False at (1, -3, 3)") == 1
 
 
+# A known flake (no issue): seen once under -n auto during Stage 4 of #322, passes alone. Its
+# 0.02 s sleep against a 0.001 s poll is timing-bound. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_the_watcher_reports_a_client_it_cannot_read_instead_of_raising():
     loading = FakeClient()
     loading.zone_name.side_effect = RuntimeError("loading")

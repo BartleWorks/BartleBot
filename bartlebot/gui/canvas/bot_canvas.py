@@ -68,7 +68,7 @@ from bartlebot.content.subgraphs.subgraphs import (
     sync_linked_values,
 )
 from bartlebot.content.templates import setup_steps, template_diff
-from bartlebot.game import scales
+from bartlebot.game import scales, walking_maps
 from bartlebot.game.pane_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
 from bartlebot.gui.canvas.bot_header import BotHeader
@@ -3362,6 +3362,10 @@ class BotCanvas(QWidget):
                     warn_reasons = member_warnings(warn_reasons)
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
+        # A zone no walk can be planned in: Run refuses the bot (controller/run.py).
+        warning_lines.extend(
+            f"{label}: {walking_maps.warning(zone)}" for label, zone in walking_maps.unmapped_zones(config.states)
+        )
         warning_lines.extend(self._orphan_flag_lines(config))
         # Once each, here: the nodes a problem names are marked by refresh_errors, not listed again.
         report = variable_report(config)

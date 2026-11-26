@@ -19,7 +19,7 @@ from bartleby.runtime.paths import (
 )
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ARRIVAL_NOTE, RESET_XYZ, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
@@ -163,6 +163,7 @@ NODE_SPEC = NodeSpec(
             # Nothing this holds can affect a run that is not queueing.
             depends_on=OPTION_TEAM_UP,
         ),
+        walking.AVOID_MOBS_OPTION,
     ],
     safety_warning=(
         "Team-Up is on with more than one player. Each player queues alone and may land in a "

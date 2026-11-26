@@ -20,7 +20,7 @@ The bot stops after 5 consecutive failures on this node.
 | Parameter | What it does | Default |
 |---|---|---|
 | **Zone** | The zone every player must be in when the node starts. | required |
-| **Mark XYZ** | Where to mark. Players elsewhere in Zone teleport here first. | required |
+| **Mark XYZ** | Where to mark. Players elsewhere in Zone walk here first. | required |
 
 **Returns**
 
@@ -30,6 +30,7 @@ The bot stops after 5 consecutive failures on this node.
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 
@@ -60,6 +61,7 @@ The bot stops after 3 consecutive failures on this node.
 - [Player Realms](options.md#player-realms)
 - [Safety Delay](options.md#safety-delay)
 - [Favorite Realm](options.md#favorite-realm), while **Keep Current Realm** is off
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 

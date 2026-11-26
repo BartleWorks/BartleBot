@@ -124,6 +124,7 @@ from bartleby.runtime.timing import (  # noqa: F401 — re-exported for callers
 )
 
 from bartlebot.game import zone_names
+from bartlebot.nodes import walking
 from bartlebot.options import player_realms
 
 
@@ -482,6 +483,7 @@ class TurnResult(NamedTuple):
 
 
 async def take_turns(
+    machine,
     clients: list,
     interact_xyz,
     reset_xyz,
@@ -491,12 +493,11 @@ async def take_turns(
     poll_interval: float = POLL_INTERVAL,
     object_use_delay: float | None = None,
     park_after_turn: bool = True,
-    log=None,
 ) -> list[TurnResult]:
     """Let each client use a shared world object alone, one after another.
 
     For objects that only serve one player at a time. Every client waits at `reset_xyz`,
-    out of the object's range; one at a time each is teleported to `interact_xyz`, given
+    out of the object's range; one at a time each walks to `interact_xyz`, is given
     up to MAX_RETRIES attempts to raise the interact prompt, and then handed to `turn_fn`,
     which owns the object until it returns.
 
@@ -508,12 +509,12 @@ async def take_turns(
     varies between the nodes that need this, and getting it wrong in either direction
     either serializes nothing useful or holds the object long after it is free.
 
-    `park_after_turn` sends each client back to `reset_xyz` once it is done, so the object
+    `park_after_turn` walks each client back to `reset_xyz` once it is done, so the object
     is genuinely free for the next one. Leave it on for interactions the client walks away
     from — standing in range is enough to swallow the next client's keypress, so a client
     left at the object undoes the serialization for everyone after it. Turn it off only
     when the interaction removes the client itself, as a zone transition does: there the
-    teleport lands on a client that is mid-loading-screen or already elsewhere.
+    walk would start on a client that is mid-loading-screen or already elsewhere.
 
     Results are positional, one per client in `clients`, so a caller that passed a subset
     can map them back. `numbers` supplies the 1-based client numbers used in log messages;
@@ -522,15 +523,15 @@ async def take_turns(
 
     Never raises on a client's failure — a client that never got the prompt is recorded and
     the next one takes its turn, because one player standing in the wrong place is not a
-    reason to deny the object to everybody else.
+    reason to deny the object to everybody else. A client whose walk to `reset_xyz` fails
+    takes no turn, logged with where its walk ended.
     """
     labels = numbers if numbers is not None else list(range(1, len(clients) + 1))
     # Read at call time rather than bound as a default, so the constant stays patchable.
     gap = OBJECT_USE_DELAY if object_use_delay is None else object_use_delay
 
     def _log(message: str, level: int = logging.DEBUG) -> None:
-        if log:
-            log(message, level)
+        machine.log(message, level)
 
     results: list[TurnResult] = []
 
@@ -538,8 +539,9 @@ async def take_turns(
     # clear_stale_prompt does for the parallel path (#152): sequential mode is only worth
     # anything if exactly one client is in range at a time, and a client that starts in
     # range never leaves it on its own.
-    await asyncio.gather(*[c.teleport(reset_xyz) for c in clients])
+    walked = await walking.walk_clients(machine, clients, reset_xyz, numbers=labels)
     stuck = await settle_prompt_clear(clients, INTERACT_PROMPT, safety_delay, poll_interval)
+    stuck = [s or not w.ok for s, w in zip(stuck, walked)]
     if any(stuck):
         _log(
             f"Client(s) {[n for n, s in zip(labels, stuck) if s]}: interact prompt would not clear at reset_xyz; "
@@ -557,12 +559,14 @@ async def take_turns(
 
         prompted = False
         for attempt in range(1, MAX_RETRIES + 1):
-            await client.teleport(interact_xyz)
+            if not await walking.walk_all(machine, [client], interact_xyz, numbers=[number], approach=True):
+                break
             if await poll_until(lambda c=client: all_in_npc_range([c]), safety_delay, poll_interval):
                 prompted = True
                 break
             _log(f"Client {number}: interact prompt did not appear (attempt {attempt}/{MAX_RETRIES}); resetting")
-            await client.teleport(reset_xyz)
+            if not await walking.walk_all(machine, [client], reset_xyz, numbers=[number]):
+                break
 
         if not prompted:
             _log(f"Client {number}: interact prompt never appeared after {MAX_RETRIES} attempts")
@@ -579,7 +583,7 @@ async def take_turns(
         # still be standing at the object, and it is the standing there — not the keypress
         # — that costs the next client its turn.
         if park_after_turn:
-            await client.teleport(reset_xyz)
+            await walking.walk_all(machine, [client], reset_xyz, numbers=[number])
             await poll_until(lambda c=client: none_in_npc_range([c]), safety_delay, poll_interval)
 
     return results
@@ -737,7 +741,7 @@ async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_
     and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
     is its own case to log.
     """
-    await client.teleport(xyz)
+    await walking.teleport(client, xyz)
     if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
         return Pickup.NO_PROMPT
     await game_keys.press(client, GameAction.INTERACT, 0.1)
@@ -1518,7 +1522,8 @@ async def clear_stale_prompt(
     off a loading screen beside another object raises that object's prompt a moment
     later, so a prompt reading absent proves nothing on its own (#152). So every client
     teleports to *reset* whether or not a prompt shows, and the prompt must stay absent
-    there for PROMPT_CLEAR_SETTLE — see ``settle_prompt_clear``.
+    there for PROMPT_CLEAR_SETTLE — see ``settle_prompt_clear``. Every client walks there
+    (``walking.walk_clients``); one whose walk fails fails the node, logged with where it ended.
 
     Returns False, having logged the node's failure, if a prompt still shows after
     ``safety_delay``: *reset* is then in range of something, and approaching from it
@@ -1530,10 +1535,16 @@ async def clear_stale_prompt(
     if any(showing):
         stale = [n for n, s in zip(labels, showing) if s]
         machine.log(
-            f"Pre-existing {prompt.name} on client(s) {stale}; teleporting to reset_xyz to clear it",
+            f"Pre-existing {prompt.name} on client(s) {stale}; walking to reset_xyz to clear it",
             logging.DEBUG,
         )
-    await asyncio.gather(*[c.teleport(reset) for c in clients])
+    walked = await walking.walk_clients(machine, clients, reset, numbers=labels)
+    if not all(w.ok for w in walked):
+        machine.log(
+            f"FAILURE: client(s) {[n for n, w in zip(labels, walked) if not w.ok]} could not walk to reset_xyz",
+            logging.WARNING,
+        )
+        return False
     still = await settle_prompt_clear(clients, prompt, safety_delay, poll_interval)
     if not any(still):
         return True
@@ -1590,8 +1601,11 @@ async def reach_prompt(
 
       1. Stand at *reset* until no prompt shows — see ``clear_stale_prompt``. A prompt
          that will not clear there is always the node's failure, logged as one.
-      2. Up to MAX_RETRIES: teleport to *point* and wait ``safety_delay`` for the
-         prompt on every client; on a miss, teleport back to *reset* and try again.
+      2. Up to MAX_RETRIES: walk to *point* and wait ``safety_delay`` for the
+         prompt on every client; on a miss, walk back to *reset* and try again.
+
+    A walk that fails (no route, blocked) ends the node there, logged with where it ended:
+    walking the same way again would meet the same wall.
 
     Returns False once the retries run out. With *fail_on_miss*, the default, that is
     logged as the node's failure, so a caller's failure path is a bare ``return
@@ -1621,8 +1635,10 @@ async def reach_prompt(
         return False
 
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to the {prompt.name}", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(point) for c in clients])
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: walking to the {prompt.name}", logging.DEBUG)
+        if not await walking.walk_all(machine, clients, point, numbers=numbers, approach=True):
+            machine.log(f"FAILURE: could not walk to the {prompt.name}", logging.WARNING)
+            return False
 
         machine.log(f"Waiting for {prompt.name}…", logging.DEBUG)
         if await poll_until(_reached, safety_delay, poll_interval):
@@ -1634,7 +1650,9 @@ async def reach_prompt(
             machine.log(f"{prompt.name.capitalize()} did not appear on every client (attempt {attempt})", logging.DEBUG)
             break
         machine.log(f"{prompt.name.capitalize()} did not appear (attempt {attempt}); resetting", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        if not await walking.walk_all(machine, clients, reset, numbers=numbers):
+            machine.log("FAILURE: could not walk back to reset_xyz", logging.WARNING)
+            return False
 
     if fail_on_miss:
         machine.log(f"FAILURE: {prompt.name} never appeared after {MAX_RETRIES} attempts", logging.WARNING)

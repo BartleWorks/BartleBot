@@ -6,7 +6,7 @@ import logging
 from bartleby.runtime.timing import MAX_RETRIES, POLL_INTERVAL
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
@@ -82,7 +82,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"Teleporting {len(clients)} client(s) to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
         logging.DEBUG,
     )
-    await asyncio.gather(*[c.teleport(target) for c in clients])
+    await asyncio.gather(*[walking.teleport(c, target) for c in clients])
 
     # 3. Verify all clients reached the target, retrying the ones that did not.
     off_target = await _off_target(clients, target)
@@ -104,7 +104,7 @@ async def run(machine, clients: list, params: dict) -> str:
         # A teleport issued mid-load pulls the client back out of the zone it lands in (#70).
         loading = await asyncio.gather(*[clients[i].is_loading() for i in off_target])
         ready = [i for i, busy in zip(off_target, loading) if not busy]
-        await asyncio.gather(*[clients[i].teleport(target) for i in ready])
+        await asyncio.gather(*[walking.teleport(clients[i], target) for i in ready])
         off_target = await _off_target(clients, target)
 
     if off_target:

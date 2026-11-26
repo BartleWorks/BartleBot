@@ -17,7 +17,7 @@ from bartleby.runtime.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTI
 from wizwalker import XYZ
 
 from bartlebot.game import scales, zone_names
-from bartlebot.nodes import node_helpers, zone_navigation
+from bartlebot.nodes import node_helpers, walking, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
@@ -84,7 +84,12 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
-    required_bot_options=[player_realms.SPEC, SAFETY_DELAY_OPTION, LEVEL_SCALING_PLAYERS_OPTION],
+    required_bot_options=[
+        player_realms.SPEC,
+        SAFETY_DELAY_OPTION,
+        LEVEL_SCALING_PLAYERS_OPTION,
+        walking.AVOID_MOBS_OPTION,
+    ],
     # One tick is a whole trip, and the apply step already retries every player.
     max_consecutive_retries=3,
     usage_notes=(
@@ -452,7 +457,7 @@ async def apply_elixir(
             f"Elixir not active on client(s) {[n for n, _ in pending]}; resetting to retry",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(reset) for _, c in pending])
+        await asyncio.gather(*[walking.teleport(c, reset) for _, c in pending])
 
     machine.log(
         f"FAILURE: level-scaling elixir not active on client(s) {[n for n, _ in pending]} after {MAX_RETRIES} attempts",
@@ -472,7 +477,7 @@ async def _use_station(machine, client, client_number: int, interact: XYZ, safet
     nothing useful to distinguish here between "the menu never opened" and "the click did
     not take".
     """
-    await client.teleport(interact)
+    await walking.teleport(client, interact)
 
     machine.log(f"Client {client_number}: waiting for interact prompt…", logging.DEBUG)
     if not await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range([client]), safety_delay, POLL_INTERVAL):

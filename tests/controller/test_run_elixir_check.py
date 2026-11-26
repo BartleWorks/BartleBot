@@ -53,6 +53,7 @@ class _Controller:
         self._bot_task = None
         self._documents.recompose_before_run = lambda: True
         self._check_restricted_zones = lambda: True
+        self._check_walking_maps = lambda: True
         self._check_player_realms = lambda: True
         self._check_variables = lambda: True
         self._confirm_combat = lambda: True

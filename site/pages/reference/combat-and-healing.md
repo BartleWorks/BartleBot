@@ -90,6 +90,7 @@ The bot stops after 5 consecutive failures on this node.
 
 - [Refill Potions](options.md#refill-potions)
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 

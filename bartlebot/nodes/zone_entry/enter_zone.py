@@ -5,7 +5,7 @@ import logging
 from bartleby.runtime.game import dialog_captions
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ARRIVAL_NOTE, TRANSITION_XYZ, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
@@ -60,7 +60,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Moves every player to another zone by teleporting them into the spot that triggers the "
+        "Moves every player to another zone by walking them into the spot that triggers the "
         "zone change. Can send four players one at a time to keep them on one realm."
     ),
     params=PARAM_SCHEMA,
@@ -77,6 +77,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         player_realms.SPEC,
         SAFETY_DELAY_OPTION,
+        walking.AVOID_MOBS_OPTION,
     ],
     max_consecutive_retries=10,
     usage_notes=(
@@ -111,7 +112,7 @@ def _reset_point(data) -> XYZ | None:
     """The configured reset_xyz, or None when there is none to use: missing, malformed, or all-zero.
 
     All-zero is what an unset coordinate was saved as before the field could be blank (#100);
-    taken literally it teleports every player to the zone's origin.
+    taken literally it walks every player to the zone's origin.
     """
     try:
         reset = XYZ(float(data["x"]), float(data["y"]), float(data["z"]))
@@ -167,10 +168,12 @@ async def watch_group(machine, clients: list, numbers: list[int]) -> None:
 async def fire_trigger(
     machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
 ) -> bool:
-    """Teleport `group` into the transition bounding box until each has left from_zone.
+    """Walk `group` into the transition bounding box until each has left from_zone.
 
-    Runs the teleport → dismiss dungeon dialog → leave-from_zone (with reset retry) half of a
-    transition for just the clients in `group`. `numbers` is each client's player number and
+    Runs the walk → dismiss dungeon dialog → leave-from_zone (with reset retry) half of a
+    transition for just the clients in `group`. A walk into the box ends when the zone
+    changes, or standing in the box, where the server's move follows a moment later; a
+    client whose walk fails is left where it stopped, logged, and retried from its reset. `numbers` is each client's player number and
     `resets` its reset point, both in `group` order. False only when the game refused the
     change, having logged it.
 
@@ -182,18 +185,26 @@ async def fire_trigger(
     safety_delay = machine.get_option("Safety Delay", 3.0)
     attempts = MAX_RETRIES
     to_move = group
-    # A client already loading has triggered, or been moved by the game: a teleport now would
-    # be applied once it lands (#70, #284). The check narrows the window rather than closing
-    # it, since is_loading() turns true a moment after the move starts.
-    teleport = node_helpers.skip_while_loading(lambda c: c.teleport(target))
+    number_of = {id(c): n for c, n in zip(group, numbers)}
+
+    def _numbers(clients: list) -> list[int]:
+        return [number_of[id(c)] for c in clients]
+
+    async def _stand(_client) -> None:
+        """The retry's action: the client stands in the box, so there is nothing to press."""
+
     for attempt in range(1, attempts + 1):
         if attempt > 1:
             machine.log(f"Attempt {attempt}/{attempts}…", logging.DEBUG)
 
-        # Teleport whichever clients still need to trigger the transition into the bounding
-        # box — the whole group on the first attempt, only the stragglers on a retry.
-        machine.log(f"Teleporting {len(to_move)} client(s) to transition bounding box", logging.DEBUG)
-        await asyncio.gather(*[teleport(c) for c in to_move])
+        # Walk whichever clients still need to trigger the transition into the bounding box —
+        # the whole group on the first attempt, only the stragglers on a retry. A client
+        # already loading has triggered, or been moved by the game, and is not walked (#70).
+        machine.log(f"Walking {len(to_move)} client(s) into the transition bounding box", logging.DEBUG)
+        loading = await asyncio.gather(*[c.is_loading() for c in to_move])
+        walkers = [c for c, busy in zip(to_move, loading) if not busy]
+        if walkers:
+            await walking.walk_clients(machine, walkers, target, numbers=_numbers(walkers))
 
         # Answer the instance prompt if the transition raised one — leaving a dungeon asks
         # before it lets you go, and until that is answered the zone change never fires.
@@ -206,21 +217,18 @@ async def fire_trigger(
             )
             return False
 
-        # Wait for the group to leave from_zone (zone change triggered by bounding box).
-        # Re-teleport only stuck clients to the trigger on each poll; clients that have
-        # already transitioned are not disturbed. Bounded by Safety Delay rather than the
+        # Wait for the group to leave from_zone (zone change triggered by bounding box). The
+        # clients stand in the box meanwhile; each poll answers a modal on a straggler, and
+        # clients that have already transitioned are not disturbed. Bounded by Safety Delay rather than the
         # full zone-change budget: this is only checking whether the trigger fired, not
         # waiting out a loading screen — that budget belongs to the arrival check below.
         #
-        # A client on a loading screen has triggered but still reads from_zone, so the
-        # retry is skipped for it: that teleport would be applied on arrival and drop the
-        # client back at the bounding box in the zone it just reached (#70).
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
         #
-        # The retry answers an instance prompt before it teleports: a prompt that came up late,
-        # or that the first answer missed, would otherwise sit there with the client reset
-        # around it, and nothing leaves a dungeon until it is answered (#281).
-        retry = node_helpers.ModalAwareRetry(teleport, recognized_only=True)
+        # The retry answers an instance prompt: a prompt that came up late, or that the first
+        # answer missed, would otherwise sit there with the client standing in the box, and
+        # nothing leaves a dungeon until it is answered (#281).
+        retry = node_helpers.ModalAwareRetry(_stand, recognized_only=True)
         seen_left = await node_helpers.poll_each_until_seen(
             group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
@@ -269,7 +277,13 @@ async def fire_trigger(
                 "resetting them and retrying…",
                 logging.WARNING,
             )
-            await asyncio.gather(*[group[i].teleport(resets[i]) for i in range(len(group)) if i not in seen_left])
+            await asyncio.gather(
+                *[
+                    walking.walk_clients(machine, [group[i]], resets[i], numbers=[numbers[i]])
+                    for i in range(len(group))
+                    if i not in seen_left
+                ]
+            )
             to_move = stuck
             continue
 
@@ -326,17 +340,17 @@ async def _transition_group(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading()
+    APIs: client.zone_name(), walking.walk_clients(), client.is_loading()
 
     Flow:
       1. Verify all clients are in from_zone. Return FAILURE if not.
       2. If stagger is enabled and exactly 4 clients are connected: transition the lead
          client (clients[0]) alone first, then the remaining 3 — each phase running its
-         own teleport/dismiss-dialog/leave-zone/load/arrive-zone sequence (see
+         own walk/dismiss-dialog/leave-zone/load/arrive-zone sequence (see
          _transition_group). Otherwise all clients transition together in one phase.
-      3. Each phase: asyncio.gather teleport clients into the transition bounding box (xyz),
+      3. Each phase: walk the clients into the transition bounding box (xyz),
          dismiss any dungeon exit warning dialog, poll until all have left from_zone
-         (re-teleporting stragglers, retrying via reset_xyz up to MAX_RETRIES on timeout —
+         (answering stragglers' modals, retrying via reset_xyz up to MAX_RETRIES on timeout —
          or via each client's starting position when no reset_xyz is given),
          wait for loading screens to finish, then wait for arrival in to_zone.
 

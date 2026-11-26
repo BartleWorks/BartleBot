@@ -158,6 +158,18 @@ def test_the_bot_tab_writes_what_it_was_given(qapp):
     assert "Spare Idler" in sm.recent_friend_names
 
 
+def test_avoid_mobs_starts_on_and_the_bot_tab_writes_it(qapp):
+    """The app setting under every bot's Avoid Mobs (#323): on until the user turns it off."""
+    tab = BotTab()
+    box = _field(tab, "Avoid mobs")
+    assert box.isChecked()
+    box.setChecked(False)
+
+    tab.apply()
+
+    assert SettingsManager.instance().get_general("default_avoid_mobs") is False
+
+
 def test_the_users_own_keep_list_round_trips_a_name_with_a_comma_in_it(qapp):
     """#34. ``No Pain, No Gain Onyx`` is a real item, and a naive split makes it two keywords."""
     sm = SettingsManager.instance()

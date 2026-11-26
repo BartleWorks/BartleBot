@@ -5,7 +5,7 @@ import logging
 from bartleby.runtime.timing import POLL_INTERVAL
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ENTITY_ID_MATCHING, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
@@ -117,7 +117,7 @@ async def run(machine, clients: list, params: dict) -> str:
             f"collect_item: P{slot} teleporting to XYZ({start.x:.1f}, {start.y:.1f}, {start.z:.1f})",
             logging.DEBUG,
         )
-        await client.teleport(start)
+        await walking.teleport(client, start)
 
     # 4. Wait for a match to show. That none is there is only known once the wait is over.
     found: list = []

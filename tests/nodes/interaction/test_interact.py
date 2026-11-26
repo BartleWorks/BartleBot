@@ -66,7 +66,7 @@ async def test_success_no_dialog():
 
     assert result == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one approach.
-    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+    assert [tuple(call.args[0]) for call in client.walk_to.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
@@ -141,7 +141,7 @@ async def test_prompt_never_appears_fails():
 
     assert result == "FAILURE"
     # The first reset, then teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == 1 + ix.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + ix.MAX_RETRIES * 2
 
 
 async def test_prompt_retry_then_success():
@@ -153,12 +153,12 @@ async def test_prompt_retry_then_success():
         if xyz.x == 1.0:  # reset_xyz has x=1.0
             reset_visited.append(True)
 
-    client.teleport.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_teleport
 
     async def npc_range():
         # Only at interact_xyz, and only once the client has been reset twice: the
         # reset every run starts with, and the one after the first miss.
-        calls = client.teleport.call_args_list
+        calls = client.walk_to.call_args_list
         return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
@@ -171,7 +171,7 @@ async def test_prompt_retry_then_success():
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 2
-    assert client.teleport.call_count == 4  # reset, interact, reset, interact
+    assert client.walk_to.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_dialog_timeout_fails():
@@ -197,7 +197,7 @@ async def test_wrong_zone_fails():
     result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
@@ -220,8 +220,8 @@ async def test_one_client_wrong_zone_fails():
     result = await ix.run(FakeMachine(), [good, bad], _PARAMS)
 
     assert result == "FAILURE"
-    good.teleport.assert_not_called()
-    bad.teleport.assert_not_called()
+    good.walk_to.assert_not_called()
+    bad.walk_to.assert_not_called()
 
 
 async def test_stale_prompt_cleared_before_interaction():
@@ -238,7 +238,7 @@ async def test_stale_prompt_cleared_before_interaction():
 
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
-    first_tp, second_tp = client.teleport.call_args_list[:2]
+    first_tp, second_tp = client.walk_to.call_args_list[:2]
     assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
@@ -251,7 +251,7 @@ async def test_all_clients_filtered_out_succeeds():
     result = await ix.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
     client.send_key.assert_not_called()
 
 
@@ -268,9 +268,9 @@ async def test_interact_clients_subset():
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
-    c1.teleport.assert_not_called()
+    c1.walk_to.assert_not_called()
     c1.send_key.assert_not_called()
-    c2.teleport.assert_called()
+    c2.walk_to.assert_called()
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
@@ -302,9 +302,9 @@ async def test_empty_interact_clients_succeeds_immediately():
     result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
-    c1.teleport.assert_not_called()
+    c1.walk_to.assert_not_called()
     c1.send_key.assert_not_called()
-    c2.teleport.assert_not_called()
+    c2.walk_to.assert_not_called()
     c2.send_key.assert_not_called()
 
 
@@ -356,7 +356,7 @@ def _positional_client() -> FakeClient:
     async def _in_range():
         return state["at_interact"]
 
-    c.teleport.side_effect = _teleport
+    c.walk_to.side_effect = _teleport
     c.is_in_npc_range.side_effect = _in_range
     c.at_interact = state
     return c
@@ -461,7 +461,7 @@ async def test_sequential_respects_interact_clients_subset():
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
-    c1.teleport.assert_not_called()
+    c1.walk_to.assert_not_called()
     c1.send_key.assert_not_called()
     c2.send_key.assert_called()
 
@@ -475,7 +475,7 @@ async def test_sequential_wrong_zone_still_fails_first():
     result = await ix.run(FakeMachine(), [client], params)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_late_dialog_caught_within_safety_window():
@@ -553,7 +553,7 @@ async def test_animation_delay_applies_on_the_sequential_path_too(monkeypatch):
     seen = _capture_quiet(monkeypatch)
     client = _ready_client()
 
-    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+    async def _fake_take_turns(machine, clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
         return [_nh.TurnResult(prompted=True, completed=bool(await turn_fn(c))) for c in clients]
 
     monkeypatch.setattr(_nh, "take_turns", _fake_take_turns)
@@ -588,7 +588,7 @@ async def test_the_object_use_delay_param_reaches_take_turns(monkeypatch):
     """The gap between uses was already a take_turns argument; the node now exposes it."""
     captured: dict = {}
 
-    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+    async def _fake_take_turns(machine, clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
         captured.update(kwargs)
         return [_nh.TurnResult(prompted=True, completed=True) for _ in clients]
 
@@ -604,7 +604,7 @@ async def test_an_unset_object_use_delay_leaves_take_turns_on_its_own_default(mo
     """None, not 0.0 — take_turns reads the constant at call time so it stays patchable."""
     captured: dict = {}
 
-    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+    async def _fake_take_turns(machine, clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
         captured.update(kwargs)
         return [_nh.TurnResult(prompted=True, completed=True) for _ in clients]
 

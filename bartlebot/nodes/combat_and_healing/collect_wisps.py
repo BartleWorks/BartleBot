@@ -6,6 +6,7 @@ import logging
 from bartleby.runtime.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 from wizwalker import XYZ
 
+from bartlebot.nodes import walking
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.help_text import seconds
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
@@ -259,7 +260,7 @@ async def collect_as_group(
             f"health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(location) for c in clients])
+        await asyncio.gather(*[walking.teleport(c, location) for c in clients])
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
 

@@ -603,7 +603,7 @@ def test_both_surfaces_draw_the_same_cards_and_share_their_folds(qapp, settings)
     options.show()
     qapp.processEvents()
     try:
-        assert list(options.cards) == ["dungeon", "team"]  # General held only the user's own options
+        assert list(options.cards) == ["dungeon", "team", "general"]  # Avoid Mobs; the rest are the user's own
         assert list(setup.cards) == ["dungeon", "team", "general"]
         assert options.cards["dungeon"].is_collapsed
     finally:

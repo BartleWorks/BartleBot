@@ -9,7 +9,7 @@ from bartleby.runtime.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_
 from bartleby.runtime.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help="Where to mark. Players elsewhere in Zone teleport here first.",
+        help="Where to mark. Players elsewhere in Zone walk here first.",
         default=None,
         required=True,
     ),
@@ -49,7 +49,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
-    required_bot_options=[SAFETY_DELAY_OPTION],
+    required_bot_options=[SAFETY_DELAY_OPTION, walking.AVOID_MOBS_OPTION],
     max_consecutive_retries=5,
     usage_notes=(
         (
@@ -129,7 +129,7 @@ def _remember(machine, client, mark: Mark) -> None:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.stats.current_mana(),
+    APIs: client.zone_name(), walking.walk_all(), client.stats.current_mana(),
           client.body.position(), node_helpers.click_by_path()
 
     Flow:
@@ -138,7 +138,7 @@ async def run(machine, clients: list, params: dict) -> str:
          once if that is every client.
       2. Verify the rest can mark: MarkButton enabled. Return FAILURE if any cannot.
       3. Verify all clients are in zone. Return FAILURE if not.
-      4. Teleport any of the rest not already at xyz to the mark position.
+      4. Walk any of the rest not already at xyz to the mark position.
       5. Mark each of the rest (:func:`mark_client`), which gives the server Safety Delay to
          hear where the client now stands, reads whether it had a mark before clicking, and
          re-marks only once it has seen the click clear one.
@@ -164,18 +164,21 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(f"FAILURE: {_CANNOT_MARK}", logging.WARNING)
         return "FAILURE"
 
-    # 3. Verify zone; teleport to xyz if needed.
+    # 3. Verify zone; walk to xyz if needed.
     if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     positions = await asyncio.gather(*[c.body.position() for c in to_mark])
-    away = [c for c, p in zip(to_mark, positions) if _distance(p, target) > 1.0]
+    away = [c for c, p in zip(to_mark, positions) if _distance(p, target) > walking.ARRIVED_WITHIN]
     if away:
         machine.log(
-            f"Teleporting clients to mark XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
+            f"Walking clients to mark XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(target) for c in away])
+        numbers = [clients.index(c) + 1 for c in away]
+        if not await walking.walk_all(machine, away, target, numbers=numbers):
+            machine.log("FAILURE: not every client could walk to the mark", logging.WARNING)
+            return "FAILURE"
 
     # 5. Mark each client, handling the same-spot edge case. mark_client waits for the server
     #    to catch up with the teleport before it clicks.
@@ -313,7 +316,8 @@ async def _still_marked_here(machine, client, zone: str, target: XYZ) -> bool:
     mark = marked_at(machine, client)
     if mark is None or not node_helpers.zone_matches(mark.zone, zone):
         return False
-    if _distance(mark.position, target) > POSITION_MARGIN:
+    # A walk stops within ARRIVED_WITHIN of the spot, so a mark it set is that far off at most.
+    if _distance(mark.position, target) > walking.ARRIVED_WITHIN + POSITION_MARGIN:
         return False
     # Cleared by hand, or by a same-spot click outside this run's record. A running recall
     # timer grays the button too, but only because a recall just used the mark, which keeps it.

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
+from bartlebot.nodes.walking import AVOID_MOBS_OPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
 #: The Friend Name row's title, which the site's reference names (bartlebot.nodes.reference.SETTING_ROWS).
@@ -31,6 +32,10 @@ FRIEND_NAME_TITLE = "Friend Name"
 _INTRO = (
     "Defaults for every bot. A bot's own value overrides these, and a value you set in its Options tab overrides both."
 )
+
+
+#: The row's title, as the Reference names it (``nodes/reference.SETTING_ROWS``).
+AVOID_MOBS_TITLE = "Avoid mobs"
 
 
 def _default(key: str):
@@ -92,6 +97,18 @@ class BotTab(SettingsForm):
 
         self._refill_potions_cb = self.add_row(refill_potions_row(sm)).control
 
+        self._avoid_mobs_cb = QCheckBox()
+        self._avoid_mobs_cb.setChecked(bool(sm.get_general("default_avoid_mobs", True)))
+        self.add_row(
+            SettingRow(
+                AVOID_MOBS_TITLE,
+                "Walk around mobs, so moving between spots starts no fight.",
+                self._avoid_mobs_cb,
+                default=_default("default_avoid_mobs"),
+                details=AVOID_MOBS_OPTION.description,
+            )
+        )
+
         # ------------------------------------------------------------------
         # Realms
         # ------------------------------------------------------------------
@@ -147,6 +164,7 @@ class BotTab(SettingsForm):
             sm.add_recent_friend_name(friend_name)
         sm.favorite_realm = self._favorite_realm_combo.get_value()
         sm.set_general("default_refill_potions", self._refill_potions_cb.isChecked())
+        sm.set_general("default_avoid_mobs", self._avoid_mobs_cb.isChecked())
         self._quicksell.write(sm)
         sm.show_quicksell_explanation = self._explain_quicksell_cb.isChecked()
         sm.set_general("default_apply_archmastery", self._apply_archmastery_cb.isChecked())

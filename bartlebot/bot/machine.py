@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from bartleby.runtime import run_trace
+from bartleby.runtime.arbiter import Arbiter
 from bartleby.runtime.clients import sightings
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
@@ -19,6 +20,7 @@ from bartlebot.bot import variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
 from bartlebot.game import restricted_zones
+from bartlebot.nodes import walking
 from bartlebot.options import bot_options, option_values
 
 logger = logging.getLogger(__name__)
@@ -140,6 +142,9 @@ class BotMachine:
         # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
         self._running: bool = False
         self._stop_flag = asyncio.Event()
+        # Who holds each client's input: every walk takes a movement lease on it
+        # (nodes/walking.py). One per run; nothing else in BartleBot holds one yet (#301).
+        self.arbiter = Arbiter()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
         # run()'s own task while it runs. With the node's, the only task that may write a
@@ -882,6 +887,10 @@ class BotMachine:
                         self._no_match_count = 0
                         self._consecutive_same_state_count = 0
                         continue
+                    self.last_result = "FAILURE"
+                except walking.TeleportRefused as refused:
+                    # The node moved a client the one way that is off for now: it fails, named.
+                    self.log(f"FAILURE: {refused}", logging.WARNING)
                     self.last_result = "FAILURE"
                 except Exception:
                     logger.exception("Node execution failed in state %s", self._fmt_state(state_id))

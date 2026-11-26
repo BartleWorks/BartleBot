@@ -73,7 +73,7 @@ async def test_wrong_zone_fails():
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_success_entry_on_first_page():
@@ -291,7 +291,7 @@ async def test_prompt_never_appears_fails():
 
     assert result == "FAILURE"
     # The first reset, then teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == 1 + evl.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + evl.MAX_RETRIES * 2
 
 
 async def test_zone_list_never_opens_fails():
@@ -340,7 +340,7 @@ async def test_stale_prompt_cleared():
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    first_tp = client.teleport.call_args_list[0]
+    first_tp = client.walk_to.call_args_list[0]
     assert first_tp.args[0].x == 1.0  # reset_xyz
 
 
@@ -362,7 +362,7 @@ async def test_resets_before_approaching_even_with_no_prompt_showing_yet():
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+    assert [tuple(call.args[0]) for call in client.walk_to.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
 
 
 # ---------------------------------------------------------------------------
@@ -440,7 +440,7 @@ def _positional_client() -> FakeClient:
     async def _zone():
         return "DestZone" if state["gone"] else "TestZone"
 
-    c.teleport.side_effect = _teleport
+    c.walk_to.side_effect = _teleport
     c.is_in_npc_range.side_effect = _in_range
     c.zone_name.side_effect = _zone
     c.state = state

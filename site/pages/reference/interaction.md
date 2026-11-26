@@ -134,6 +134,7 @@ The bot stops after 10 consecutive failures on this node.
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 
@@ -166,6 +167,7 @@ The bot stops after 10 consecutive failures on this node.
 **Bot options** it adds to the bot's **Options** tab:
 
 - [Safety Delay](options.md#safety-delay)
+- [Avoid Mobs](options.md#avoid-mobs)
 
 **Usage notes**
 

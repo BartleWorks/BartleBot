@@ -72,7 +72,7 @@ from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
 from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
-from bartlebot.nodes import zone_navigation
+from bartlebot.nodes import walking, zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import (
     NODE_PARAM_SCHEMAS,
@@ -614,7 +614,7 @@ class _XyzField(ThemedMixin, QWidget):
         target = XYZ(value["x"], value["y"], value["z"])
         try:
             await asyncio.gather(
-                *[c.teleport(target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
+                *[walking.teleport(c, target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
             )
         except Exception:
             pass

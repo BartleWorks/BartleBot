@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 from wizwalker import XYZ
 
 import bartlebot.nodes.utility.handle_level_scaling as hls
-from tests.conftest import FakeClient, FakeMachine, prompt_at
+from tests.conftest import FakeClient, FakeMachine, moves, prompt_at
 from tests.node_helper_patches import patch_helper
 
 _PARAMS = {
@@ -56,8 +56,9 @@ async def test_prompt_never_appears_fails():
         result = await _apply(machine, [client])
 
     assert result == "FAILURE"
-    # The first reset, then teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == 1 + hls.MAX_RETRIES * 2
+    # The first reset, walked, then teleport(interact) + teleport(reset) for each attempt
+    assert client.walk_to.call_count == 1
+    assert client.teleport.call_count == hls.MAX_RETRIES * 2
 
 
 async def test_menu_never_appears_fails():
@@ -101,8 +102,9 @@ async def test_clients_to_scale_subset():
         result = await _apply(machine, [c1, c2], [2])
 
     assert result == "SUCCESS"
-    c1.teleport.assert_not_called()
+    assert moves(c1) == []
     c1.send_key.assert_not_called()
+    c2.walk_to.assert_called()
     c2.teleport.assert_called()
     from wizwalker import Keycode
 
@@ -119,10 +121,10 @@ async def test_stale_prompt_cleared_before_interaction():
         result = await _apply(machine, [client])
 
     assert result == "SUCCESS"
-    # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
-    first_tp, second_tp = client.teleport.call_args_list[:2]
-    assert first_tp.args[0].x == 1.0  # reset_xyz
-    assert second_tp.args[0].x == 0.0  # interact_xyz
+    # The walk to reset_xyz (x=1.0) first, then the teleport to interact_xyz (x=0.0).
+    first, second = moves(client)[:2]
+    assert first[0] == 1.0  # reset_xyz
+    assert second[0] == 0.0  # interact_xyz
 
 
 async def test_prompt_retry_then_success():
@@ -136,12 +138,13 @@ async def test_prompt_retry_then_success():
             reset_visited.append(True)
 
     client.teleport.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_teleport
 
     async def npc_range():
         # Only at interact_xyz, and only once the client has been reset twice: the
         # reset every run starts with, and the one after the first miss.
-        calls = client.teleport.call_args_list
-        return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
+        sent = moves(client)
+        return bool(sent) and sent[-1][0] == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
 
@@ -160,7 +163,7 @@ async def test_prompt_retry_then_success():
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 2
-    assert client.teleport.call_count == 4  # reset, interact, reset, interact
+    assert len(moves(client)) == 4  # reset (walked), interact, reset, interact
 
 
 async def test_missing_elixir_is_retried():

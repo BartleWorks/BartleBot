@@ -27,6 +27,8 @@ from bartleby.runtime.views import PlayerRow, PlayerView
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from wizwalker import XYZ
 
+from bartlebot.nodes import walking
+
 #: What the XYZ row reads before a position has been read. Spelled out rather than
 #: derived from :func:`format_xyz`, so the placeholder form and the value form cannot
 #: drift into different spacings.
@@ -226,7 +228,7 @@ class ClientCard(PlayerCard):
             # Exit freecam before teleporting — matches Deimos behavior.
             await self._client.camera_elastic()
             self._set_freecam(False)
-            await self._client.teleport(pos, wait_on_inuse=True, purge_on_after_unuser_fixer=True)
+            await walking.teleport(self._client, pos, wait_on_inuse=True, purge_on_after_unuser_fixer=True)
         except Exception:
             pass
 

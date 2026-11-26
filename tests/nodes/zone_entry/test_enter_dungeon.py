@@ -58,7 +58,7 @@ async def test_wrong_source_zone_fails():
     result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    client.teleport.assert_not_called()
+    client.walk_to.assert_not_called()
 
 
 async def test_success_single_client():
@@ -73,7 +73,7 @@ async def test_success_single_client():
 
     assert result == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one teleport to the sigil.
-    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [1.0, 0.0]
     client.send_key.assert_called()
 
 
@@ -103,7 +103,7 @@ async def test_success_multiple_clients():
 
     assert result == "SUCCESS"
     for c in clients:
-        assert [call.args[0].x for call in c.teleport.call_args_list] == [1.0, 0.0]
+        assert [call.args[0].x for call in c.walk_to.call_args_list] == [1.0, 0.0]
 
 
 async def test_one_client_stuck_in_source_zone_fails():
@@ -165,7 +165,7 @@ async def test_prompt_never_appears_retries_exhausted_fails():
 
     assert result == "FAILURE"
     # The first reset, then a sigil teleport and a reset teleport for each failed attempt
-    assert client.teleport.call_count == 1 + nh.MAX_RETRIES * 2
+    assert client.walk_to.call_count == 1 + nh.MAX_RETRIES * 2
 
 
 async def test_prompt_retry_then_success():
@@ -181,7 +181,7 @@ async def test_prompt_retry_then_success():
         if xyz.x == 1.0:  # reset_xyz has x=1.0, sigil_xyz has x=0.0
             reset_visited.append(True)
 
-    client.teleport.side_effect = tracking_teleport
+    client.walk_to.side_effect = tracking_teleport
 
     async def entrance_prompt(clients_list):
         # Once the client has been reset twice: the reset every run starts with, and the
@@ -197,7 +197,7 @@ async def test_prompt_retry_then_success():
     assert result == "SUCCESS"
     assert len(reset_visited) == 2  # the first reset, and one after the miss
     # teleport(reset), teleport(sigil) attempt 1, teleport(reset), teleport(sigil) attempt 2
-    assert client.teleport.call_count == 4
+    assert client.walk_to.call_count == 4
 
 
 async def test_loading_screen_awaited():
@@ -590,7 +590,7 @@ async def test_teamup_success_single_client():
 
     assert await screen.run([client]) == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one teleport to the sigil.
-    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
+    assert [call.args[0].x for call in client.walk_to.call_args_list] == [1.0, 0.0]
 
 
 async def test_teamup_success_multiple_clients():
@@ -600,7 +600,7 @@ async def test_teamup_success_multiple_clients():
 
     assert await screen.run(clients) == "SUCCESS"
     for c in clients:
-        assert [call.args[0].x for call in c.teleport.call_args_list] == [1.0, 0.0]
+        assert [call.args[0].x for call in c.walk_to.call_args_list] == [1.0, 0.0]
 
 
 async def test_teamup_window_never_appears_fails():
@@ -910,7 +910,7 @@ def _on_the_sigil(presses_needed: list[int], clients: list):
         return client.send_key.await_count >= needed[id(client)]
 
     def on_sigil(client) -> bool:
-        last = client.teleport.call_args
+        last = client.walk_to.call_args
         return last is not None and last.args[0].x == _PARAMS["sigil_xyz"]["x"]
 
     for client in clients:

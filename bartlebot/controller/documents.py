@@ -45,6 +45,7 @@ from bartlebot.content.subgraphs.subgraphs import (
 )
 from bartlebot.content.templates import template_store
 from bartlebot.controller.template_roots import TemplateRoots
+from bartlebot.game import walking_maps
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
 from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
@@ -405,6 +406,8 @@ class Documents(QObject):
         self.delete_autosave(old_save_path)
         self.has_unsaved_changes = False
         self._loaded_config = config
+        # Its zones' walking maps first, so its first walk in each finds one ready.
+        walking_maps.WARMER.prefer(walking_maps.bot_zones(config.states))
         self._last_save_path = path
         self._rewards_declined_for = None
         # An Official bot is read-only and only ever opens in Run mode (#149).

@@ -47,6 +47,7 @@ Open **File › Settings…** and select **Bot**. Its rows are the app settings 
 - **Automatically group players**: puts every player in one group when a run starts. Every account must be on the others' friends lists.
 - **Friend Name**: the wizard a bot teleports to when it doesn't name one of your players.
 - **Refill potions**: buys potions when a player runs out, which costs gold.
+- **Avoid mobs**: players walk around mobs' paths, so moving between spots starts no fight. Off, they take the shortest way and fight what they meet.
 - **Favorite Realm**: where [Change Realm](../../reference/utility.md#change-realm) and [Sync in Zone](../../reference/teleportation.md#sync-in-zone) send players.
 - **Quicksell**, the sell switches, **Always keep** and **Quicksell reminder**: [Quicksell and keep lists](quicksell.md) has them.
 - **Set archmastery with decks**: sets a deck's archmastery school when it's applied.

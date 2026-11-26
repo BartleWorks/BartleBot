@@ -23,6 +23,7 @@ from bartleby.runtime.timing import (
 from bartleby.shared.combat_defaults import LAST_RESORT_DSL, slot_dsls
 
 from bartlebot.game import drop_detection
+from bartlebot.nodes import walking
 
 if TYPE_CHECKING:
     from bartlebot.combat.combat_resolution import Level
@@ -397,7 +398,7 @@ async def join_fight(
                 aimed_at = aim
             before = await _position(client)
             try:
-                await client.teleport(target)
+                await walking.teleport(client, target)
             except Exception as exc:
                 machine.log(f"Client {index}: teleport to {aim} failed ({exc!r})", logging.DEBUG)
             else:
@@ -420,7 +421,7 @@ async def join_fight(
                 machine.log(f"Client {index}: target found again on attempt {attempt}", logging.DEBUG)
                 target_lost = False
             before = await _position(client) if attempt > 1 else None
-            await client.tp_to(target)
+            await walking.teleport(client, target, how="tp_to")
             await _log_re_teleport(machine, client, index, attempt, before)
 
         # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time). After a

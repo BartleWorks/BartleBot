@@ -329,6 +329,19 @@ friends list at once. The waves end when one moves nobody and drops no route: a 
 drops nothing, so it is not retried on its own. A client that cannot port at all travels there itself
 once the others have arrived.
 
+**Every step walks inside its zone** (Stage 4 of #322). A step's approach, from its Reset XYZ to
+the trigger, the object or the sigil, is a walk (`nodes/walking.py`'s `walk_clients`): every
+client of the step at once, each from where it stands, on the zone's walking map. A walk into a
+zone change's trigger ends standing in it, or as the zone changes, and the step then waits for
+the loading screen as before; a retry walks back to Reset XYZ and in again. A walk that can't be
+planned (no route, or a closed gate with no way around) fails the step there, logged with the
+zone and both points, and the route is planned around that link as any failed step is. The
+ports are unchanged: a port is the game's own move, one loading screen, so following the
+leader still beats walking a long route, and a player who arrived by port walks the few
+units to stand beside it. Walking is slower than the teleport it replaced, by the time a walk
+takes at the wizard's own speed; nothing is costed differently yet, since a step's cost is
+its loading screens and waits (*Route cost*), and the walks inside a zone are seconds against them.
+
 **A client that misses a step** while travelling together gets one more go at it alone; for a walk
 through a gate that has been opened, only the walk is retried. A client that misses it again stays
 exactly where it is -- nothing teleports it or runs a step on it -- while the rest carry on, and it
@@ -348,7 +361,7 @@ on one realm, confirmed by sight (`bartleby-core/docs/PLAYER_REALMS.md`). The le
 or, when the target refuses a realm change (`"realm_change": false`, Eerem Palace), before the step
 into it: a door keeps each player's realm, so the hop carries through. Everyone the leader does not
 see then ports to it -- `port_map._port_batch` counts a landing only once the target sees it. A
-player that cannot port travels, is teleported beside the leader, and only if still unseen reads
+player that cannot port travels, walks to where the leader stands, and only if still unseen reads
 the leader's realm from its spellbook and hops to it. A leader that misses a step is replaced by
 one who made it. Under `Player Realms: Separate` every player travels, and nobody ports or hops.
 

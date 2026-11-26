@@ -6,7 +6,7 @@ import logging
 from bartleby.runtime.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REAGENT_DROP_MESSAGE_TIMEOUT
 from wizwalker import XYZ
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import node_helpers, walking
 from bartlebot.nodes.help_text import ENTITY_ID_MATCHING, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
@@ -169,7 +169,7 @@ async def run(machine, clients: list, params: dict) -> str:
             f"collect_reagent: teleporting to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(target) for c in clients])
+        await asyncio.gather(*[walking.teleport(c, target) for c in clients])
 
     # 4. Wait for entities to load.
     await asyncio.sleep(safety_delay)
