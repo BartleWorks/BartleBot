@@ -10,7 +10,7 @@ generated: true
 Every node, bot option and Official subgraph, in the words the app shows for each one. Each group in the node browser has a page, and so do bot options and subgraphs.
 
 - [Zone Entry](zone-entry.md): Enter Dungeon, Enter Gauntlet, Enter Zone, Enter Zone via Object, Open Skeleton Key Door
-- [Teleportation](teleportation.md): Mark Location, Sync in Zone, Teleport to Coordinates, Teleport to Friend, Teleport to Marked Location, Teleport to World Hub
+- [Teleportation](teleportation.md): Mark Location, Sync in Zone, Teleport to Friend, Teleport to Marked Location, Teleport to World Hub, Teleport to XYZ, Walk to XYZ
 - [Combat and Healing](combat-and-healing.md): Collect Wisps, Handle Combat, Handle Potions
 - [Interaction](interaction.md): Click Path, Collect Item, Collect Reagent, Interact, Interact Menu, Wait for Dialogue
 - [Control Flow](control-flow.md): Branch, Check Health and Mana, Check Level Scaling, Check Zone, Set Variables

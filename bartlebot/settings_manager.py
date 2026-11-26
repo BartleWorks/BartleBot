@@ -100,7 +100,6 @@ class _CanvasSettings(BaseModel):
 # ``authoring_tools.AuthoringAction``'s values, spelled out here rather than imported so
 # loading settings does not pull in the combat runner. An empty string is an unbound action.
 DEFAULT_AUTHORING_HOTKEYS: dict[str, str] = {
-    "xyz_sync": "F1",
     "tp_to_focused": "F2",
     "toggle_speed": "F3",
     "toggle_combat": "F4",
@@ -139,12 +138,12 @@ _SECTION_MODELS: dict[str, type[BaseModel]] = {
 
 # The node hotbar's slots, keys 1-9 then 0. The steps recorded inside a dungeon, in the
 # order an author usually meets them (#85): walk in, talk, reposition, fight, tidy up.
-# The shipped bots use enter_zone, interact, handle_combat and teleport_to_coordinates
-# most; the four after are what else turns up between entering a dungeon and leaving it.
+# The shipped bots use enter_zone, interact, handle_combat and walk_to_xyz most; the
+# four after are what else turns up between entering a dungeon and leaving it.
 DEFAULT_HOTKEY_NODES: tuple[str, ...] = (
     "enter_zone",
     "interact",
-    "teleport_to_coordinates",
+    "walk_to_xyz",
     "handle_combat",
     "collect_wisps",
     "wait_for_dialogue",
@@ -153,6 +152,12 @@ DEFAULT_HOTKEY_NODES: tuple[str, ...] = (
     "",
     "",
 )
+
+#: Hotbar nodes this build no longer has, and what a saved slot holding one becomes.
+RETIRED_HOTKEY_NODES = {"teleport_to_coordinates": "walk_to_xyz"}
+
+#: Authoring actions this build no longer has, whose saved key bindings are dropped.
+RETIRED_AUTHORING_ACTIONS = ("xyz_sync",)
 
 _DEFAULTS: dict[str, Any] = {
     "general": {
@@ -453,6 +458,7 @@ class SettingsManager:
 
         self._migrate_accounts()
         self._seed_hotkey_nodes()
+        self._drop_retired()
 
     def _seed_hotkey_nodes(self) -> None:
         """Give an install whose hotbar was never filled the default slots, once.
@@ -467,6 +473,22 @@ class SettingsManager:
         self._data["hotkey_nodes_seeded"] = True
         if not any(self._data.get("favorited_hotkey_nodes") or []):
             self._data["favorited_hotkey_nodes"] = list(DEFAULT_HOTKEY_NODES)
+
+    def _drop_retired(self) -> None:
+        """Take out what names a node or an authoring action this build no longer has.
+
+        Teleport to Coordinates and XYZ sync went in Stage 7 of #322. A saved hotbar slot holding
+        the node gets Walk to XYZ, the default slot's node now: ``save`` writes every default, so
+        an install that never touched its hotbar holds it in slot 3. A saved key binding for XYZ
+        sync is dropped, so its key is free for another action.
+        """
+        slots = self._data.get("favorited_hotkey_nodes")
+        if isinstance(slots, list):
+            self._data["favorited_hotkey_nodes"] = [RETIRED_HOTKEY_NODES.get(s, s) for s in slots]
+        hotkeys = self._data.get("authoring", {}).get("hotkeys")
+        if isinstance(hotkeys, dict):
+            for action in RETIRED_AUTHORING_ACTIONS:
+                hotkeys.pop(action, None)
 
     def _migrate_accounts(self) -> None:
         """Hand a settings file's own accounts and launch profiles to the shared store.
@@ -1062,7 +1084,7 @@ class SettingsManager:
 
     @property
     def authoring_hotkeys(self) -> dict[str, str]:
-        """Each authoring action's key binding, e.g. ``{"xyz_sync": "F1"}``. Empty = unbound.
+        """Each authoring action's key binding, e.g. ``{"tp_to_focused": "F2"}``. Empty = unbound.
 
         Every known action is present: one missing from the file falls back to its default.
         """

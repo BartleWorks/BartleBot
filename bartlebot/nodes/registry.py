@@ -31,14 +31,16 @@ from bartlebot.nodes.teleportation.mark_location import NODE_SPEC as _mark_locat
 from bartlebot.nodes.teleportation.mark_location import run as mark_location_run
 from bartlebot.nodes.teleportation.sync_in_zone import NODE_SPEC as _sync_in_zone_spec
 from bartlebot.nodes.teleportation.sync_in_zone import run as sync_in_zone_run
-from bartlebot.nodes.teleportation.teleport_to_coordinates import NODE_SPEC as _teleport_to_coordinates_spec
-from bartlebot.nodes.teleportation.teleport_to_coordinates import run as teleport_to_coordinates_run
 from bartlebot.nodes.teleportation.teleport_to_friend import NODE_SPEC as _teleport_to_friend_spec
 from bartlebot.nodes.teleportation.teleport_to_friend import run as teleport_to_friend_run
 from bartlebot.nodes.teleportation.teleport_to_marked_location import NODE_SPEC as _teleport_to_marked_location_spec
 from bartlebot.nodes.teleportation.teleport_to_marked_location import run as teleport_to_marked_location_run
 from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _teleport_to_world_hub_spec
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
+from bartlebot.nodes.teleportation.teleport_to_xyz import NODE_SPEC as _teleport_to_xyz_spec
+from bartlebot.nodes.teleportation.teleport_to_xyz import run as teleport_to_xyz_run
+from bartlebot.nodes.teleportation.walk_to_xyz import NODE_SPEC as _walk_to_xyz_spec
+from bartlebot.nodes.teleportation.walk_to_xyz import run as walk_to_xyz_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
 from bartlebot.nodes.utility.change_realm import run as change_realm_run
 from bartlebot.nodes.utility.handle_level_scaling import NODE_SPEC as _handle_level_scaling_spec
@@ -67,7 +69,8 @@ NODE_REGISTRY: dict = {
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
     "sync_in_zone": sync_in_zone_run,
-    "teleport_to_coordinates": teleport_to_coordinates_run,
+    "walk_to_xyz": walk_to_xyz_run,
+    "teleport_to_xyz": teleport_to_xyz_run,
     "enter_dungeon": enter_dungeon_run,
     "enter_gauntlet": enter_gauntlet_run,
     "interact": interact_run,
@@ -100,7 +103,8 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
     "sync_in_zone": _sync_in_zone_spec,
-    "teleport_to_coordinates": _teleport_to_coordinates_spec,
+    "walk_to_xyz": _walk_to_xyz_spec,
+    "teleport_to_xyz": _teleport_to_xyz_spec,
     "enter_dungeon": _enter_dungeon_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
     "interact": _interact_spec,
@@ -134,6 +138,9 @@ NODE_PARAM_SCHEMAS: dict[str, list[ParamField]] = {k: v.params for k, v in NODE_
 #: (bartleby-core/docs/UI_TEXT.md, N3).
 _SMALL_WORDS = frozenset({"a", "an", "and", "at", "by", "for", "in", "of", "on", "or", "the", "to", "via"})
 
+#: Words a node name writes in capitals, as a param's label does: Walk to XYZ.
+_ACRONYMS = {"xyz": "XYZ"}
+
 
 def node_display_name(node_type: str) -> str:
     """What the node browser calls a node type, and the label a new node of it starts with.
@@ -143,7 +150,7 @@ def node_display_name(node_type: str) -> str:
         handle_combat       → "Handle Combat"
     """
     words = node_type.split("_")
-    return " ".join(w if i and w in _SMALL_WORDS else w.capitalize() for i, w in enumerate(words))
+    return " ".join(_ACRONYMS.get(w) or (w if i and w in _SMALL_WORDS else w.capitalize()) for i, w in enumerate(words))
 
 
 # Ordered category groupings used by the GUI dropdown.
@@ -164,10 +171,11 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         [
             "mark_location",
             "sync_in_zone",
-            "teleport_to_coordinates",
             "teleport_to_friend",
             "teleport_to_marked_location",
             "teleport_to_world_hub",
+            "teleport_to_xyz",
+            "walk_to_xyz",
         ],
     ),
     (

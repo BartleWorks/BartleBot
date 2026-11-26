@@ -83,7 +83,7 @@ from bartleby.shared.strategy_library import StrategyKind
 from bartleby.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from pydantic import BaseModel, ValidationError
 
-from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
+from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition, removed_node_text
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy, read_bot_names
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -267,6 +267,8 @@ def check(share: ShareFile, sources: Sources) -> list[Incoming]:
         file_format = packed.content.get("format", 1)
         if packed.kind in _LIBRARY_KINDS and isinstance(file_format, int) and file_format > LIBRARY_FORMAT:
             raise Refused(newer)
+        if (removed := removed_node_text(packed.content)) is not None:
+            raise Refused(f"'{packed.content.get('name') or packed.id}' can't come in. {removed}")
         try:
             item = MODELS[packed.kind].model_validate(packed.content)
         except ValidationError as e:

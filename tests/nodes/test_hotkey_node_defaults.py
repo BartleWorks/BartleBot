@@ -50,3 +50,23 @@ def test_clearing_every_slot_after_the_seed_sticks(settings_dir):
         manager.clear_favorited_hotkey_node(slot)
 
     assert SettingsManager().favorited_hotkey_nodes == [""] * 10
+
+
+def test_a_saved_slot_holding_teleport_to_coordinates_becomes_walk_to_xyz(settings_dir):
+    """The node left in Stage 7 of #322, and save() wrote the old default into every install."""
+    _write(
+        settings_dir,
+        {"hotkey_nodes_seeded": True, "favorited_hotkey_nodes": ["", "teleport_to_coordinates"] + [""] * 8},
+    )
+
+    assert SettingsManager().favorited_hotkey_nodes[:2] == ["", "walk_to_xyz"]
+
+
+def test_a_saved_key_for_xyz_sync_is_dropped(settings_dir):
+    _write(settings_dir, {"authoring": {"hotkeys": {"xyz_sync": "F9", "tp_to_focused": "F8"}}})
+
+    manager = SettingsManager()
+
+    stored = manager.get("authoring", "hotkeys")
+    assert "xyz_sync" not in stored and stored["tp_to_focused"] == "F8"
+    assert "xyz_sync" not in manager.authoring_hotkeys

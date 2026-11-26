@@ -151,7 +151,7 @@ def test_each_category_has_a_page_and_every_node_appears_once_under_its_display_
         for t in node_types:
             assert entries[node_anchor(t)] == [(name, node_display_name(t))]
 
-    assert len(NODE_SPECS) == 30
+    assert len(NODE_SPECS) == 31
     assert sorted(entries) == sorted(node_anchor(t) for t in NODE_SPECS)
 
 

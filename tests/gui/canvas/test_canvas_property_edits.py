@@ -265,7 +265,7 @@ def _coord_canvas(qapp):
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="teleport_to_coordinates", params={"zone": "Z/One", "xyz": dict(_XYZ)})],
+        states=[StateModel(id="a", node_type="walk_to_xyz", params={"zone": "Z/One", "xyz": dict(_XYZ)})],
         transitions=[],
     )
     canvas = _canvas(qapp, config)

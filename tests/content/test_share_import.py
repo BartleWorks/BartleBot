@@ -662,6 +662,19 @@ def test_an_unknown_node_type_is_refused(sender, receiver, tmp_path):
         _plan(receiver, path)
 
 
+def test_a_bot_naming_teleport_to_coordinates_is_refused_naming_its_replacements(sender, receiver, tmp_path):
+    """The node left in Stage 7 of #322, and nothing rewrites a file on its way in."""
+    path = _file_with(sender, tmp_path, _bot())
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["items"][0]["content"]["states"][0]["node_type"] = "teleport_to_coordinates"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(Refused) as refused:
+        _plan(receiver, path)
+    assert "Teleport to Coordinates" in str(refused.value)
+    assert "Walk to XYZ" in str(refused.value) and "Teleport to XYZ" in str(refused.value)
+    assert receiver.bots() == {}
+
+
 def test_an_invalid_item_is_refused(sender, receiver, tmp_path):
     path = _file_with(sender, tmp_path, _bot())
     data = json.loads(path.read_text(encoding="utf-8"))

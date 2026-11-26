@@ -222,7 +222,7 @@ async def test_run_recording_clears_active_task_on_exception():
 def test_recordable_nodes_contains_all_expected_types():
     expected = {
         "enter_zone",
-        "teleport_to_coordinates",
+        "walk_to_xyz",
         "enter_dungeon",
         "enter_gauntlet",
         "interact",
@@ -232,6 +232,7 @@ def test_recordable_nodes_contains_all_expected_types():
         "teleport_to_marked_location",
         "handle_combat",
         "open_skeleton_key_door",
+        "teleport_to_xyz",
     }
     assert RECORDABLE_NODES == expected
 
@@ -297,10 +298,14 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
     client.is_in_npc_range.side_effect = _then_false(True)
     client.is_loading.side_effect = _then_false(False, True)
     client.find_closest_mob.return_value = _mob("Test-Mob")
+    # And a walk past a gate that then stands still, for Teleport to XYZ's end.
+    if node_type == "teleport_to_xyz":
+        client.body.position.side_effect = _then_still(XYZ(1.0, 2.0, 3.0), XYZ(200.0, 2.0, 3.0))
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording(node_type, client, form, on_status, on_btn, try_set_label, player=1, safety_delay=0)
+    with patch.object(recording, "HOP_END_STILL", 0):
+        await run_recording(node_type, client, form, on_status, on_btn, try_set_label, player=1, safety_delay=0)
 
     fields = NODE_PARAM_SCHEMAS[node_type]
     # A plain-text param is filled only by the workflow that names it; every other is a zone.
@@ -314,6 +319,71 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
         recording._REGISTRY[node_type].keys()
     )
     assert on_status.call_args_list[-1][0][0].startswith("Done")
+
+
+def _then_still(*positions):
+    """A side effect answering *positions* in turn, then the last one ever after: a player who
+    walks there and stops."""
+    answers = iter(positions)
+    last = [positions[-1]]
+
+    def answer():
+        last[0] = next(answers, last[0])
+        return last[0]
+
+    return answer
+
+
+# ---------------------------------------------------------------------------
+# teleport_to_xyz  (_Hop: the spot before the gate, then the spot past it)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_hop_records_the_start_at_once_and_the_end_where_the_player_stops(zero_poll):
+    client = _client(zone="Aquila/AQ_Atlantea")
+    client.body.position.side_effect = _then_still(
+        XYZ(1000.0, 0.0, 0.0), XYZ(1020.0, 0.0, 0.0), XYZ(1150.0, 0.0, 0.0), XYZ(1240.0, 0.0, 0.0)
+    )
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    with patch.object(recording, "HOP_END_STILL", 0.05):
+        await run_recording("teleport_to_xyz", client, form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields["zone"] == "Aquila/AQ_Atlantea"
+    assert form.xyz_fields["start_xyz"] == (1000.0, 0.0, 0.0)
+    assert form.xyz_fields["end_xyz"] == (1240.0, 0.0, 0.0)
+    assert on_status.call_args_list[-1][0][0] == "Done — 240 apart"
+    assert call("Stop") in on_btn.call_args_list
+
+
+async def test_a_hop_recorded_past_its_span_says_so(zero_poll):
+    client = _client()
+    client.body.position.side_effect = _then_still(XYZ(0.0, 0.0, 0.0), XYZ(400.0, 0.0, 0.0))
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    with patch.object(recording, "HOP_END_STILL", 0):
+        await run_recording("teleport_to_xyz", client, form, on_status, on_btn, try_set_label)
+
+    assert on_status.call_args_list[-1][0][0] == "Done — 400 apart, past the 300 a hop may span"
+
+
+async def test_stopping_a_hop_recording_puts_back_both_points(zero_poll):
+    """Stop is a cancel: a start with no end was never recorded together."""
+    client = _client()
+    client.body.position.return_value = XYZ(5.0, 5.0, 5.0)  # never leaves the start
+    form = FakeParamForm()
+    form.set_xyz("start_xyz", 1.0, 1.0, 1.0)
+    on_status, on_btn, try_set_label = _callbacks()
+
+    task = asyncio.create_task(run_recording("teleport_to_xyz", client, form, on_status, on_btn, try_set_label))
+    await asyncio.sleep(0.05)
+    task.cancel()
+    await task
+
+    assert form.xyz_fields == {"start_xyz": (1.0, 1.0, 1.0)}
+    on_btn.assert_called_with("Record")
 
 
 # ---------------------------------------------------------------------------
@@ -498,7 +568,7 @@ async def test_stopping_a_door_recording_puts_back_what_the_form_held(zero_poll)
 
 
 # ---------------------------------------------------------------------------
-# teleport_to_coordinates  (_Point: instant, no Stop button)
+# walk_to_xyz  (_Point: instant, no Stop button)
 # ---------------------------------------------------------------------------
 
 
@@ -507,7 +577,7 @@ async def test_go_to_xyz_happy_path():
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("teleport_to_coordinates", client, form, on_status, on_btn, try_set_label)
+    await run_recording("walk_to_xyz", client, form, on_status, on_btn, try_set_label)
 
     assert form.str_fields["zone"] == "Hub/Central"
     assert form.xyz_fields["xyz"] == (10.0, 20.0, 30.0)
@@ -520,7 +590,7 @@ async def test_a_recording_in_a_challenge_mode_copy_writes_the_ordinary_zone():
     client = _client(zone="Aquila/AQ_Z02_Atlantea_Hard")
     form = FakeParamForm()
 
-    await run_recording("teleport_to_coordinates", client, form, *_callbacks())
+    await run_recording("walk_to_xyz", client, form, *_callbacks())
 
     assert form.str_fields["zone"] == "Aquila/AQ_Z02_Atlantea"
 
@@ -529,7 +599,7 @@ async def test_a_recording_in_a_higher_gauntlet_band_writes_the_lowest_band():
     client = _client(zone="Housing_AV_Gauntlet/AV_Gauntlet_60/AV_Gauntlet_60_02")
     form = FakeParamForm()
 
-    await run_recording("teleport_to_coordinates", client, form, *_callbacks())
+    await run_recording("walk_to_xyz", client, form, *_callbacks())
 
     assert form.str_fields["zone"] == "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_02"
 
@@ -546,7 +616,7 @@ async def test_go_to_xyz_status_contains_zone_suffix():
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("teleport_to_coordinates", client, form, on_status, on_btn, try_set_label)
+    await run_recording("walk_to_xyz", client, form, on_status, on_btn, try_set_label)
 
     last_status = on_status.call_args_list[-1][0][0]
     assert "Central" in last_status
@@ -558,7 +628,7 @@ async def test_go_to_xyz_cancellation():
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("teleport_to_coordinates", client, form, on_status, on_btn, try_set_label)
+    await run_recording("walk_to_xyz", client, form, on_status, on_btn, try_set_label)
 
     on_status.assert_called_with("")
     on_btn.assert_called_with("Record")
@@ -571,7 +641,7 @@ async def test_go_to_xyz_exception_shows_error():
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("teleport_to_coordinates", client, form, on_status, on_btn, try_set_label)
+    await run_recording("walk_to_xyz", client, form, on_status, on_btn, try_set_label)
 
     last_status = on_status.call_args_list[-1][0][0]
     assert last_status.startswith("Error:")
@@ -579,7 +649,7 @@ async def test_go_to_xyz_exception_shows_error():
 
 
 # ---------------------------------------------------------------------------
-# mark_location  (_Point, as teleport_to_coordinates)
+# mark_location  (_Point, as walk_to_xyz)
 # ---------------------------------------------------------------------------
 
 
