@@ -447,15 +447,17 @@ https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
 long written teleports held again on Ahmarra's live build, and taken up again on 2026-11-24 by
 choice. Core's stages land in bartleby-core, and BartleBot pins each core release Stages 1 and 2 cut, and 0.12.0, the fixes from
 reviewing them and walking the walker in game. 0.12.1 carries Stage 3.1's gates, pinned with
-the r815378 update's wizwalker.
+the r815378 update's wizwalker, and 0.13.0 Stage 3.2's gate read, pinned by Stage 4. **No BartleBot
+release is cut until Stages 7 and 8 land** (the user's call, 2026-11-25): Stage 4's walks can fail
+in the bots `tools/check_bot_routes.py` lists, where a gate or a placed floor is in the way.
 
 | stage | issue | what | status |
 |---|---|---|---|
 | 0 | #336 | speed boosts off in both apps, behind `SPEED_TOGGLE_ENABLED` | landed |
 | 1 | core #14 | route planning (1.1), and the shipped zone maps (1.2) | landed |
 | 2 | core #15 | walking a route in core | landed |
-| 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | 3.1 landed |
-| 4 | #323 | the run's helpers walk | |
+| 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | landed |
+| 4 | #323 | the run's helpers walk | in progress |
 | 5 | #324 | fights and pickups by walking | |
 | 6 | #325 | the other movers walk | |
 | 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
@@ -468,7 +470,9 @@ Core's `docs/WALKING.md` is the feature as built; the game's rules of movement a
 zones read by core's wad reader (its `tools/zone_files.py`, from the checkout beside this one), and
 `probe_walk_input.py` walks on core's walker (`movement/walk.py`'s `RouteWalker`).
 `probe_gates.py` reads a zone's gates with the same reader and matches each against the
-client's entity list, for Stage 3.2's session in game. A run plans on the zone maps core ships, built by its `tools/build_zone_maps.py` from
+client's entity list, for Stage 3.2's session in game. `check_bot_routes.py` plans every walk the
+shipped bots make, and lists the ones with no route, a gate as the only way, or over 60 s: Stage 7's
+list of where a Teleport to XYZ goes. A run plans on the zone maps core ships, built by its `tools/build_zone_maps.py` from
 `zone_nav.json`, `bots/` and `subgraphs/`; `test_every_zone_on_the_map_has_a_walking_map_core_ships`
 fails on a `zone_nav.json` zone without one.
 
