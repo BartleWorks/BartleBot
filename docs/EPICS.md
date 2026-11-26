@@ -463,7 +463,7 @@ walks it.
 | 2 | core #15 | walking a route in core | landed |
 | 3 | core #16 | doors in the maps: gates open until found closed (3.1), and gates read from the client (3.2) | landed |
 | 4 | #323 | the run's helpers walk | landed |
-| 5 | #324 | fights and pickups by walking | |
+| 5 | #324 | fights and pickups by walking | landed |
 | 6 | #325 | the other movers walk | |
 | 7 | #326 | Walk to XYZ and Teleport to XYZ, `walking.hop` and `HOP_MAX` | |
 | 8 | core #17 | verified links | |
