@@ -15,6 +15,7 @@ from bartleby.runtime.paths import (
 from wizwalker import XYZ, MemoryReadError
 
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.nodes import walking
 from bartlebot.nodes.node_helpers import (
     all_in_zone,
     all_left_zone,
@@ -719,9 +720,9 @@ async def test_only_the_walk_to_the_prompt_approaches_an_object_never_the_reset(
 
     asked = []
 
-    async def _walk(machine, client, number, goal, avoid, approach=False):
+    async def _walk(machine, client, number, goal, avoid, approach=False, *rest):
         asked.append((tuple(goal), approach))
-        return await walk_double(machine, client, number, goal, avoid, approach)
+        return await walk_double(machine, client, number, goal, avoid, approach, *rest)
 
     monkeypatch.setattr(walking, "walk_one", _walk)
     client = FakeClient()
@@ -1685,20 +1686,22 @@ async def test_each_mover_in_another_zone_is_given_its_reason():
 # ── pick_up ──────────────────────────────────────────────────────────────────
 
 
-async def test_pick_up_presses_x_at_the_prompt_and_waits_for_it_to_clear():
+async def test_pick_up_walks_there_presses_x_at_the_prompt_and_waits_for_it_to_clear():
     client = FakeClient()
     client.is_in_npc_range.side_effect = [True, False]
     spot = XYZ(1.0, 2.0, 3.0)
 
-    assert await nh.pick_up(client, spot, 1.0, 0) is nh.Pickup.COLLECTED
-    client.teleport.assert_called_once_with(spot)
+    assert await nh.pick_up(FakeMachine(), client, 1, spot, 1.0, 0) is nh.Pickup.COLLECTED
+    (where,) = client.walk_to.await_args.args
+    assert tuple(where) == (1.0, 2.0, 3.0)
+    client.teleport.assert_not_called()
     client.send_key.assert_called_once()
 
 
 async def test_pick_up_without_a_prompt_presses_nothing():
     client = FakeClient()
 
-    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NO_PROMPT
+    assert await nh.pick_up(FakeMachine(), client, 1, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NO_PROMPT
     client.send_key.assert_not_called()
 
 
@@ -1706,7 +1709,96 @@ async def test_pick_up_whose_prompt_stays_is_not_collected():
     client = FakeClient()
     client.is_in_npc_range.return_value = True
 
-    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED
+    assert await nh.pick_up(FakeMachine(), client, 1, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED
+
+
+async def test_pick_up_whose_walk_fails_presses_nothing():
+    from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
+
+    client = FakeClient()
+    client.walk_to.return_value = WalkEnd.NO_ROUTE
+    client.is_in_npc_range.return_value = True
+
+    assert await nh.pick_up(FakeMachine(), client, 1, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_REACHED
+    client.send_key.assert_not_called()
+
+
+async def test_a_pickup_beside_an_entity_to_keep_away_from_stands_on_its_far_side():
+    """#35's Streamportal: its prompt would show instead, so stand where only the reagent's does."""
+    client = FakeClient()
+    portal = FakeEntity("Streamportal")
+    portal.location.return_value = XYZ(1000.0, 0.0, 0.0)
+    client.get_base_entities_with_predicate.return_value = [portal]
+
+    spot = await nh.pickup_spot(client, XYZ(1100.0, 0.0, 0.0), ["Streamportal"])
+
+    off = nh.PICKUP_REACH - walking.ARRIVED_WITHIN
+    assert (spot.x, spot.y, spot.z) == pytest.approx((1100.0 + off, 0.0, 0.0))
+
+
+async def test_a_pickup_with_nothing_to_keep_away_from_stands_on_the_entity():
+    client = FakeClient()
+    client.get_base_entities_with_predicate.return_value = []
+
+    spot = await nh.pickup_spot(client, XYZ(1100.0, 50.0, 0.0), ["Streamportal"])
+
+    assert (spot.x, spot.y, spot.z) == (1100.0, 50.0, 0.0)
+
+
+def _hall_with_a_cave_mouth():
+    """A hall 4000 by 2000 with an exit of radius 300 at its middle, as #35's cave mouth."""
+    from bartleby.runtime.movement.collision import MESH, WALKABLE, Solid  # noqa: PLC0415
+    from bartleby.runtime.movement.route import ZoneFiles, build_planner  # noqa: PLC0415
+    from bartleby.runtime.movement.zone_links import Volume  # noqa: PLC0415
+
+    a, b, c, d = (0.0, 0.0, 0.0), (4000.0, 0.0, 0.0), (4000.0, 2000.0, 0.0), (0.0, 2000.0, 0.0)
+    identity = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
+    floor = Solid(MESH, WALKABLE, identity, (0.0, 0.0, 0.0), 1.0, (), [a, b, c, a, c, d], [(0, 1, 2), (3, 4, 5)])
+    cave = Volume("Activator Volume Teleport to the cave", (2000, 1000, 0), radius=300)
+    return build_planner(ZoneFiles("Test/T_Jungle", [floor], [], {}, volumes=[cave], teleports=frozenset({cave.name})))
+
+
+@pytest.fixture
+def cave_mouth(monkeypatch):
+    planner = _hall_with_a_cave_mouth()
+
+    async def load(_zone):
+        return planner
+
+    monkeypatch.setattr(walking, "has_map", lambda zone: zone == "Test/T_Jungle")
+    monkeypatch.setattr(walking, "load_planner", load)
+    return planner
+
+
+async def test_a_pickup_inside_an_exit_walks_to_the_floor_just_outside_it(cave_mouth, monkeypatch):
+    """#35's cave: walking onto the spawn would leave the zone."""
+    monkeypatch.setattr(nh, "PICKUP_REACH", 400.0)
+    client = FakeClient()
+    client.zone_name.return_value = "Test/T_Jungle"
+
+    spot = await nh.pickup_spot(client, XYZ(2250.0, 1000.0, 0.0))
+
+    assert cave_mouth.exits_at(spot.x, spot.y, spot.z) == []
+    assert spot.x > 2250.0  # out of the mouth on the spawn's own side
+
+
+async def test_a_pickup_inside_an_exit_with_no_floor_outside_within_reach_is_skipped(cave_mouth, monkeypatch):
+    monkeypatch.setattr(nh, "PICKUP_REACH", 100.0)
+    client = FakeClient()
+    client.zone_name.return_value = "Test/T_Jungle"
+
+    assert await nh.pickup_spot(client, XYZ(2000.0, 1000.0, 0.0)) is None
+    assert await nh.pick_up(FakeMachine(), client, 1, XYZ(2000.0, 1000.0, 0.0), 0.05, 0) is nh.Pickup.IN_AN_EXIT
+    client.walk_to.assert_not_called()
+
+
+async def test_a_pickup_outside_every_exit_stands_on_the_entity(cave_mouth):
+    client = FakeClient()
+    client.zone_name.return_value = "Test/T_Jungle"
+
+    spot = await nh.pickup_spot(client, XYZ(3500.0, 1000.0, 0.0))
+
+    assert (spot.x, spot.y, spot.z) == (3500.0, 1000.0, 0.0)
 
 
 # ---------------------------------------------------------------------------
