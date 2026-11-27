@@ -625,7 +625,9 @@ async def test_with_avoid_mobs_on_a_walk_to_anything_else_starts_no_fight(two_pa
     assert started == []
 
 
-async def test_a_fight_met_during_ambient_combat_waits_for_no_preempt(real_walks):
+async def test_a_fight_met_during_ambient_combat_waits_for_no_preempt(real_walks, monkeypatch):
+    # Far longer than the walk itself takes under -n auto's load, so only a wait could reach it.
+    monkeypatch.setattr(walking, "FIGHT_PREEMPT_WAIT", 5.0)
     client = _client()
     client.battle = True
     machine = _machine()
