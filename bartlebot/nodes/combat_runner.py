@@ -5,16 +5,21 @@ combat, fleeing a fight that cannot be won, checking a DSL, and holding a fighte
 cast. What stays here reads a bot: :func:`resolve_combat`, the DSLs a fight runs from the
 four levels of ``combat_resolution``; the chat-log drop poll after a fight, through the
 machine's baselines; and joining a fight already under way (:class:`FightCenter`,
-:func:`join_fight`). ``handle_combat`` and the ambient watcher use both.
+:func:`join_fight`). ``handle_combat`` and the ambient watcher use both. A combat order's
+players wait their turn to join short of the fight (:func:`wait_turn_near`).
 """
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+import math
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, NamedTuple
 
-from bartleby.runtime.movement.walk import WalkEnd
+import numpy as np
+from bartleby.runtime.movement.patrols import Patrol, distance_to_segments, segments
+from bartleby.runtime.movement.route import FIGHT_REACH, Leg
+from bartleby.runtime.movement.walk import WalkEnd, plan_in_thread
 from bartleby.runtime.timing import (
     COMBAT_DROP_MESSAGE_POLL,
     COMBAT_DROP_MESSAGE_TIMEOUT,
@@ -480,6 +485,99 @@ async def _mob_spot(entity) -> tuple[object, int | None] | None:
     except Exception:
         mob = None
     return spot, mob
+
+
+# ---------------------------------------------------------------------------
+# Waiting a turn to join, short of the fight
+# ---------------------------------------------------------------------------
+
+#: How far from its fight a player walking in after another waits for its turn, in floor-plan
+#: units, measured from the mob and from anywhere on its patrol. Far enough that the fight cannot
+#: start with it, and so take the seat meant for the player ahead: at Captain Nemo (Ruined
+#: Hermitage, 2026-11-27) the fight started with the first player 600 units from the boss, and
+#: the players after it were pulled in from 470 to 640 units off its circle, against the 275 of the
+#: largest patrol's trigger radius. Near enough that the step in is a second's walk, not the walk
+#: from wherever the node began.
+FIGHT_HOLD = 1000.0
+
+#: How finely a route is looked along for where it first comes within FIGHT_HOLD.
+_HOLD_STEP = 25.0
+
+
+def fight_patrols(patrols: Sequence[Patrol], at: Sequence[float]) -> list[Patrol]:
+    """The patrols of the mobs in a fight at *at*: those whose trigger radius comes within
+    FIGHT_REACH of it, as a walk into that fight spares them (core's ``ZonePlanner.fight_cost``)."""
+    x, y = np.asarray([float(at[0])]), np.asarray([float(at[1])])
+    return [p for p in patrols if float(distance_to_segments(x, y, segments(p))[0]) - p.proximity <= FIGHT_REACH]
+
+
+def _sample(waypoints: Sequence[Sequence[float]], step: float) -> np.ndarray:
+    """Points along *waypoints* no more than *step* apart, the first and last included, as (N, 3)."""
+    pts = np.asarray(waypoints, dtype=float)
+    out = [pts[:1]]
+    for a, b in zip(pts[:-1], pts[1:]):
+        n = max(1, math.ceil(math.dist(a[:2], b[:2]) / step))
+        out.append(a + (b - a) * (np.arange(1, n + 1) / n)[:, None])
+    return np.concatenate(out)
+
+
+def hold_point(
+    legs: Sequence[Leg], mob: Sequence[float], patrols: Sequence[Patrol], distance: float = FIGHT_HOLD
+) -> tuple[float, float, float] | None:
+    """The last point on a route to a fight that is still *distance* from it, or None.
+
+    *legs* is the route to *mob*, the spot of the mob to fight, and *patrols* that mob's
+    (:func:`fight_patrols`): the route is kept *distance* from the mob and from everywhere it
+    patrols to. None when the route starts that near already, so the player waits where it
+    stands, and when it first comes that near only where a link lands it, since standing on the
+    link to wait would take it.
+    """
+    for leg in legs:
+        pts = _sample(leg.waypoints, _HOLD_STEP)
+        away = np.hypot(pts[:, 0] - mob[0], pts[:, 1] - mob[1])
+        for patrol in patrols:
+            away = np.minimum(away, distance_to_segments(pts[:, 0], pts[:, 1], segments(patrol)))
+        near = np.flatnonzero(away < distance)
+        if len(near):
+            first = int(near[0])
+            return None if first == 0 else tuple(float(v) for v in pts[first - 1])
+    return None
+
+
+async def wait_turn_near(machine, client, index: int, target) -> None:
+    """Walk *client* to where it waits its turn to join the fight with *target*: :func:`hold_point`
+    on the route a walk into that fight would take. It walks nowhere when the zone has no map, the
+    target or a route can't be had, or it stands that near already, and then steps in from where it
+    is, as it would have. Never raises but for a cancel: a failed wait only leaves it farther back.
+
+    A fight met on the way is not waited out for ambient combat, which never preempts
+    handle_combat: the player is in that fight, and join_fight sees so.
+    """
+    number = index + 1
+    try:
+        spot = await _mob_spot(target)
+        zone = await client.zone_name()
+        if spot is None or not zone or not walking.has_map(zone):
+            return
+        mob = walking.point(spot[0])
+        planner = await walking.load_planner(zone)
+        here = walking.point(await client.body.position())
+        avoid = bool(machine.get_option(walking.AVOID_MOBS, walking.AVOID_MOBS_OPTION.default))
+        route = await plan_in_thread(planner.route, here, mob, avoid, True)
+        if route is None:
+            return
+        legs = await asyncio.to_thread(planner.legs, route)
+        hold = hold_point(legs, mob, fight_patrols(planner.patrols, mob))
+        if hold is None or math.dist(hold[:2], here[:2]) <= walking.ARRIVED_WITHIN:
+            return
+        machine.log(
+            f"P{number}: waiting its turn at ({hold[0]:.0f}, {hold[1]:.0f}), {math.dist(hold[:2], mob[:2]):.0f}"
+            " units from the fight",
+            logging.DEBUG,
+        )
+        await walking.walk_clients(machine, [client], hold, numbers=[number], wait_for_preempt=False)
+    except Exception as exc:  # noqa: BLE001 - it steps in from wherever it is
+        machine.log(f"P{number}: could not walk to wait its turn ({exc!r})", logging.DEBUG)
 
 
 async def duel_center(client):

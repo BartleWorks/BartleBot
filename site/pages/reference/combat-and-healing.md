@@ -71,7 +71,7 @@ The bot stops after 5 consecutive failures on this node.
 
 **Usage notes**
 
-Players walk up to the enemy, and once a fight has started, to its duel circle. With Avoid Mobs on, the walk keeps clear of every other enemy, so it starts no other fight. The time spent walking does not count toward entering combat, but it does count toward Max Duration.
+Players walk up to the enemy, and once a fight has started, to its duel circle. With Avoid Mobs on, the walk keeps clear of every other enemy, so it starts no other fight. When the fight's Duel Strategy sets a combat order, the players join in that order: while the first starts the fight, the others wait their turn a short way off, then step in one at a time. The time spent walking does not count toward entering combat, but it does count toward Max Duration.
 
 ## Handle Potions { #handle-potions }
 

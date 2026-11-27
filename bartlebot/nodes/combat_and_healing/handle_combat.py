@@ -14,6 +14,7 @@ from bartlebot.nodes.combat_runner import (
     resolve_combat,
     seed_chat_baselines,
     start_combat_drop_poll,
+    wait_turn_near,
 )
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
@@ -73,8 +74,10 @@ NODE_SPEC = NodeSpec(
     usage_notes=(
         "Players walk up to the enemy, and once a fight has started, to its duel circle. With "
         "Avoid Mobs on, the walk keeps clear of every other enemy, so it starts no other fight. "
-        "The time spent walking does not count toward entering combat, but it does count toward "
-        "Max Duration."
+        "When the fight's Duel Strategy sets a combat order, the players join in that order: while "
+        "the first starts the fight, the others wait their turn a short way off, then step in one "
+        "at a time. The time spent walking does not count toward entering combat, but it does "
+        "count toward Max Duration."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -110,7 +113,9 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Snapshot chat to enable drop detection after combat.
       5. Walk clients to their targets, each walk into the fight (combat_runner.join_fight):
          - If the resolved Duel Combat Strategy sets a combat order: send clients one at
-           a time in that order, waiting for each to report in_battle().
+           a time in that order, waiting for each to report in_battle(). Meanwhile everyone
+           after the first walks to wait its turn FIGHT_HOLD short of the fight
+           (combat_runner.wait_turn_near), so its turn is a short step in.
          - Otherwise: walk all clients at once, aiming again every COMBAT_TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires,
            counting the waits and not the walks.
@@ -221,20 +226,35 @@ async def run(machine, clients: list, params: dict) -> str:
 
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
-        for client_num in combat_order:
-            idx = client_num - 1  # user-facing 1-based → 0-based list index
-            if idx < 0 or idx >= len(clients):
-                machine.log(
-                    f"combat_order: skipping client {client_num} — not connected (have {len(clients)} client(s))",
-                    logging.DEBUG,
-                )
-                continue
-            if not await join_fight(machine, clients[idx], idx, fight, ENTER_COMBAT_TIMEOUT, find_target=find_target):
-                machine.log(
-                    f"FAILURE: client {client_num} did not enter combat within {ENTER_COMBAT_TIMEOUT}s",
-                    logging.WARNING,
-                )
-                return "FAILURE"
+        # Everyone after the first walks at once to wait its turn short of the fight, while the
+        # first starts it, so each one's turn is a short step in rather than the whole walk.
+        present = list(dict.fromkeys(n for n in combat_order if 1 <= n <= len(clients)))
+        waits = {
+            n: asyncio.create_task(wait_turn_near(machine, clients[n - 1], n - 1, targets[n - 1])) for n in present[1:]
+        }
+        try:
+            for client_num in combat_order:
+                idx = client_num - 1  # user-facing 1-based → 0-based list index
+                if idx < 0 or idx >= len(clients):
+                    machine.log(
+                        f"combat_order: skipping client {client_num} — not connected (have {len(clients)} client(s))",
+                        logging.DEBUG,
+                    )
+                    continue
+                if (wait := waits.pop(client_num, None)) is not None:
+                    await wait
+                if not await join_fight(
+                    machine, clients[idx], idx, fight, ENTER_COMBAT_TIMEOUT, find_target=find_target
+                ):
+                    machine.log(
+                        f"FAILURE: client {client_num} did not enter combat within {ENTER_COMBAT_TIMEOUT}s",
+                        logging.WARNING,
+                    )
+                    return "FAILURE"
+        finally:
+            for wait in waits.values():
+                wait.cancel()
+            await asyncio.gather(*waits.values(), return_exceptions=True)
     else:
         # 4. Walk all clients to their targets, aiming again until in combat
         machine.log("Walking all clients to the target (aiming again until in combat)…", logging.DEBUG)
