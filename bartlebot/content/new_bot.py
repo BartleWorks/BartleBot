@@ -27,7 +27,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from bartlebot.bot.schema import BotConfig, TemplateRef
-from bartlebot.content.bot_folders import UNBADGED_FOLDERS
+from bartlebot.content.bot_folders import UNBADGED_FOLDERS, folder_identity, listed_names
 from bartlebot.content.bot_tags import normalize_tags
 from bartlebot.content.store_roots import Origin, slugify
 from bartlebot.content.templates import template_store
@@ -166,13 +166,23 @@ def unique_file_name(stem: str, folder: str | Path) -> str:
     return name
 
 
+def matching_folder(folders: list[str], name: str | None) -> str | None:
+    """The one of ``folders`` that is ``name``'s, whatever its number, or None."""
+    if not name:
+        return None
+    return next((f for f in folders if folder_identity(f) == folder_identity(name)), None)
+
+
 def library_folders(*bots_dirs: str | Path) -> list[str]:
     """The bot library's folders a new bot can be saved in, in the library's order.
 
     By folder name, so the numbers set the order (see :mod:`bartlebot.content.bot_folders`).
     Empty ones are listed too, unlike in the library panel: a new bot is how one fills.
     Every folder in any of ``bots_dirs``, so a user's own folder, empty on a first run,
-    still offers every world the shipped one has (:mod:`bartlebot.content.bot_roots`).
+    still offers every world the shipped one has (:mod:`bartlebot.content.bot_roots`). A
+    world whose folders are numbered differently is offered once, under its name in the
+    first of ``bots_dirs`` that has it, so the shipped folder goes first.
     """
-    names = {p.name for d in map(Path, bots_dirs) if d.is_dir() for p in d.iterdir() if p.is_dir()}
+    groups = ([p.name for p in d.iterdir() if p.is_dir()] for d in map(Path, bots_dirs) if d.is_dir())
+    names = set(listed_names(*groups).values())
     return sorted(n for n in names if n not in UNBADGED_FOLDERS and not n.startswith((".", "_")))

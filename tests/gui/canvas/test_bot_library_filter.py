@@ -350,9 +350,9 @@ def library(tmp_path, monkeypatch):
     monkeypatch.setattr(bot_roots, "shipped_bots_dir", lambda: tmp_path / "no-shipped-bots")
     bots = tmp_path / "bots"
     _write_bot(bots / "04_mooshu", "Jade Oni")
-    _write_bot(bots / "31_four_dungeons", "Graveyard")
+    _write_bot(bots / "32_four_dungeons", "Graveyard")
     _write_bot(bots / "40_my_farms", "Mine")
-    (bots / "26_gardening").mkdir()
+    (bots / "27_gardening").mkdir()
     SettingsManager.instance().set("canvas", "bot_library_path", value=str(bots))
     card_art.forget_cache()
     yield bots
@@ -372,7 +372,7 @@ def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, l
 
     assert _rows(panel)[1:] == [
         ("04_mooshu", "MooShu"),
-        ("31_four_dungeons", "Four Dungeons"),
+        ("32_four_dungeons", "Four Dungeons"),
         ("40_my_farms", "My Farms"),
     ]
 
@@ -380,11 +380,20 @@ def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, l
     assert _names(panel._category_metas()) == ["Graveyard"]
 
 
+def test_a_worlds_old_and_new_folders_share_one_row(qapp, library):
+    _write_bot(library / "31_four_dungeons", "Old Graveyard")
+
+    panel = BotLibraryPanel()
+    panel.refresh()
+
+    assert [key for key, caption in _rows(panel) if caption == "Four Dungeons"] == ["32_four_dungeons"]
+
+
 def test_an_empty_folder_is_not_listed(qapp, library):
     panel = BotLibraryPanel()
     panel.refresh()
 
-    assert "26_gardening" not in [key for key, _ in _rows(panel)]
+    assert "27_gardening" not in [key for key, _ in _rows(panel)]
 
 
 def test_with_no_art_extracted_no_row_has_an_icon(qapp, library):
@@ -417,7 +426,7 @@ def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_
     }
 
     # MooShu's badge was not extracted and my_farms has none to have.
-    assert with_icon == {panel._ALL_KEY, "31_four_dungeons"}
+    assert with_icon == {panel._ALL_KEY, "32_four_dungeons"}
 
 
 def test_loose_files_are_listed_as_other(qapp, library):
@@ -487,7 +496,7 @@ def test_an_empty_folder_says_how_many_other_bots_match_and_offers_them(qapp, li
 
 
 def test_the_count_is_plural_past_one(qapp, library):
-    _write_bot(library / "31_four_dungeons", "Mine Shaft")
+    _write_bot(library / "32_four_dungeons", "Mine Shaft")
     panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
@@ -736,7 +745,7 @@ def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qap
     from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
     from bartleby.qt.testing.extracted_art import write_extracted_art  # noqa: PLC0415
 
-    _tagged_bot(library / "31_four_dungeons", "Gold Run", "Gold")
+    _tagged_bot(library / "32_four_dungeons", "Gold Run", "Gold")
     panel = BotLibraryPanel()
     panel.show()
     panel._cat_list.setCurrentRow(2)
@@ -746,10 +755,10 @@ def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qap
     write_extracted_art(icons=["badge_all", "badge_4dungeons", "tag_gold"])
     announce_art_changed()
 
-    assert _rows_with_icons(panel) == {panel._ALL_KEY, "31_four_dungeons"}
+    assert _rows_with_icons(panel) == {panel._ALL_KEY, "32_four_dungeons"}
     assert all(pill.has_icon for pill in _pills(panel))
     # The user stays in the folder they were looking at.
-    assert panel.current_folder() == "31_four_dungeons"
+    assert panel.current_folder() == "32_four_dungeons"
     panel.hide()
 
 

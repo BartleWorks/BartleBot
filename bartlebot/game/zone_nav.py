@@ -520,10 +520,12 @@ def _parse_link(link: dict, where: str, zone_world: dict[str, str], problems: li
             else:
                 params["object_use_delay"] = float(delay)
     if "unlock" in link:
-        # A gate that objects open, and that appears only a while later: Tomb of Storms.
+        # A gate that objects open, and that appears only a while later: Tomb of Storms, shared,
+        # and the Akashic portal, open only to whoever pressed its button.
         unlock = link["unlock"]
         objects = unlock.get("objects") if isinstance(unlock, dict) else None
         opens_after = unlock.get("opens_after") if isinstance(unlock, dict) else None
+        per_player = unlock.get("per_player", False) if isinstance(unlock, dict) else False
         if kind != WALK:
             problems.append(f"{where}: only a walk can have an unlock")
         elif (
@@ -537,10 +539,13 @@ def _parse_link(link: dict, where: str, zone_world: dict[str, str], problems: li
             problems.append(f"{where}: unlock needs objects, each with interact_xyz and reset_xyz")
         elif not isinstance(opens_after, int | float) or isinstance(opens_after, bool) or opens_after < 0:
             problems.append(f"{where}: unlock needs opens_after, the seconds the gate takes to appear")
+        elif not isinstance(per_player, bool):
+            problems.append(f"{where}: unlock per_player must be true or false")
         else:
             params["unlock"] = {
                 "objects": [{"interact_xyz": o["interact_xyz"], "reset_xyz": o["reset_xyz"]} for o in objects],
                 "opens_after": float(opens_after),
+                "per_player": per_player,
             }
     if kind == RIDE:
         # ride_zone is optional: the Krokotopia boats ride inside the zone they start in.

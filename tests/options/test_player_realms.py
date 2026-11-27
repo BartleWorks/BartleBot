@@ -37,17 +37,17 @@ _ROOT = project_root()
 #: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron and the Portico, the reagent bots
 #: rebuilt from Reagent Collector (which declares it), and that template's draft.
 SHIPPED_SEPARATE = {
-    "bots/25_crafting/aeriel-shores-aethyr-burst.json",
-    "bots/25_crafting/nightside-flax.json",
-    "bots/25_crafting/aeriel-shores-silver-chests.json",
-    "bots/25_crafting/crab-alley-stone-block.json",
-    "bots/25_crafting/mirkholm-keep-reagents.json",
-    "bots/25_crafting/the-necropolis-deep-mushroom.json",
-    "bots/25_crafting/the-wild-deep-mushroom.json",
-    "bots/25_crafting/the-zocalo-red-mandrake.json",
-    "bots/25_crafting/scrap-iron-collector.json",
-    "bots/25_crafting/selenopolis-parchment.json",
-    "bots/25_crafting/the-portico-pearl.json",
+    "bots/26_crafting/aeriel-shores-aethyr-burst.json",
+    "bots/26_crafting/nightside-flax.json",
+    "bots/26_crafting/aeriel-shores-silver-chests.json",
+    "bots/26_crafting/crab-alley-stone-block.json",
+    "bots/26_crafting/mirkholm-keep-reagents.json",
+    "bots/26_crafting/the-necropolis-deep-mushroom.json",
+    "bots/26_crafting/the-wild-deep-mushroom.json",
+    "bots/26_crafting/the-zocalo-red-mandrake.json",
+    "bots/26_crafting/scrap-iron-collector.json",
+    "bots/26_crafting/selenopolis-parchment.json",
+    "bots/26_crafting/the-portico-pearl.json",
     "templates/reagent-collector/draft.json",
 }
 

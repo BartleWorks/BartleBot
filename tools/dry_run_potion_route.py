@@ -40,6 +40,7 @@ import logging
 import sys
 import time
 
+from bartleby.runtime.arbiter import Arbiter
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.nodes import wizard_city
@@ -52,14 +53,15 @@ DEFAULT_SAFETY_DELAY = 3.0
 
 
 class ConsoleMachine:
-    """The slice of BotMachine that the potion route actually uses: log() and get_option().
+    """The slice of BotMachine that the potion route actually uses: log(), get_option(), and
+    the arbiter every walk takes its movement lease from.
 
-    Nodes call machine.log(msg, level) and machine.get_option(name, default) and nothing
-    else on this path (confirmed across handle_potions, enter_zone, mark_location and
+    Nodes need nothing else on this path (handle_potions, enter_zone, mark_location and
     teleport_to_marked_location), so a real FSM is not needed to drive them.
     """
 
     def __init__(self, safety_delay: float):
+        self.arbiter = Arbiter()
         self._options = {"Safety Delay": safety_delay}
         self.warnings: list[str] = []
 

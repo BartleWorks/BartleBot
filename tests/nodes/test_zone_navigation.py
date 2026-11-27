@@ -1,5 +1,6 @@
 """Unit tests for navigate(): one planned step at a time, World Gates and HOME included."""
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -433,6 +434,50 @@ async def test_a_gated_walk_opens_its_gate_with_one_player_then_waits_for_it(mon
     assert [p["interact_xyz"] for p in opening] == [_xyz(3), _xyz(4), _xyz(5)]
     assert all(p["interact_clients"] == [1] and p["has_dialogue"] is False for p in opening)
     assert game.calls[3][1] == {"duration": 20.0}
+
+
+def _per_player_gate(per_player: bool) -> dict:
+    spots = [{"interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}]
+    return {**_walk(_HUB, _S1), "unlock": {"objects": spots, "opens_after": 5, "per_player": per_player}}
+
+
+async def test_a_gate_each_player_opens_for_itself_is_opened_by_all_of_them(monkeypatch):
+    """The Akashic portal: it opens only for whoever pressed its button."""
+    game = _Game(monkeypatch, [_HUB, _HUB, _HUB])
+
+    outcome = await _go(game, _nav(_per_player_gate(True)), _S1)
+
+    assert outcome.success
+    assert game.names == ["interact", "sleep", "walk"]
+    assert game.calls[0][1]["interact_clients"] == [1, 2, 3]
+
+
+@pytest.mark.parametrize(
+    ("per_player", "retried"), [(False, ["walk"]), (True, ["interact", "sleep", "walk"])], ids=["shared", "each"]
+)
+async def test_a_player_who_missed_a_gate_opens_it_again_only_when_each_opens_its_own(per_player, retried):
+    [step] = zone_nav.plan(_nav(_per_player_gate(per_player)), _HUB, _S1)
+    calls = zone_navigation.step_call(step, 2)
+    ran = []
+
+    async def _run_calls(run, group):
+        ran.extend(params for _, params in run)
+        return True
+
+    async def _nobody_made_it(_step, group):
+        return [], group
+
+    class _Client:
+        async def zone_name(self):
+            return _HUB
+
+    trip = SimpleNamespace(
+        run_calls=_run_calls, sort=_nobody_made_it, who=lambda _group: "2", machine=SimpleNamespace(log=lambda *_: None)
+    )
+    await zone_navigation._Trip.retry(trip, step, calls, [_Client()], _HUB, [])
+
+    names = {"interact_xyz": "interact", "duration": "sleep", "from_zone": "walk"}
+    assert [next(name for key, name in names.items() if key in params) for params in ran] == retried
 
 
 async def test_a_gate_that_will_not_open_stops_before_the_walk(monkeypatch):
