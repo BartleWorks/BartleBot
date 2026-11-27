@@ -258,6 +258,17 @@ and went off. `node_helpers.PICKUP_REACH` (275) sits a little inside it, from Fr
 Keep Away From, and skips a spawn inside an exit with no floor outside within it. Run it with no
 other prompt in range, since the game's prompt flag does not say whose prompt shows.
 
+### How wisps move, and how near a wizard takes one: `probe_wisps.py`
+
+`uv run --no-sync python tools/probe_wisps.py --seconds 120` records the wizard's position and
+ratios and every wisp's position, every 0.1 s (it only reads), and `--analyze <csv>` summarizes a
+saved run. Each wisp is still, loops, heads one way, follows a path or wanders, with its speed and
+lap time. A pickup is timed by the ratio's rise, never by the wisp leaving the list: a taken wisp
+flies to the wizard and lingers there 1.3-1.8 s first, so the leaving puts the pickup at 45 units
+where the rise puts it at about 400. Stand still for how wisps move, and stand on a moving wisp's
+way below full for the pickup. Its findings are in core's `docs/WIZARD101.md`, *How wisps move,
+and how near a wizard takes one*.
+
 ### Where a walk the game allows leaves the planner's floor: `probe_walk_track.py`
 
 `uv run --no-sync python tools/probe_walk_track.py` records a walk you make by hand (zone and
