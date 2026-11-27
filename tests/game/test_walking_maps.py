@@ -11,7 +11,7 @@ import pytest
 from bartleby.runtime.movement.zone_maps import ZoneMaps
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.game import walking_maps
+from bartlebot.game import walking_maps, zone_names
 
 _ROOT = Path(__file__).resolve().parents[2]
 #: The shipped bot with the most states.
@@ -48,6 +48,28 @@ def test_every_shipped_bot_and_subgraph_names_only_mapped_zones():
         states = [StateModel.model_validate(s) for s in data.get("states", [])]
         found.extend((path.name, *hit) for hit in walking_maps.unmapped_zones(states))
     assert found == []
+
+
+def test_every_challenge_mode_copy_of_a_shipped_zone_has_a_map():
+    """Challenge Mode loads a dungeon as a second zone, and a walk plans on the zone it is in. A
+    bot names only the ordinary one, so neither the test above nor the check at Run sees a copy
+    with no map. Rebuild core's maps with its ``tools/build_zone_maps.py``, which adds each copy
+    of a zone it is given (core's ``docs/WALKING.md``, *Which zones*), and pin the release."""
+    named = set()
+    for path in [*(_ROOT / "bots").rglob("*.json"), *(_ROOT / "subgraphs").rglob("*.json")]:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        named.update(walking_maps.bot_zones(StateModel.model_validate(s) for s in data.get("states", [])))
+    # A copy is one the game has a name for: challenge_variant_of takes a zone read from a
+    # client, so it asks only that the ordinary zone exists.
+    copies = {
+        copy
+        for zone in named
+        for suffix in zone_names.CHALLENGE_SUFFIXES
+        if zone_names.display_names(copy := zone + suffix) and zone_names.challenge_variant_of(copy) == zone
+    }
+
+    assert copies, "no shipped zone has a Challenge Mode copy, so this checks nothing"
+    assert sorted(copy for copy in copies if not walking_maps.MAPS.has(copy)) == []
 
 
 def test_the_check_opens_no_map_and_is_fast_on_the_largest_shipped_bot(monkeypatch):
