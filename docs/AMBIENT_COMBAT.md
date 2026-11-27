@@ -177,9 +177,25 @@ the navigation map, or a failed teleport, goes straight to recovery: the relog t
 ## Fleeing and the flee limit
 
 A fight is fled by every one of our players in it, never by one alone (core's `bartleby.runtime.combat.fight.FightWatch`):
-when none of them has held a castable damage card and no enemy has carried damage over time for
-several planning phases in a row, or once the fight runs past its time limit
+once several planning phases in a row count against it, or once the fight runs past its time limit
 (`AMBIENT_COMBAT_MAX_DURATION` here, `max_duration` in `handle_combat`, both 600s).
+
+A planning phase counts only when all of these hold:
+
+- **Its round is past every numbered `{N}` line** among our players' strategies in the fight. A
+  fixed 3-round wait made a strategy with a late hit impossible, and a strategy that names a
+  later round has more to do there. A strategy of repeating lines holds nothing back.
+- **None of our players holds a castable damage card.**
+- **No enemy carries damage over time**, or damage deferred to a later round.
+- **None of our players used a card on its last turn**: a cast (a fizzle included), an enchant,
+  a discard or a draw, which wizsprinter reports as `turn_acted`. A large deck can take many
+  turns to reach a hit. A move's success doesn't say this: a pass succeeds, and so does a
+  discard with nothing to throw away. Cards run out, so a team that keeps casting passes in the
+  end, short of Reshuffle or anything else that puts cards back, and the time limit covers that.
+
+The case left over is a strategy of repeating lines whose players all pass 3 turns running to
+save pips for a hit in hand: grayed for want of pips, it reads as no hit. Until something tells
+that apart from a card that can never be cast, number the hit's round.
 
 `AMBIENT_FLEE_LIMIT` (3) flees within `AMBIENT_FLEE_WINDOW` (600s) stops the bot with a reason the
 user sees (`BotMachine.note_flee`), counting `handle_combat`'s flees and the watcher's alike.

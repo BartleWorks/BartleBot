@@ -104,7 +104,11 @@ With no message, the log names the last step. A step that fails too many times i
 
 BartleBot flees a fight when none of your players can still deal damage, and three fled fights stop the bot.
 
-1. Check each player's deck holds damage cards they can cast at their level.
+!!! info "Coming in the next release"
+
+    BartleBot waits until your strategies' last numbered round has passed and your players stop using cards. [When something goes wrong](guides/running/when-something-goes-wrong.md) has the whole rule.
+
+1. Check each player's deck holds damage cards they can cast at their level. In Challenge Mode, check that none of them is banned in advanced combat.
 2. Check they have mana. In a bot that uses potions, [**Refill potions**](reference/options.md#refill-potions), in Settings › Bot, buys more when they run out.
 3. Check the bot's **Combat** tab, and the strategy each player fights with.
 

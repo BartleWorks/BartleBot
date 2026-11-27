@@ -87,7 +87,7 @@ site = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.15.3" },
+    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.15.4" },
     { name = "beautifulsoup4", specifier = ">=4.0" },
     { name = "cryptography", specifier = ">=44" },
     { name = "curl-cffi", specifier = ">=0.15" },
@@ -103,7 +103,7 @@ requires-dist = [
     { name = "vdf", specifier = ">=3.4" },
     { name = "velopack", specifier = "==1.2.161" },
     { name = "wakepy", specifier = ">=1.0" },
-    { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=5d5bd4c54654c1c57492789665fe2b58569c13fd" },
+    { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=6c6d51d6cd5160980041dca917d72ac3e17c7947" },
     { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=ed97af1a8d91cd74afcbccd81ae2afd10dc742f4" },
 ]
 
@@ -123,8 +123,8 @@ site = [{ name = "zensical", specifier = "==0.0.71" }]
 
 [[package]]
 name = "bartleby-core"
-version = "0.15.3"
-source = { git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.15.3#9ae474533df5c653c863fafd34ae7edde9127a3c" }
+version = "0.15.4"
+source = { git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.15.4#d729e04902668421206ff1682db967bb0571b8e4" }
 dependencies = [
     { name = "keyring" },
     { name = "pydantic" },
@@ -1777,7 +1777,7 @@ wheels = [
 [[package]]
 name = "wizsprinter"
 version = "0.5.5"
-source = { git = "https://github.com/BartleWorks/wizsprinter.git?rev=5d5bd4c54654c1c57492789665fe2b58569c13fd#5d5bd4c54654c1c57492789665fe2b58569c13fd" }
+source = { git = "https://github.com/BartleWorks/wizsprinter.git?rev=6c6d51d6cd5160980041dca917d72ac3e17c7947#6c6d51d6cd5160980041dca917d72ac3e17c7947" }
 dependencies = [
     { name = "lark" },
     { name = "wizwalker" },

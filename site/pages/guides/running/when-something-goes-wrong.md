@@ -48,6 +48,17 @@ A player who walks too close to a monster is pulled into a fight, even in the mi
 
 A fight the players can't win is fled: when none of them can deal damage for several rounds, or after 10 minutes. Fled players land in the world's hub, collect wisps, and the bot goes to its recovery state. If the game shows **You Are Idle** in any fight, BartleBot flees it the same way.
 
+!!! info "Coming in the next release"
+
+    BartleBot gives a slow strategy more time before it flees a fight that none of your players can attack in. A round counts toward fleeing only when all of these are true:
+
+    - It's after the last numbered round, such as `{12}`, in any of their strategies.
+    - Nobody can cast a damage card.
+    - No enemy has damage over time or delayed damage on it.
+    - Nobody cast, enchanted, discarded or drew a card on their last turn.
+
+    They flee after 3 of these rounds in a row. The 10-minute limit stays.
+
 Three fled fights within 10 minutes stop the bot, since something is wrong with the decks, the mana or the combat setup. [Troubleshooting](../../troubleshooting.md#the-players-fled-fights) has what to check.
 
 ## Level scaling elixirs at the start of a run
