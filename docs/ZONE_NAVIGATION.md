@@ -125,6 +125,13 @@ above about six seconds.
 
 The objects are added to the link by hand: no zone change happens at them for the tester to record.
 
+Ahmarra's Forbidden City has one portal to three Akashic Cities, and the gate button pressed picks
+which: a walk link to each city, all at the portal, each with an `unlock` of its own button. The
+portal can be walked into 5 seconds after the press and does not close. Pressing another button
+switches it, so the step's own press is what makes its city sure. No button opens dialogue. Whether
+one player's press opens it for the others is not yet confirmed in game; the step assumes it does,
+as it does for the Oasis gate.
+
 ### World Gates, HOME and side worlds
 
 A world's `door` is the zone its World Gate stands in, which is where a gate drops a player
