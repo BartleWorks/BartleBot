@@ -98,6 +98,8 @@ class Hung:
             effect_type=effect.type,
             disposition=HangingDisposition.beneficial if up else HangingDisposition.harmful,
             param=effect.param,
+            # As in game: an Aegis or Indemnity leaves its id and reads `protected`.
+            protected=self.enchant in PROTECTING,
         )
 
 
@@ -112,6 +114,10 @@ E = SpellEffects
 SHARPENED_BLADE = _spell("Sharpened Blade", 1001, (E.modify_card_charm, T.spell, 10))
 POTENT_TRAP = _spell("Potent Trap", 1002, (E.modify_card_ward, T.spell, 10))
 EPIC = _spell("Epic", 1003, (E.modify_card_damage, T.spell, 275))
+AEGIS = _spell("Aegis", 1004, (E.protect_card_beneficial, T.spell, 0))
+INDEMNITY = _spell("Indemnity", 1005, (E.protect_card_harmful, T.spell, 0))
+#: The enchants that protect a buff, which stacks as the plain spell's.
+PROTECTING = (AEGIS, INDEMNITY)
 # Blades, traps and the rest of the buffs
 STORM_BLADE = _spell("Storm Blade", 2001, (E.modify_outgoing_damage, T.friendly_single, 35))
 BALANCEBLADE = _spell("Balanceblade", 2002, (E.modify_outgoing_damage, T.friendly_team, 25), pips=1)

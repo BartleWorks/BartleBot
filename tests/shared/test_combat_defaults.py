@@ -8,6 +8,7 @@ Stage 4; until then the files ship and are found by id.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -119,6 +120,47 @@ def test_the_cheat_boss_supports_never_enchant_the_card_their_cheat_watches():
     assert "blade" not in no_blades
     assert "spell(any<trap>)" not in no_feints
     assert "spell(any<trap & !feint>)" in no_feints
+
+
+#: What a cast of each kind enchants with, protecting backup last (Official set 11).
+_PROTECTED_ENCHANTS = {"blade": '[sharp | "Aegis"]', "trap": '[potent | "Indemnity"]', "ward": '["Aegis"]'}
+#: A move on ``any<…>``, with its enchant if it has one. One aimed at a card in hand, inside
+#: ``spell(…)``, is what an enchant goes onto, and never a cast.
+_TEMPLATE_MOVE = re.compile(r"(?<!spell\()any<([^>]*)>(\[[^\]]*\])?")
+
+
+def _protection_problems(dsl: str) -> list[str]:
+    problems = []
+    for match in _TEMPLATE_MOVE.finditer(dsl):
+        types = {t.strip() for t in match.group(1).split("&")}
+        enchant = match.group(2)
+        for kind, wanted in _PROTECTED_ENCHANTS.items():
+            # A shield is always enchanted; a blade or trap only where the line enchants it,
+            # since a mass trap is mostly an item card, which takes none.
+            if kind in types and (kind == "ward" or enchant) and enchant != wanted:
+                problems.append(match.group(0))
+    return problems
+
+
+@pytest.mark.parametrize("path", _player_files(), ids=lambda p: p.name)
+def test_every_shipped_blade_trap_and_shield_cast_names_its_protecting_backup(path: Path):
+    """Aegis or Indemnity, when Sharpened Blade or Potent Trap isn't in hand: a protected buff
+    is no weaker than a bare one (``docs/COMBAT_CONFIG.md``)."""
+    assert _protection_problems(PlayerCombatStrategy.load(path).dsl) == []
+
+
+def test_the_protection_check_sees_a_missing_backup():
+    assert _protection_problems("any<blade>[sharp] @ self | any<ward> @ self") == [
+        "any<blade>[sharp]",
+        "any<ward>",
+    ]
+    assert _protection_problems("sharp @ spell(any<blade>) | any<trap & aoe & stacks>") == []
+
+
+def test_shared_set_version_rose_with_the_protecting_backups():
+    """Every shipped blade, trap and shield cast took Aegis or Indemnity as a backup at
+    version 11."""
+    assert SHARED_SET_VERSION >= 11
 
 
 def test_default_dsl_equals_the_last_resort():
