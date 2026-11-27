@@ -188,6 +188,9 @@ class BotMachine:
         self._health_monitor: ClientHealthMonitor | None = None
         # Who can port to whom, surveyed before the run. See the port_map property.
         self._port_map: PortMap | None = None
+        # The zones that refused a port this run: every walk there is walked (walking.walk_clients).
+        # Cleared when a run starts, so a game update that changes a zone's rule costs one refusal.
+        self.no_port_zones: set[str] = set()
         # What a node keeps for its own rerun, by node type. A node cancelled by the ambient
         # combat watcher is run again from the start (see bartlebot/nodes/CLAUDE.md), and this
         # is the only thing that outlives the cancel: handle_level_scaling keeps where each
@@ -784,6 +787,7 @@ class BotMachine:
         self._run_task = asyncio.current_task()
         self._lost_hwnds.clear()
         self._fresh_logins.clear()
+        self.no_port_zones.clear()
         self._reset_variables()
         self._variable_only_streak.clear()
         self._since_recovery = set()
