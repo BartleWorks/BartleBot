@@ -89,45 +89,81 @@ def test_wisps_on_one_loop_share_its_path_and_one_elsewhere_does_not():
     assert probe.sharers(tracks, 3) == 0
 
 
-def test_a_wisp_gone_beside_a_wizard_whose_ratio_rose_was_taken_with_the_distances_that_bracket_it():
-    """The wizard stands still; the wisp comes at it, is last seen 40 off, and the health rises."""
-    track = _line(1, (-200.0, 0.0), (100.0, 0.0), 1.6)  # last seen at x = -40
-    wizard = _wizard(1.6, health=0.5) + _wizard(3.0, health=0.8, start=1.7)
-    run = probe.Run(wizard=wizard, sightings=track)
+def _pickup_run(kind_seen="WC_WispHealth", rises="health"):
+    """A still wizard at the origin; a wisp coming along x at 100/s from 800 off. At 400 off the
+    wizard's *rises* ratio goes from 0.5 to 0.75 (410 off at the sample before); the wisp then flies
+    in to rest 45 off, reached 0.8 s after the rise, and is seen last 1.4 s after it. The run goes on
+    a second more."""
+    wizard, sightings = [], []
+    rise_at, gone_at, end_at = 40, 55, 65  # sample indexes, 0.1 s apart
+    for i in range(end_at + 1):
+        t = round(i * _STEP, 2)
+        risen = i >= rise_at
+        health = 0.75 if risen and rises == "health" else 0.5
+        mana = 0.75 if risen and rises == "mana" else 0.5
+        wizard.append(probe.Wizard(t, (0.0, 0.0, 0.0), health, mana))
+        if i < gone_at:
+            x = -800.0 + 100.0 * t if i < rise_at else min(-45.0, -400.0 + (355.0 / 9) * (i - rise_at + 1))
+            sightings.append(probe.Sighting(t, 7, kind_seen, (x, 0.0, 20.0)))
+    return probe.Run(wizard=wizard, sightings=sightings)
 
-    end = probe.ending(run, track)
 
-    assert end.how == "taken"
-    assert math.isclose(end.seen_at, 40.0, abs_tol=1e-6)
-    assert math.isclose(end.gone_at, 40.0, abs_tol=1e-6)
-    assert math.isclose(end.rose, 0.3, abs_tol=1e-6)
+def test_a_rise_in_a_ratio_is_put_down_to_the_nearest_wisp_of_its_kind_with_how_far_off_it_was():
+    run = _pickup_run()
+
+    [pickup] = probe.pickups(run)
+
+    assert pickup.wisp == 7
+    assert pickup.kind == "health"
+    assert math.isclose(pickup.rose, 0.25)
+    assert math.isclose(pickup.off, 410.0, abs_tol=1e-6)  # at the sample before the rise
+    assert math.isclose(pickup.rest, 45.0, abs_tol=1e-6)
+    assert math.isclose(pickup.arrived, 0.8, abs_tol=1e-6)
+    assert math.isclose(pickup.linger, 1.4, abs_tol=1e-6)
+
+
+def test_the_summary_says_how_a_taken_wisp_came_in_and_lingered():
+    summary = probe.summarize(_pickup_run())
+
     assert (
-        "taken: the wizard 40 off at its last sighting, 40 at the first without it; health rose 30%"
-        in probe.summarize(run)
+        "taken at 4.0 s: health rose 25% with it 410 off; it flew in, coming to rest 45 off 0.8 s after, "
+        "and left the list 1.4 s after" in summary
     )
+    assert "Pickups: 1, each wisp 410-410 off at the last sample before" in summary
+    assert "taken wisps lingered in the list 1.4-1.4 s" in summary
 
 
-def test_a_wisp_gone_far_from_the_wizard_is_gone_not_taken():
+def test_a_taken_wisp_moves_as_it_did_before_the_pickup_not_as_it_flew_in():
+    summary = probe.summarize(_pickup_run())
+
+    assert "heads one way, speed 100/s" in summary
+
+
+def test_a_rise_with_no_wisp_of_its_kind_in_sight_is_put_down_to_none():
+    """A potion, or a wisp unseen: a mana wisp in sight is not a health rise's."""
+    run = _pickup_run(kind_seen="WC_WispMana", rises="health")
+
+    [pickup] = probe.pickups(run)
+    summary = probe.summarize(run)
+
+    assert pickup.wisp is None
+    assert "Rises with no wisp of the kind in sight (a potion?): health at 4.0 s" in summary
+    assert "gone untaken at 5.4 s" in summary
+
+
+def test_a_wisp_that_leaves_the_list_with_no_rise_is_gone_untaken():
     track = _line(1, (2000.0, 0.0), (0.0, 0.0), 1.0)
     run = probe.Run(wizard=_wizard(3.0, health=0.5), sightings=track)
 
-    assert probe.ending(run, track).how == "gone"
-
-
-def test_a_wisp_gone_beside_a_wizard_whose_ratio_did_not_rise_is_gone():
-    """A rise of the other kind's ratio is not this wisp's."""
-    track = _line(1, (20.0, 0.0), (0.0, 0.0), 1.0, name="WispMana")
-    wizard = _wizard(1.0, health=0.5, mana=0.5) + _wizard(3.0, health=0.9, mana=0.5, start=1.1)
-    run = probe.Run(wizard=wizard, sightings=track)
-
-    assert probe.ending(run, track).how == "gone"
+    assert probe.pickups(run) == []
+    assert "gone untaken at 1.0 s, 2000 off" in probe.summarize(run)
 
 
 def test_a_wisp_seen_to_the_end_is_still_there():
     track = _line(1, (0.0, 0.0), (0.0, 0.0), 3.0)
     run = probe.Run(wizard=_wizard(3.0), sightings=track)
 
-    assert probe.ending(run, track).how == "still there"
+    assert "still there at the end" in probe.summarize(run)
 
 
 def test_a_full_wizard_a_wisp_passes_through_is_reported_with_the_nearest_it_came():

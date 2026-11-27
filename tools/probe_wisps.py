@@ -1,24 +1,30 @@
-"""Diagnostic: how do wisps move, how close must a wizard be to take one, and does a full one? (#343)
+"""Diagnostic: how do wisps move, and how close must a wizard be to take one? (#343)
 
 Collect Wisps walks to a wisp where it was when the walk was planned. Whether that is good
-enough, or a walk must aim again, or ahead, depends on how wisps move, which nobody had measured
-(Stage 4 of epic #340). This probe records it.
+enough, or a walk must aim again, or ahead, depends on how wisps move and how near a wizard must
+come, which nobody had measured (Stage 4 of epic #340). This probe records both.
 
 It watches one client: the wizard's own position and health and mana ratios, and the position of
 every entity whose template name holds "Wisp", every --interval seconds. The list of wisps is read
 again every LIST_REFRESH seconds, so a wisp that lingers in memory after it is taken shows as one
-still listed. The summary says, per wisp:
+still listed.
 
-  - how it moves: still (strayed under STILL from where it was first seen), loops (left its ground
-    and came back to it, as a wisp on a path or an orbit would), heads one way (net travel over
-    STRAIGHT of its path), follows a path (wanders, but along other wisps' tracks: a path seen for
-    less than a lap), or wanders; its median speed, how far it strayed on the ground, and how
-    far up and down it went;
-  - how it ended: still there at the end, taken (gone with the wizard within NEAR, and a ratio of
-    its kind rose), or gone (with the wizard farther off: despawned, or out of render range);
-  - for one taken, how far off the wizard stood at the last sample the wisp was seen, and at the
-    first it was gone: the pickup radius lies between, less the lag;
-  - for one a full wizard came near and did not take, the nearest it came while full.
+A pickup is a rise in the wizard's health or mana ratio, put down to the nearest wisp of that kind
+at the sample before it. It is timed by the ratio and not by the wisp leaving the list, since a
+taken wisp flies to the wizard and lingers beside it for a second or more before it goes.
+
+The summary says, per wisp:
+
+  - how it moved until taken: still (strayed under STILL from where it was first seen), loops
+    (left its ground and came back to it, as a wisp on a path or an orbit would), heads one way
+    (net travel over STRAIGHT of its path), follows a path (wanders, but along other wisps' tracks:
+    a path seen for less than a lap), or wanders; its median speed, how far it strayed on the
+    ground, and how far up and down it went;
+  - how it ended: still there at the end, taken, or gone untaken (despawned, or out of render
+    range);
+  - for one taken, how far off it was at the last sample before the ratio rose, by how much the
+    ratio rose, where it came to rest and how soon, and how long it lingered after the rise;
+  - for one a full wizard came within FULL_NEAR of and did not take, the nearest it came.
 
 It writes nothing to the game: it only reads. You walk, or stand; it watches.
 
@@ -29,10 +35,9 @@ HOW TO RUN
 
          uv run --no-sync python tools/probe_wisps.py --seconds 120
 
-    3. For how wisps move, stand still. For the pickup radius, a wizard below full on a wisp's
-       kind takes one: stand on a moving wisp's way and let it come to you, since at its own speed
-       it crosses the radius a few units a sample, or walk toward a still one slowly. For a full
-       wizard, do the same at full: a wisp that passes or stays is in the summary.
+    3. For how wisps move, stand still. For the pickup distance, be well below full on a wisp's
+       kind (several wisps' worth) and stand still on a moving wisp's way, so it comes to you at
+       its own speed, or walk slowly toward a still one.
     4. Ctrl+C stops early and prints the summary.
 
 Each run writes its samples to its own tools/probe_wisps.<time>.local.csv (gitignored). Re-read one
@@ -42,18 +47,26 @@ without the game running:
 
 Runs are not pooled: each file is summarized on its own, since a wisp id means nothing across runs.
 
-Distances are 2D, as a walk measures them, unless a line says 3D.
+Distances are 2D, as a walk measures them.
 
-Not in the plan: it samples every 0.1 s, not POLL_INTERVAL (0.25 s). A walking wizard covers about
-100 units in 0.25 s, so the pickup radius would be bracketed no finer than that.
+Not in the plan: it samples every 0.1 s, not POLL_INTERVAL (0.25 s), so a pickup is placed to
+within a tenth of a second of a wisp's way.
 
 Wizard names and ids are never read or printed. Wisp template names and game ids are game data.
+
+OUTCOME, 2026-11-27: Ahmarra's Eastern Sea, outdoors, ten WC_WispHealth wisps. All ten go round one
+shared loop at 88-89 units a second, lapping in about 99 s, and one taken is replaced on the loop
+11-22 s later. A wizard below full took three, each 401-418 off at the last sample before its health
+rose (25% of max each, the third filling it). The wisp then flew in, resting 44-46 off 0.9 s
+after the rise, and left the entity list 1.3-1.8 s after it. Full, the wizard let the
+rest pass within 137-146.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import bisect
 import csv
 import glob
 import math
@@ -78,14 +91,15 @@ REVISIT = 15.0
 LAP_AWAY = 200.0
 #: A wisp whose samples lie within this of another's track, at the median, shares its path.
 SHARED = 30.0
-#: A wisp gone with the wizard within this was taken, if a ratio of its kind rose.
-NEAR = 300.0
 #: A ratio this close to 1 is full.
 FULL = 0.999
-#: How long after a wisp is gone a rise in its kind's ratio still counts as its.
-RISE_WINDOW = 1.5
+#: A ratio up by more than this has risen.
+RISE = 1e-4
+#: A full wizard this near a wisp it did not take gets a line: a needy one would have taken it.
+FULL_NEAR = 600.0
 
 CSV_FIELDS = ["t", "what", "id", "name", "x", "y", "z", "health", "mana"]
+KINDS = ("health", "mana")
 
 
 def kind_of(name: str) -> str:
@@ -140,7 +154,12 @@ class Run:
 
     def wizard_at(self, t: float) -> Wizard | None:
         """The wizard's sample nearest *t*."""
-        return min(self.wizard, key=lambda w: abs(w.t - t), default=None)
+        if not self.wizard:
+            return None
+        times = [w.t for w in self.wizard]
+        i = bisect.bisect_left(times, t)
+        near = [j for j in (i - 1, i) if 0 <= j < len(times)]
+        return self.wizard[min(near, key=lambda j: abs(times[j] - t))]
 
 
 def flat(a: tuple[float, float, float], b: tuple[float, float, float]) -> float:
@@ -159,7 +178,7 @@ class Motion:
 
 def motion(track: list[Sighting]) -> Motion:
     """How a wisp moved over *track*: its shape, median ground speed, ground stray from where it was
-    first seen, the height it went through, and how long it was seen."""
+    first seen, the height it went through, how long it was seen, and its lap time if it lapped."""
     start = track[0].at
     stray = max(flat(start, s.at) for s in track)
     heights = [s.at[2] for s in track]
@@ -225,43 +244,52 @@ def _loops(track: list[Sighting]) -> bool:
 
 
 @dataclass
-class Ending:
-    how: str
-    seen_at: float | None = None
-    gone_at: float | None = None
-    rose: float | None = None
+class Pickup:
+    """A rise in one kind's ratio, and the wisp it is put down to (None: no wisp of the kind in sight)."""
+
+    t: float
+    kind: str
+    rose: float
+    wisp: int | None = None
+    off: float | None = None
+    arrived: float | None = None
+    rest: float | None = None
+    linger: float | None = None
 
 
-def ending(run: Run, track: list[Sighting]) -> Ending:
-    """How *track*'s wisp ended: still there, taken (with the distances that bracket the pickup), or gone."""
-    last = track[-1]
-    after = [w for w in run.wizard if w.t > last.t]
-    if not after:
-        return Ending("still there")
-    kind = kind_of(last.name)
-    before = run.wizard_at(last.t)
-    gone = after[0]
-    seen_at = flat(before.at, last.at) if before else None
-    gone_at = flat(gone.at, last.at)
-    rose = _rise(run, kind, last.t)
-    near = min(d for d in (seen_at, gone_at) if d is not None)
-    if near <= NEAR and rose is not None:
-        return Ending("taken", seen_at, gone_at, rose)
-    return Ending("gone", seen_at, gone_at, rose)
+def pickups(run: Run) -> list[Pickup]:
+    """Every rise in the wizard's health or mana ratio, each put down to the nearest wisp of its kind
+    at the sample before it, with how that wisp came in and how long it lingered after."""
+    at_time: dict[float, list[Sighting]] = {}
+    for sighting in run.sightings:
+        at_time.setdefault(sighting.t, []).append(sighting)
+    tracks = run.tracks()
+    found = []
+    for before, after in zip(run.wizard, run.wizard[1:]):
+        for kind in KINDS:
+            rose = after.ratio(kind) - before.ratio(kind)
+            if rose <= RISE:
+                continue
+            pickup = Pickup(after.t, kind, rose)
+            candidates = [s for s in at_time.get(before.t, []) if kind_of(s.name) == kind]
+            if candidates:
+                nearest = min(candidates, key=lambda s: flat(before.at, s.at))
+                _follow(run, pickup, nearest, before, tracks[nearest.wisp])
+            found.append(pickup)
+    return found
 
 
-def _rise(run: Run, kind: str, t: float) -> float | None:
-    """How much *kind*'s ratio rose from the wizard's last sample at or before *t* to its highest
-    within RISE_WINDOW after, or None if it did not."""
-    before = [w for w in run.wizard if w.t <= t]
-    window = [w for w in run.wizard if t < w.t <= t + RISE_WINDOW]
-    if not before or not window:
-        return None
-    start = before[-1].ratio(kind)
-    if start is None:
-        return None
-    rise = max(w.ratio(kind) for w in window) - start
-    return rise if rise > 0 else None
+def _follow(run: Run, pickup: Pickup, nearest: Sighting, before: Wizard, track: list[Sighting]) -> None:
+    pickup.wisp = nearest.wisp
+    pickup.off = flat(before.at, nearest.at)
+    later = [s for s in track if s.t > before.t]
+    if not later:
+        return
+    offs = [flat(run.wizard_at(s.t).at, s.at) for s in later]
+    pickup.rest = min(offs)
+    pickup.arrived = next(s.t for s, d in zip(later, offs) if d <= pickup.rest + STILL) - pickup.t
+    if later[-1].t < run.end:
+        pickup.linger = later[-1].t - pickup.t
 
 
 def nearest_while_full(run: Run, track: list[Sighting]) -> float | None:
@@ -280,14 +308,16 @@ def nearest_while_full(run: Run, track: list[Sighting]) -> float | None:
 
 def summarize(run: Run) -> str:
     tracks = run.tracks()
+    found = pickups(run)
+    taken = {p.wisp: p for p in found if p.wisp is not None}
     if not tracks:
         return f"No wisp seen in {run.end:.0f} s ({len(run.wizard)} wizard samples)."
     where = f" in {run.zone}" if run.zone else ""
     lines = [f"{len(tracks)} wisps{where} over {run.end:.0f} s, {len(run.wizard)} wizard samples"]
-    radii: list[tuple[float, float]] = []
     for wisp, track in sorted(tracks.items(), key=lambda kv: kv[1][0].t):
-        m = motion(track)
-        end = ending(run, track)
+        pickup = taken.get(wisp)
+        until = [s for s in track if pickup is None or s.t < pickup.t] or track[:1]
+        m = motion(until)
         shared = sharers(tracks, wisp)
         # Seen for less than a lap, a wisp on a bending path others follow too looks like one wandering.
         shape = "follows a path" if m.shape == "wanders" and shared else m.shape
@@ -298,27 +328,43 @@ def summarize(run: Run) -> str:
         )
         if shared:
             lines.append(f"  its path is {shared} other wisps' too")
-        if end.how == "taken":
-            radii.append((end.seen_at, end.gone_at))
-            lines.append(
-                f"  taken: the wizard {end.seen_at:.0f} off at its last sighting, {end.gone_at:.0f} at the first "
-                f"without it; {kind_of(track[0].name)} rose {end.rose:.0%}"
-            )
-        elif end.how == "gone":
-            off = ", ".join(f"{d:.0f}" for d in (end.seen_at, end.gone_at) if d is not None)
-            lines.append(f"  gone with the wizard {off} off" + (" (a ratio rose)" if end.rose else ""))
+        if pickup is not None:
+            lines.append(f"  taken at {pickup.t:.1f} s: {_taken(pickup)}")
+        elif track[-1].t < run.end:
+            last = run.wizard_at(track[-1].t)
+            lines.append(f"  gone untaken at {track[-1].t:.1f} s, {flat(last.at, track[-1].at):.0f} off")
         else:
             lines.append("  still there at the end")
-        full = nearest_while_full(run, track)
-        if full is not None and full <= NEAR and end.how != "taken":
-            lines.append(f"  a full wizard came within {full:.0f} and it stayed")
-    if radii:
-        seen = max(r[0] for r in radii)
-        gone = min(r[1] for r in radii)
-        lines.append(
-            f"Pickups: {len(radii)}; the farthest last sighting {seen:.0f}, the nearest first absence {gone:.0f}"
-        )
+        if pickup is None:
+            full = nearest_while_full(run, track)
+            if full is not None and full <= FULL_NEAR:
+                lines.append(f"  a full wizard came within {full:.0f} and it stayed")
+    lines.extend(_pickup_lines(found))
     return "\n".join(lines)
+
+
+def _taken(p: Pickup) -> str:
+    text = f"{p.kind} rose {p.rose:.0%} with it {p.off:.0f} off"
+    if p.arrived is not None:
+        text += f"; it flew in, coming to rest {p.rest:.0f} off {p.arrived:.1f} s after"
+    if p.linger is not None:
+        text += f", and left the list {p.linger:.1f} s after"
+    return text
+
+
+def _pickup_lines(found: list[Pickup]) -> list[str]:
+    lines = []
+    put = [p for p in found if p.wisp is not None]
+    if put:
+        offs = [p.off for p in put]
+        lines.append(f"Pickups: {len(put)}, each wisp {min(offs):.0f}-{max(offs):.0f} off at the last sample before")
+        lingers = [p.linger for p in put if p.linger is not None]
+        if lingers:
+            lines.append(f"  taken wisps lingered in the list {min(lingers):.1f}-{max(lingers):.1f} s")
+    if unput := [p for p in found if p.wisp is None]:
+        rises = ", ".join(f"{p.kind} at {p.t:.1f} s" for p in unput)
+        lines.append(f"Rises with no wisp of the kind in sight (a potion?): {rises}")
+    return lines
 
 
 def read_csv(path: Path) -> Run:
@@ -340,7 +386,7 @@ async def record(client, writer, run: Run, seconds: float, interval: float) -> N
     listed_at = -math.inf
     started = time.monotonic()
     while (now := time.monotonic()) - started < seconds:
-        t = now - started
+        t = round(now - started, 2)
         if now - listed_at >= LIST_REFRESH:
             listed = []
             for entity in await client.get_base_entities_with_vague_name("Wisp"):
@@ -355,17 +401,17 @@ async def record(client, writer, run: Run, seconds: float, interval: float) -> N
         wizard = Wizard(t, (pos.x, pos.y, pos.z), health, mana)
         run.wizard.append(wizard)
         writer.writerow([f"{t:.2f}", "wizard", "", "", *wizard.at, f"{health:.4f}", f"{mana:.4f}"])
-        seen: dict[int, Sighting] = {}
+        seen = []
         for wisp, name, entity in listed:
             try:
                 loc = await entity.location()
             except Exception:  # noqa: BLE001, S112 - freed since it was listed: taken, or despawned
                 continue
             sighting = Sighting(t, wisp, name, (loc.x, loc.y, loc.z))
-            seen[wisp] = sighting
+            seen.append(sighting)
             run.sightings.append(sighting)
             writer.writerow([f"{t:.2f}", "wisp", wisp, name, *sighting.at, "", ""])
-        nearest = min((flat(wizard.at, s.at) for s in seen.values()), default=None)
+        nearest = min((flat(wizard.at, s.at) for s in seen), default=None)
         status = f"{len(seen)} wisps, nearest {nearest:.0f}" if nearest is not None else "no wisp in sight"
         print(f"\r{t:6.1f} s  {status}  health {health:.0%} mana {mana:.0%}" + " " * 10, end="", flush=True)
         await asyncio.sleep(interval)
