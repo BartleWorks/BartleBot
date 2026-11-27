@@ -641,16 +641,55 @@ async def test_a_fight_met_during_ambient_combat_waits_for_no_preempt(real_walks
     assert any("during ambient combat" in m for m, _ in machine.logs)
 
 
+def _alive(client, *mobs):
+    """The mobs standing at each of *mobs* now, in *client*'s entity list."""
+    from bartleby.runtime.testing.sim_client import SimEntity  # noqa: PLC0415
+
+    client.entities = [SimEntity("Ghost", at, mob=True) for at in mobs]
+
+
 @pytest.mark.parametrize("avoid, clear", [(True, True), (False, False)])
 async def test_a_walk_is_clear_of_patrols_only_when_its_planned_route_stays_outside_every_trigger(
     two_patrols, avoid, clear
 ):
     client = _client(at=(200.0, 1000.0, 0.0))
+    _alive(client, FIGHT_MOB, OTHER_MOB)
 
     # Straight across is through the second ghost's path; avoiding, the plan goes around it.
     assert (
         await walking.passes_clear_of_patrols(_machine(**{walking.AVOID_MOBS: avoid}), client, (2800, 1000, 0)) is clear
     )
+
+
+@pytest.mark.parametrize("start", [(200.0, 1000.0, 0.0), OTHER_MOB], ids=["before its path", "inside its radius"])
+async def test_a_beaten_mobs_patrol_is_no_danger_to_a_walk(two_patrols, start):
+    """A boss room after the fight: the spawn files still list the mob the party beat, and the
+    party stands in its radius, which refused every wisp in Captain Nemo's Ruined Hermitage."""
+    client = _client(at=start)
+    _alive(client, FIGHT_MOB)  # the second ghost was beaten; only the first walks its path
+
+    machine = _machine(**{walking.AVOID_MOBS: False})
+    assert await walking.passes_clear_of_patrols(machine, client, (2800, 1000, 0))
+
+
+async def test_with_no_mob_loaded_a_walk_is_clear_of_patrols_without_planning(two_patrols, monkeypatch):
+    client = _client(at=OTHER_MOB)
+    plan = AsyncMock()
+    monkeypatch.setattr(walking, "plan_in_thread", plan)
+
+    assert await walking.passes_clear_of_patrols(_machine(**{walking.AVOID_MOBS: False}), client, (2800, 1000, 0))
+    plan.assert_not_awaited()
+
+
+def test_a_patrol_is_live_only_with_a_mob_near_its_path(two_patrols):
+    fight, other = two_patrols.patrols
+    on_path = (3000.0 + walking.LIVE_PATROL_REACH - 1, 650.0, 0.0)  # mid-step, just off it
+    off_path = (3000.0 + walking.LIVE_PATROL_REACH + 1, 500.0, 0.0)
+
+    assert walking.live_patrols(two_patrols.patrols, [on_path]) == [fight]
+    assert walking.live_patrols(two_patrols.patrols, [off_path]) == []
+    assert walking.live_patrols(two_patrols.patrols, [FIGHT_MOB, OTHER_MOB]) == [fight, other]
+    assert walking.live_patrols(two_patrols.patrols, []) == []
 
 
 async def test_a_walk_with_no_map_counts_as_clear_of_patrols(real_walks):
@@ -665,7 +704,13 @@ async def test_cancelling_a_patrol_check_stops_its_plan(real_walks, monkeypatch)
     planning, ended = asyncio.Event(), asyncio.Event()
     stopped: list[bool] = []
 
+    import numpy as np  # noqa: PLC0415
+    from bartleby.runtime.movement.patrols import Patrol  # noqa: PLC0415
+
     class _SlowPlanner:
+        # A patrol with its mob on it, so the check gets as far as planning.
+        patrols = [Patrol("Ghosts 01", "Ghost", 200, 1, np.array([OTHER_MOB], dtype=float))]
+
         def route(self, start, goal, avoid, stop=None):
             loop.call_soon_threadsafe(planning.set)
             # The deadline only bounds the failing case, where nothing ever stops the plan.
@@ -676,8 +721,10 @@ async def test_cancelling_a_patrol_check_stops_its_plan(real_walks, monkeypatch)
         return _SlowPlanner()
 
     monkeypatch.setattr(walking, "load_planner", _load)
-    check = asyncio.create_task(walking.passes_clear_of_patrols(_machine(), _client(), (2800, 1000, 0)))
-    await planning.wait()
+    client = _client()
+    _alive(client, OTHER_MOB)
+    check = asyncio.create_task(walking.passes_clear_of_patrols(_machine(), client, (2800, 1000, 0)))
+    await asyncio.wait_for(planning.wait(), 5.0)
 
     check.cancel()
 
