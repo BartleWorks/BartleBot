@@ -7,7 +7,7 @@ Four Dungeons. A folder's icon and caption both come from its category.
 
 WHY THE FOLDER NAMES STAY READABLE
     The folder is where a user saves a new bot, so it has to say what it is on disk:
-    ``25_crafting``, not ``Crafting``, and certainly not ``4Dungeons``. The number keeps
+    ``26_crafting``, not ``Crafting``, and certainly not ``4Dungeons``. The number keeps
     Explorer's order the same as the library's, and is stripped before the lookup, so
     renumbering a folder never touches this table.
 
@@ -53,6 +53,7 @@ FOLDER_BADGES: dict[str, str] = {
     "wallaru": "Wallaru",
     "selenopolis": "Selenopolis",
     "darkmoor": "Darkmoor",
+    "ahmarra": "Ahmarra",
     "crafting": "Crafting",
     "gardening": "Gardening",
     "housing_gauntlets": "HousingGauntlet",
@@ -76,12 +77,12 @@ _NUMBER = re.compile(r"^\d+_")
 
 
 def folder_slug(dir_name: str) -> str:
-    """'25_crafting' -> 'crafting'."""
+    """'26_crafting' -> 'crafting'."""
     return _NUMBER.sub("", dir_name)
 
 
 def folder_number(dir_name: str) -> int | None:
-    """'25_crafting' -> 25, or None for an unnumbered folder."""
+    """'26_crafting' -> 26, or None for an unnumbered folder."""
     match = _NUMBER.match(dir_name)
     return int(match.group()[:-1]) if match else None
 
@@ -94,7 +95,7 @@ def folder_badge(dir_name: str) -> str | None:
 def folder_caption(dir_name: str) -> str:
     """What the library calls a folder: its category's name, else a tidied folder name.
 
-    '31_four_dungeons' -> 'Four Dungeons'; 'my_bots' -> 'My Bots'.
+    '32_four_dungeons' -> 'Four Dungeons'; 'my_bots' -> 'My Bots'.
     """
     badge = folder_badge(dir_name)
     if badge is not None:

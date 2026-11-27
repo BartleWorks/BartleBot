@@ -111,11 +111,11 @@ def test_every_folder_names_a_real_category():
 
 
 def test_every_folder_captions_itself_in_the_games_words():
-    assert folder_caption("31_four_dungeons") == "Four Dungeons"
-    assert folder_caption("30_five_boxes") == "Five B.O.X.E.S."
-    assert folder_caption("33_monstrology") == "Monstrology"
+    assert folder_caption("32_four_dungeons") == "Four Dungeons"
+    assert folder_caption("31_five_boxes") == "Five B.O.X.E.S."
+    assert folder_caption("34_monstrology") == "Monstrology"
     assert folder_caption("04_mooshu") == "MooShu"
-    assert folder_caption("27_housing_gauntlets") == "Housing Gauntlet"
+    assert folder_caption("28_housing_gauntlets") == "Housing Gauntlet"
 
 
 def test_a_folder_the_table_does_not_know_keeps_a_readable_caption():
