@@ -1,7 +1,8 @@
 """Zone navigation tester: map zone transitions by playing, and test routes, on one client.
 
 A plain window, not embedded, hooked to one Wizard101 client. It always shows where the
-client is, and a tree of the current world rooted at its hub:
+client is, and a tree of the current world rooted at its hub. Copy XYZ puts where it stands on
+the clipboard as zone_nav.json writes a position, to paste into a hand edit:
 
     green   a route exists on verified links
     amber   a route exists only over tentative links: guessed from game data, never run
@@ -37,6 +38,14 @@ MAP tab
     its window title and recorded the same way, but saved as its world's gate rather than into
     a list network. It must stand in the world's door zone.
 
+EDITING THE MAP BY HAND
+    Save zone_nav.json in your editor and the tester takes it up at once: the tree, the pickers,
+    both cards and the last Preview are redrawn, and the next Execute runs on it. A route already
+    running keeps the map it started with. An edit that does not validate is logged and not used:
+    the map loaded before stays, the status bar says so, and the tester saves nothing until the
+    file is fixed. If a link the last run used was edited, Mark verified goes off, since the edit
+    has not been run.
+
 USAGE
     uv run python -m tools.zone_nav_tester              # the first client found
     uv run python -m tools.zone_nav_tester --client 2   # 1-based
@@ -59,8 +68,10 @@ import time
 from dataclasses import dataclass, field
 
 import qasync
+from bartleby.runtime.arbiter import Arbiter
 from bartleby.runtime.paths import HUB_BUTTON_PATH, TELEPORT_TIMER_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
 from bartleby.runtime.timing import POLL_INTERVAL
+from PyQt6.QtCore import QFileSystemWatcher, QTimer
 from PyQt6.QtGui import QBrush, QColor, QFont
 from PyQt6.QtWidgets import (
     QApplication,
@@ -95,6 +106,9 @@ VOLUME_MATCH_DISTANCE = 400.0
 ARRIVAL_MATCH_DISTANCE = 600.0
 SAFETY_DELAY = 3.0
 UNHOOK_TIMEOUT = 10.0
+RELOAD_DEBOUNCE_MS = 250
+"""How long zone_nav.json must sit still before it is read: an editor may save it in several writes."""
+RELOADED_MESSAGE_MS = 5000
 
 RESET_VERIFY_STEP = 40.0
 """How much further out to push a candidate reset point each time it still shows the prompt."""
@@ -112,7 +126,11 @@ SPEED_MULTIPLIER_RANGE = (0.1, 20.0)
 
 
 class ConsoleMachine:
-    """The slice of BotMachine the zone-entry nodes use: log() and get_option()."""
+    """The slice of BotMachine the zone-entry nodes use on one client: log(), get_option(), and
+    the arbiter every walk takes its movement lease from."""
+
+    def __init__(self) -> None:
+        self.arbiter = Arbiter()
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         logging.getLogger("zone_nav_tester.run").log(level, msg)
@@ -164,6 +182,19 @@ def retreat_points(
     ]
 
 
+def still_mapped(nav: zone_nav.NavMap, step: zone_nav.Step) -> bool:
+    """Whether `nav` still runs `step` as it was run: the same link with the same coordinates."""
+    return any(
+        zone_nav.link_key(s) == zone_nav.link_key(step) and s.params == step.params
+        for s in nav.steps_from(step.from_zone, include_unverified=True)
+    )
+
+
+def xyz_text(point: tuple[float, float, float]) -> str:
+    """`point` as zone_nav.json writes it, ready to paste after a key such as "interact_xyz"."""
+    return zone_nav.dumps(edits.xyz(point)).rstrip()
+
+
 class TesterWindow(QMainWindow):
     def __init__(self, client, game: GameData) -> None:
         super().__init__()
@@ -189,10 +220,18 @@ class TesterWindow(QMainWindow):
         """(prompt shown at interact_xyz, reset confirmed clear or None) once list_spot is verified live."""
         self._list_verifying = False
         self._list_save_ready = False
+        self._previewed: str | None = None
+        """The zone whose route preview test_output is showing, so a reload can redo it."""
+        self._map_text: str | None = None
+        """zone_nav.json as it read when the map in use was taken from it."""
+        self._map_raw: dict = {"worlds": {}}
+        self._rejected_text: str | None = None
+        """The file's text while it holds an edit that does not validate."""
         self.setWindowTitle("Zone Navigation Tester")
         self.resize(1200, 820)
         self._build()
-        self._fill_worlds()
+        self._watch_map()
+        self.reload_map()
 
     def start(self) -> None:
         self._poller = asyncio.ensure_future(self.poll())
@@ -248,7 +287,17 @@ class TesterWindow(QMainWindow):
             label.setTextInteractionFlags(
                 label.textInteractionFlags() | label.textInteractionFlags().TextSelectableByMouse
             )
-            outer.addWidget(label)
+        outer.addWidget(self.zone_label)
+        outer.addWidget(self.name_label)
+        # The button comes first, so the changing text beside it never moves it.
+        state_row = QHBoxLayout()
+        self.copy_xyz_button = QPushButton("Copy XYZ")
+        self.copy_xyz_button.setToolTip("Copies where the client stands, as zone_nav.json writes a position.")
+        self.copy_xyz_button.setEnabled(False)
+        self.copy_xyz_button.clicked.connect(self._copy_xyz)
+        state_row.addWidget(self.copy_xyz_button)
+        state_row.addWidget(self.state_label, 1)
+        outer.addLayout(state_row)
 
         speed_row = QHBoxLayout()
         self.speed_check = QCheckBox("Speedhack")
@@ -558,6 +607,8 @@ class TesterWindow(QMainWindow):
             if on
         ]
         self.state_label.setText(f"XYZ({x:.2f}, {y:.2f}, {z:.2f})    {'  ·  '.join(flags)}")
+        # A loading client still reports the position it left.
+        self.copy_xyz_button.setEnabled(not sample.loading)
         if sample.zone is None or sample.zone == self.shown_zone:
             return
         self.shown_zone = sample.zone
@@ -569,6 +620,13 @@ class TesterWindow(QMainWindow):
             + (f"   RESTRICTED: {restricted.describe()}" if restricted else "")
         )
         self._refresh_tree()
+
+    def _copy_xyz(self) -> None:
+        if self.sample is None or self.sample.loading:
+            return
+        text = xyz_text(self.sample.xyz)
+        QApplication.clipboard().setText(text)
+        logger.info("Copied %s", text)
 
     def _refresh_tree(self) -> None:
         self.tree_widget.clear()
@@ -620,6 +678,7 @@ class TesterWindow(QMainWindow):
         target = self.zone_combo.currentData()
         if target is None:
             return
+        self._previewed = target
         self.test_output.setPlainText("\n".join(self._describe_route(target)))
 
     def _avoid(self) -> set[str]:
@@ -697,6 +756,7 @@ class TesterWindow(QMainWindow):
         if target is None or self.executing is not None:
             return
         self.verify_button.setEnabled(False)
+        self._previewed = None
         self.test_output.setPlainText("\n".join(self._describe_route(target)) + "\n\nExecuting…")
         self._set_running(True)
         self.executing = asyncio.ensure_future(
@@ -730,6 +790,19 @@ class TesterWindow(QMainWindow):
                 self.test_output.appendPlainText(
                     f"  worked: {step.kind} {_label(step.from_zone)} -> {_label(step.to_zone)}"
                 )
+        # The map may have been edited while the route ran.
+        self._drop_stale_verify_offer()
+
+    def _drop_stale_verify_offer(self) -> None:
+        """Withdraw Mark verified once a link it would mark is no longer the one that was run."""
+        if self.last_outcome is None or not self.verify_button.isEnabled():
+            return
+        nav = zone_nav.load()
+        if all(still_mapped(nav, step) for step in self.last_outcome.unverified):
+            return
+        self.verify_button.setEnabled(False)
+        self.last_outcome = None
+        logger.warning("A link the last run used has changed: run it again before marking it verified")
 
     def _stop(self) -> None:
         if self.executing is not None:
@@ -742,7 +815,8 @@ class TesterWindow(QMainWindow):
     def _mark_verified(self) -> None:
         if self.last_outcome is None:
             return
-        raw = self._read_raw()
+        if (raw := self._read_raw()) is None:
+            return
         changed = edits.mark_verified(raw, self.last_outcome.unverified)
         if self._write_raw(raw):
             logger.info("Marked %d link(s) verified", changed)
@@ -904,7 +978,7 @@ class TesterWindow(QMainWindow):
         lines = [f"interact_xyz: {edits.xyz(interact)}", f"reset_xyz:    {edits.xyz(reset) if reset else None}", ""]
         ready = reset is not None
         world = zone_nav.load().world_of(spot.zone)
-        raw = self._read_raw()
+        raw = self._map_raw
         if hit := check_zone(spot.zone):
             lines.append(f"Restricted zone, nothing is recorded: {hit.describe()}")
             ready = False
@@ -1012,7 +1086,8 @@ class TesterWindow(QMainWindow):
         if spot is None or not self._list_save_ready:
             return
         interact, reset, _ = self._list_points()
-        raw = self._read_raw()
+        if (raw := self._read_raw()) is None:
+            return
         what = "World Gate" if spot.world_gate else "list object"
         try:
             # The list opened at interact_xyz in a real client: the same evidence a recorded list
@@ -1028,7 +1103,6 @@ class TesterWindow(QMainWindow):
             return
         if self._write_raw(raw):
             logger.info("%s %s in %s", verb.capitalize(), what, spot.zone)
-            self._show_list_card()
 
     def _discard_list_spot(self) -> None:
         self.list_spot = None
@@ -1140,7 +1214,8 @@ class TesterWindow(QMainWindow):
         if draft.link is None and not keep:
             return
         nav = zone_nav.load()
-        raw = self._read_raw()
+        if (raw := self._read_raw()) is None:
+            return
         for zone in (t.from_zone, t.to_zone):
             if edits.world_declaring(raw, zone) is None:
                 edits.declare_zone(raw, nav.world_of(zone).key, zone)
@@ -1167,9 +1242,92 @@ class TesterWindow(QMainWindow):
 
     # ── The file ──────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _read_raw() -> dict:
-        return json.loads(zone_nav.ZONE_NAV_PATH.read_text(encoding="utf-8"))
+    def _watch_map(self) -> None:
+        """Reload zone_nav.json whenever it is saved.
+
+        Its folder is watched too: an editor that saves by replacing the file can end the watch
+        on the file itself, and the folder's change is what brings the new one back under watch.
+        """
+        self._reload_timer = QTimer(self)
+        self._reload_timer.setSingleShot(True)
+        self._reload_timer.setInterval(RELOAD_DEBOUNCE_MS)
+        self._reload_timer.timeout.connect(self._on_map_saved)
+        self._watcher = QFileSystemWatcher([str(zone_nav.ZONE_NAV_PATH.parent)], self)
+        self._watcher.directoryChanged.connect(lambda _path: self._reload_timer.start())
+        self._watcher.fileChanged.connect(lambda _path: self._reload_timer.start())
+        self._watch_map_file()
+
+    def _watch_map_file(self) -> None:
+        if not self._watcher.files() and zone_nav.ZONE_NAV_PATH.exists():
+            self._watcher.addPath(str(zone_nav.ZONE_NAV_PATH))
+
+    def _on_map_saved(self) -> None:
+        self._watch_map_file()
+        if self.reload_map():
+            logger.info("Reloaded zone_nav.json")
+            self.statusBar().showMessage("Reloaded zone_nav.json", RELOADED_MESSAGE_MS)
+
+    def reload_map(self) -> bool:
+        """Take up zone_nav.json if it has changed and validates. Returns whether it was taken up.
+
+        zone_nav.load() gives an empty map for a bad file, so the text is validated before the
+        cached map is dropped: a half-finished edit leaves the map in use alone.
+        """
+        text = None
+        try:
+            text = zone_nav.ZONE_NAV_PATH.read_text(encoding="utf-8")
+            if text == self._map_text:
+                if self._rejected_text is not None:
+                    self._rejected_text = None
+                    self.statusBar().clearMessage()
+                    logger.info("zone_nav.json matches the map in use again")
+                return False
+            if text == self._rejected_text:
+                return False
+            raw = json.loads(text)
+            zone_nav.parse(raw)
+        except FileNotFoundError:
+            return False  # between an editor's delete and its rename; the folder reports the new file
+        except Exception as exc:
+            # Not only ValueError: valid JSON of the wrong shape fails inside parse() any which way.
+            self._rejected_text = text
+            logger.error("zone_nav.json not reloaded:\n%s: %s", type(exc).__name__, exc)
+            self.statusBar().showMessage("zone_nav.json is invalid, so the map loaded before is still in use")
+            return False
+        self._adopt_map(text, raw)
+        return True
+
+    def _adopt_map(self, text: str, raw: dict) -> None:
+        """Put the map in `text`, already validated, into use and redraw everything drawn from it."""
+        self._map_text, self._map_raw = text, raw
+        self._rejected_text = None
+        self.statusBar().clearMessage()
+        zone_nav.load.cache_clear()
+        self._refresh_tree()
+        self._fill_worlds()
+        self._show_card()
+        self._show_list_card()
+        self._drop_stale_verify_offer()
+        if self._previewed is not None:
+            self.test_output.setPlainText(
+                "\n".join(self._describe_route(self._previewed))
+                if self._previewed in self._declared()
+                else f"{_label(self._previewed)} is no longer on the map."
+            )
+
+    def _read_raw(self) -> dict | None:
+        """zone_nav.json as it is on disk, so a save keeps hand edits.
+
+        None, with the reason logged, while the file does not validate: saving over it would
+        lose the edit being made.
+        """
+        try:
+            raw = json.loads(zone_nav.ZONE_NAV_PATH.read_text(encoding="utf-8"))
+            zone_nav.parse(raw)
+        except Exception as exc:
+            logger.error("Not saved: fix zone_nav.json first.\n%s: %s", type(exc).__name__, exc)
+            return None
+        return raw
 
     def _write_raw(self, raw: dict) -> bool:
         try:
@@ -1177,10 +1335,9 @@ class TesterWindow(QMainWindow):
         except ValueError as exc:
             logger.error("Not saved -- the map would be invalid:\n%s", exc)
             return False
-        zone_nav.ZONE_NAV_PATH.write_text(zone_nav.dumps(raw), encoding="utf-8")
-        zone_nav.load.cache_clear()
-        self._refresh_tree()
-        self._fill_worlds()
+        text = zone_nav.dumps(raw)
+        zone_nav.ZONE_NAV_PATH.write_text(text, encoding="utf-8")
+        self._adopt_map(text, raw)
         return True
 
 

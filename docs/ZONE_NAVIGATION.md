@@ -392,8 +392,9 @@ matches a walk to its volume and the landing to an arrival point, and saves the 
 `zone_nav.json` as a verified link — without replacing a verified link that already exists
 unless told to. Its Test tab previews or runs a route, lists the hops
 still to record when there is none, and marks the tentative links a successful run used as
-verified. `tools/zone_nav_tester/app.py` has the details; the detection rules are in
-`recorder.py`.
+verified. It takes up a hand edit to `zone_nav.json` as soon as the file is saved, keeping the
+map it had while the edit does not validate. `tools/zone_nav_tester/app.py` has the details;
+the detection rules are in `recorder.py`.
 
 A list object is recorded without being used. A list belongs to one zone, and everything a
 network member needs is in that zone: where the object is, and a spot clear of its prompt. So
