@@ -11,7 +11,8 @@ still listed. The summary says, per wisp:
 
   - how it moves: still (strayed under STILL from where it was first seen), loops (left its ground
     and came back to it, as a wisp on a path or an orbit would), heads one way (net travel over
-    STRAIGHT of its path), or wanders; its median speed, how far it strayed on the ground, and how
+    STRAIGHT of its path), follows a path (wanders, but along other wisps' tracks: a path seen for
+    less than a lap), or wanders; its median speed, how far it strayed on the ground, and how
     far up and down it went;
   - how it ended: still there at the end, taken (gone with the wizard within NEAR, and a ratio of
     its kind rose), or gone (with the wizard farther off: despawned, or out of render range);
@@ -287,12 +288,15 @@ def summarize(run: Run) -> str:
     for wisp, track in sorted(tracks.items(), key=lambda kv: kv[1][0].t):
         m = motion(track)
         end = ending(run, track)
+        shared = sharers(tracks, wisp)
+        # Seen for less than a lap, a wisp on a bending path others follow too looks like one wandering.
+        shape = "follows a path" if m.shape == "wanders" and shared else m.shape
         lines.append(
-            f"{track[0].name} {wisp}: seen {track[0].t:.1f}-{track[-1].t:.1f} s ({len(track)} samples), {m.shape}, "
+            f"{track[0].name} {wisp}: seen {track[0].t:.1f}-{track[-1].t:.1f} s ({len(track)} samples), {shape}, "
             f"speed {m.speed:.0f}/s, strayed {m.stray:.0f}, height range {m.rise:.0f}"
             + (f", lapped in {m.lap:.1f} s" if m.lap is not None else "")
         )
-        if shared := sharers(tracks, wisp):
+        if shared:
             lines.append(f"  its path is {shared} other wisps' too")
         if end.how == "taken":
             radii.append((end.seen_at, end.gone_at))

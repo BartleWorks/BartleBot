@@ -178,3 +178,16 @@ def test_a_run_round_trips_through_its_csv(tmp_path):
 
 def test_no_wisp_seen_says_so():
     assert probe.summarize(probe.Run(wizard=_wizard(2.0))).startswith("No wisp seen")
+
+
+def test_wisps_seen_for_less_than_a_lap_of_a_shared_bending_path_follow_a_path():
+    """Half a big circle: not straight enough to head one way, and not a whole lap."""
+    run = probe.Run(
+        wizard=_wizard(20.0),
+        sightings=_circle(1, 1000.0, 40.0, 20.0) + _circle(2, 1000.0, 40.0, 20.0, phase=0.5),
+    )
+
+    summary = probe.summarize(run)
+
+    assert summary.count("follows a path") == 2
+    assert "wanders" not in summary
