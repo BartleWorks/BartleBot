@@ -533,3 +533,42 @@ The rules every stage keeps:
   didn't ask for.
 - **Logs name players by number**, and BartleBuddy's settings take no migration while it is
   unreleased.
+
+## Wisps and ports
+
+Epic #340: a group moves by whichever is quicker, walking or porting to one of its own, and
+Collect Wisps spends its time on the player who needs a wisp most, by the seconds each wisp's
+route takes rather than its straight-line distance. Drafted from the Captain Nemo bot's runs
+of 2026-11-27 (#339).
+https://claude.ai/artifact/TZD7vHp168TRUbY8UTwrgy
+
+**In progress. The page is kept current while the stages land.** Core's stages land in
+bartleby-core, and the BartleBot stage that uses each pins that release's tag. No stage runs
+a port or a walk in game before the user's go-ahead for that stage.
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | core #38 | costing routes: a walk that stops before its first step when its plan is too long, the plan kept, and one search for several goals (1.1); room from walls where there is room (1.2) | |
+| 2 | #341 | Collect Wisps by route time, neediest first | |
+| 3 | #342 | a long walk to one of ours becomes a port | |
+| 4 | #343 | how wisps move: a probe, in game | |
+| 5 | core #39 | walking to a moving wisp | |
+| 6 | #344 | full, by the game's word, and a timeout that waits for progress | |
+
+Core's `docs/WALKING.md` is the feature as built: *Routes* for `seconds_to`, *Walking a route*
+for a plan too long and the plan kept, and *A bot run* for what BartleBot does with them. The
+game's rules it rests on are core's `docs/WIZARD101.md`, *Moving, and what the server allows*:
+a port within a zone, and the zones that refuse one.
+
+The rules every stage keeps:
+
+- **Old bots load and run unchanged**, and every bot file round-trips byte-identical. No param
+  is added, renamed or removed; a saved timeout keeps working.
+- **No teleport is ever longer than `HOP_MAX`**, and nothing but `walking.hop` writes a
+  position. A port is the game's own move, made by clicking, and writes nothing.
+- **A walk into a fight, or into a zone exit, is always walked.**
+- **Every input goes through an arbiter lease**; a port is made under the mover's movement
+  lease, as a walk is.
+- **Logs name players by number**, never by wizard name.
+- **The restricted-zone check stays complete**, and core imports neither product.
+- **No game file is committed**: tests build their zones in code.
