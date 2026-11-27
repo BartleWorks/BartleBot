@@ -37,6 +37,15 @@ def _planner():
     return build_planner(ZoneFiles(ZONE, [solid], [], {}))
 
 
+def split_hall():
+    """Two halls, x 0 to 600 and x 1000 to 2000, each y 0 to 3000, joined only by a corridor
+    along their foot (y 0 to 300): a point across the gap is a long way around."""
+    vertices = [*_floor(0, 0, 600, 3000), *_floor(600, 0, 1000, 300), *_floor(1000, 0, 2000, 3000)]
+    faces = [(k, k + 1, k + 2) for k in range(0, len(vertices), 3)]
+    solid = Solid(MESH, WALKABLE, _IDENTITY, (0.0, 0.0, 0.0), 1.0, (), vertices, faces)
+    return build_planner(ZoneFiles(ZONE, [solid], [], {}))
+
+
 @pytest.fixture
 def real_walks(monkeypatch):
     """The real walk, on this file's zone. Planners are built once: each walk gets a copy."""
@@ -188,6 +197,84 @@ async def test_avoid_mobs_plans_around_patrols_and_watches_mobs_only_when_on(rea
     await walking.walk_clients(_machine(**{walking.AVOID_MOBS: avoid}), [_client()], (1400.0, 1000.0, 0.0))
 
     assert made[0]["avoid"] is avoid and made[0]["watch_mobs"] is avoid
+
+
+# --- costing a walk before it is made (Stage 2 of #340) -------------------------------------
+
+
+async def test_seconds_to_costs_every_goal_for_every_client_at_its_own_speed(real_walks):
+    on_foot, mounted = _client((200.0, 1000.0, 0.0)), _client((200.0, 1000.0, 0.0))
+    on_foot.speed = 0
+    goals = [(1400.0, 1000.0, 0.0), (3200.0, 1000.0, 0.0), (6500.0, 500.0, 0.0)]  # the last on the island
+
+    (foot, mount) = await walking.seconds_to(_machine(), [on_foot, mounted], goals)
+
+    assert foot[0] == pytest.approx(1200 / 600, rel=0.1)
+    assert foot[1] == pytest.approx(3000 / 600, rel=0.1)
+    assert mount[:2] == pytest.approx([s / 2 for s in foot[:2]])
+    assert foot[2] is None and mount[2] is None
+
+
+async def test_seconds_to_finds_the_long_way_round(monkeypatch):
+    import dataclasses  # noqa: PLC0415
+
+    built = split_hall()
+
+    async def _load(_zone):
+        return dataclasses.replace(built, passable=built.passable.copy(), closed=[], blocks=[], _took={})
+
+    monkeypatch.setattr(walking, "has_map", lambda zone: zone == ZONE)
+    monkeypatch.setattr(walking, "load_planner", _load)
+    client = _client((300.0, 1500.0, 0.0))
+    client.speed = 0
+
+    ((across, along),) = await walking.seconds_to(_machine(), [client], [(1300.0, 1500.0, 0.0), (300.0, 2900.0, 0.0)])
+
+    assert across > 2500 / 600  # 1,000 units in a straight line, but around by the foot
+    assert along == pytest.approx(1400 / 600, rel=0.1)
+    assert along < across
+
+
+async def test_seconds_to_is_none_where_there_is_no_map_or_the_client_is_loading(real_walks):
+    elsewhere, loading = _client(), _client()
+    elsewhere.zone = "Test/Unmapped"
+    loading.loading = True
+
+    assert await walking.seconds_to(_machine(), [elsewhere], [(1400.0, 1000.0, 0.0)]) is None
+    assert await walking.seconds_to(_machine(), [loading], [(1400.0, 1000.0, 0.0)]) is None
+
+
+@pytest.mark.parametrize("avoid", [True, False])
+async def test_seconds_to_plans_as_the_walk_would_by_avoid_mobs(real_walks, monkeypatch, avoid):
+    from bartleby.runtime.movement.route import ZonePlanner  # noqa: PLC0415
+
+    asked = []
+    real = ZonePlanner.seconds_to
+
+    def _seconds_to(self, start, goals, avoid=True, speed=600.0, stop=None):
+        asked.append(avoid)
+        return real(self, start, goals, avoid, speed, stop)
+
+    monkeypatch.setattr(ZonePlanner, "seconds_to", _seconds_to)
+
+    await walking.seconds_to(_machine(**{walking.AVOID_MOBS: avoid}), [_client()], [(1400.0, 1000.0, 0.0)])
+
+    assert asked == [avoid]
+
+
+@pytest.mark.parametrize(("field_value", "speed"), [(0, 600.0), (55, 930.0), (100, 1200.0), (250, 600.0), (-1, 600.0)])
+async def test_own_speed_is_the_speed_field_as_the_walker_reads_it(field_value, speed):
+    client = _client()
+    client.speed = field_value
+
+    assert await walking.own_speed(client) == pytest.approx(speed)
+
+
+async def test_own_speed_of_an_unreadable_field_is_on_foot():
+    client = FakeClient()
+    client.client_object.speed_multiplier = AsyncMock(side_effect=RuntimeError("freed"))
+
+    assert await walking.own_speed(client) == 600.0
 
 
 async def test_each_walk_holds_a_movement_lease_on_the_runs_arbiter(real_walks):

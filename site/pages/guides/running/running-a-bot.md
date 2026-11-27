@@ -43,7 +43,7 @@ While a run goes on, the **Options** and **Combat** tabs are locked. Your clicks
 
 Inside a zone, players walk. A step that sends them somewhere walks every player there at once, each from where it stands, at its own speed, around walls, and with [Avoid Mobs](../../reference/options.md#avoid-mobs) on, around the mobs too. A walk that can't get there fails the step, and the log says where it stopped ([A walk failed](../../troubleshooting.md#a-walk-failed)). A walk that runs into a fight anyway is handled like any [fight no step started](when-something-goes-wrong.md#fights-no-step-started).
 
-To fight, players walk up to the enemy, and once the fight has started, to its duel circle. With Avoid Mobs on, that walk keeps clear of every other enemy, so it starts no other fight. After a fight, only the players low on health or mana walk to the wisps; the rest stay still, which keeps them safe from enemies for a while.
+To fight, players walk up to the enemy, and once the fight has started, to its duel circle. With Avoid Mobs on, that walk keeps clear of every other enemy, so it starts no other fight. After a fight, only the players low on health or mana walk to the wisps, those after health and those after mana at once, each group to the wisp its walk reaches soonest. The rest stay still, which keeps them safe from enemies for a while.
 
 A player walks to a reagent or a quest item to pick it up. One inside a zone exit, such as a cave mouth, is picked up from just outside, or skipped when that's too far for its prompt to show, so no player leaves the zone by accident.
 

@@ -1,5 +1,6 @@
 """Unit tests for the collect_wisps node."""
 
+import asyncio
 from itertools import count
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -125,15 +126,37 @@ async def test_only_wanted_kind_is_scanned():
     assert _walk_targets(client) == [(200, 0, 0)]
 
 
-async def test_health_and_mana_candidates_are_merged():
-    """Both wanted → the nearest wisp of either kind is taken first."""
+async def test_a_player_short_of_both_goes_for_the_kind_further_below_its_fail_threshold():
+    """Health 0.6 is 0.1 over its fail threshold, mana 0.55 only 0.05: the mana wisp first, though
+    the health one is nearer."""
+    client = _client(health=0.6, mana=0.55)
+    _serve_once(client.get_health_wisps, [_entity(400)])
+    _serve_once(client.get_mana_wisps, [_entity(900)])
+
+    await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert _walk_targets(client)[0] == (900, 0, 0)
+
+
+async def test_a_player_short_of_both_by_as_much_goes_for_health():
     client = _client(health=0.6, mana=0.6)
     _serve_once(client.get_health_wisps, [_entity(900)])
     _serve_once(client.get_mana_wisps, [_entity(400)])
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
-    assert _walk_targets(client)[0] == (400, 0, 0)
+    assert _walk_targets(client)[0] == (900, 0, 0)
+
+
+async def test_a_player_short_of_both_whose_kind_has_no_wisp_goes_for_the_other():
+    """Further below on mana, but only a health wisp is in sight: it walks to that, not nowhere."""
+    client = _client(health=0.6, mana=0.2)
+    client.get_health_wisps.return_value = [_entity(400)]
+    _refill_on_walk(client, health=1.0)
+
+    await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert _walk_targets(client) == [(400, 0, 0)]
 
 
 async def test_visited_wisp_is_excluded_from_the_next_scan():
@@ -496,6 +519,191 @@ async def test_a_full_client_does_not_pull_the_pick_toward_itself():
     await cw.run(FakeMachine(), [lead, full], _DEFAULT_PARAMS)
 
     assert _walk_targets(lead) == [(-100, 0, 0)]
+
+
+# ---------------------------------------------------------------------------
+# Two groups a round, picked by route seconds (Stage 2 of #340)
+# ---------------------------------------------------------------------------
+
+
+def _route_seconds(monkeypatch, seconds):
+    """Cost every walk by ``seconds(client, x)``, the goal's x, instead of planning a route; it
+    answers None for a goal that client has no route to. Returns the calls, as (clients, xs)."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    calls: list = []
+
+    async def fake(_machine, clients, goals):
+        xs = [walking.point(g)[0] for g in goals]
+        calls.append((list(clients), xs))
+        return [[seconds(c, x) for x in xs] for c in clients]
+
+    monkeypatch.setattr(walking, "seconds_to", fake)
+    return calls
+
+
+async def test_the_mana_walker_below_its_fail_threshold_goes_with_the_health_walkers_together():
+    """Stage 2's Done when: P4 below the mana fail threshold and P1 and P3 short of health; the
+    first round sends P4 to a mana wisp and P1 and P3 to a health wisp, both walks at once."""
+    p1, p2, p3, p4 = _client(health=0.7), _client(), _client(health=0.8), _client(mana=0.43)
+    _serve_once(p1.get_health_wisps, [_entity(300)])
+    _serve_once(p1.get_mana_wisps, [_entity(-500)])
+    started: list = []
+    both = asyncio.Event()
+
+    def walker(client, **ratios):
+        async def walk(location):
+            started.append((client, location.x))
+            if len(started) == 3:
+                both.set()
+            await asyncio.wait_for(both.wait(), 1.0)  # only walks made together all start
+            for name, value in ratios.items():
+                getattr(client, f"calc_{name}_ratio").return_value = value
+
+        client.walk_to.side_effect = walk
+
+    walker(p1, health=1.0)
+    walker(p3, health=1.0)
+    walker(p4, mana=1.0)
+    machine = FakeMachine()
+
+    result = await cw.run(machine, [p1, p2, p3, p4], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert sorted((c is p4, x) for c, x in started) == [(False, 300), (False, 300), (True, -500)]
+    assert _walk_targets(p2) == []
+    hops = [m for m, _ in machine.logs if "hop" in m]
+    assert any("health wisp" in m and "for P1, P3" in m for m in hops)
+    assert any("mana wisp" in m and "for P4" in m for m in hops)
+
+
+async def test_the_wisp_its_walkers_reach_soonest_in_all_wins(monkeypatch):
+    """By the seconds of each walker's route, summed, not by straight line."""
+    near, far = _entity(300), _entity(900)
+    lead, other = _client(health=0.6), _client(health=0.6)
+    lead.get_health_wisps.return_value = [near, far]
+    _refill_on_walk(lead, health=1.0)
+    _refill_on_walk(other, health=1.0)
+    calls = _route_seconds(monkeypatch, lambda c, x: {300: 12.0, 900: 4.0}[x] + (1.0 if c is other else 0.0))
+    machine = FakeMachine()
+
+    await cw.run(machine, [lead, other], _DEFAULT_PARAMS)
+
+    assert _walk_targets(lead) == _walk_targets(other) == [(900, 0, 0)]
+    assert calls[0] == ([lead, other], [300, 900])
+    assert any("planned 5.0s" in m for m, _ in machine.logs)
+
+
+async def test_a_wisp_with_no_route_is_dropped_and_not_searched_for_again(monkeypatch):
+    unreachable, open_ = _entity(300), _entity(900)
+    client = _client(health=0.2)  # never rises
+    client.get_health_wisps.side_effect = lambda visited: [
+        w for w in (unreachable, open_) if w.global_id_full.return_value not in visited
+    ]
+    calls = _route_seconds(monkeypatch, lambda _c, x: None if x == 300 else 6.0)
+    machine = FakeMachine()
+
+    await cw.collect_as_group(machine, [client], 1.0, 0.0, None, True)
+
+    assert _walk_targets(client) == [(900, 0, 0)]
+    assert [xs for _clients, xs in calls] == [[300, 900]]
+    assert any("dropping a health wisp" in m and "no route there for P1" in m for m, _ in machine.logs)
+
+
+async def test_no_wisp_with_a_route_moves_nobody(monkeypatch):
+    client = _client(health=0.3)
+    client.get_health_wisps.return_value = [_entity(300)]
+    _route_seconds(monkeypatch, lambda _c, _x: None)
+
+    result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    client.walk_to.assert_not_called()
+
+
+async def test_a_zone_with_no_map_picks_by_straight_line():
+    """A FakeClient's zone has no walking map, so the nearest wisp is the pick, as before."""
+    client = _client(health=0.6)
+    client.get_health_wisps.return_value = [_entity(900), _entity(300)]
+    _refill_on_walk(client, health=1.0)
+    machine = FakeMachine()
+
+    await cw.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert _walk_targets(client) == [(300, 0, 0)]
+    assert any("hop 1" in m and "by straight line" in m for m, _ in machine.logs)
+
+
+async def test_near_the_timeout_a_group_nobody_in_which_is_failing_stays(monkeypatch):
+    """With 10 s left, a 20 s walk is made only for the player below a fail threshold: P1's
+    health is short but above its fail threshold, P2's mana below it."""
+    p1, p2 = _client(health=0.8), _client(mana=0.3)
+    _serve_once(p1.get_health_wisps, [_entity(300)])
+    _serve_once(p1.get_mana_wisps, [_entity(900)])
+    _refill_on_walk(p2, mana=1.0)
+    _route_seconds(monkeypatch, lambda _c, _x: 20.0)
+    machine = FakeMachine()
+
+    result = await cw.run(machine, [p1, p2], {**_DEFAULT_PARAMS, "timeout": 10.0})
+
+    assert result == "SUCCESS"
+    assert _walk_targets(p1) == []
+    assert _walk_targets(p2) == [(900, 0, 0)]
+    assert any("not walking P1 to a health wisp" in m for m, _ in machine.logs)
+
+
+async def test_a_walk_that_fits_the_time_left_is_made_for_anyone(monkeypatch):
+    client = _client(health=0.8)
+    _serve_once(client.get_health_wisps, [_entity(300)])
+    _route_seconds(monkeypatch, lambda _c, _x: 3.0)
+
+    await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 10.0})
+
+    assert _walk_targets(client) == [(300, 0, 0)]
+
+
+async def test_the_wait_lasts_until_the_failing_players_kind_is_in_sight():
+    """A health wisp is in sight at once, but the player below a fail threshold needs mana: the
+    first round waits for a mana wisp, then both groups go."""
+    short_health, failing_mana = _client(health=0.8), _client(mana=0.3)
+    short_health.get_health_wisps.side_effect = [[_entity(300)]] * 3 + [[]] * 50
+    short_health.get_mana_wisps.side_effect = [[], [], [_entity(900)]] + [[]] * 50
+    _refill_on_walk(short_health, health=1.0)
+    _refill_on_walk(failing_mana, mana=1.0)
+
+    result = await cw.run(_patient(2.0), [short_health, failing_mana], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _walk_targets(short_health) == [(300, 0, 0)]
+    assert _walk_targets(failing_mana) == [(900, 0, 0)]
+
+
+async def test_a_wisp_behind_a_wall_loses_to_a_farther_one_with_a_shorter_route(monkeypatch):
+    """Planned for real: on a floor split by a gap joined only at its foot, the wisp 1,000 units
+    away across the gap is some 3,000 units of walking, and the one 1,400 units away on the
+    player's own side wins."""
+    import dataclasses  # noqa: PLC0415
+
+    from bartlebot.nodes import walking  # noqa: PLC0415
+    from tests.nodes.test_walking import ZONE, split_hall  # noqa: PLC0415
+
+    built = split_hall()
+
+    async def load(_zone):
+        return dataclasses.replace(built, passable=built.passable.copy(), closed=[], blocks=[], _took={})
+
+    monkeypatch.setattr(walking, "has_map", lambda zone: zone == ZONE)
+    monkeypatch.setattr(walking, "load_planner", load)
+    client = _client(health=0.6)
+    client.zone_name.return_value = ZONE
+    client.body.position.return_value = XYZ(300, 1500, 0)
+    across, along = _entity(1300, 1500), _entity(300, 2900)
+    client.get_health_wisps.return_value = [across, along]
+    _refill_on_walk(client, health=1.0)
+
+    await cw.collect_as_group(FakeMachine(), [client], 1.0, 0.0, None, False)
+
+    assert _walk_targets(client) == [(300, 2900, 0)]
 
 
 # ---------------------------------------------------------------------------

@@ -28,6 +28,7 @@ from bartleby.runtime.arbiter import Busy, LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
 from bartleby.runtime.movement.patrols import Patrol, distance_to_segments, segments
+from bartleby.runtime.movement.route import WIZARD_SPEED
 from bartleby.runtime.movement.walk import (
     ARRIVE_GOAL,
     ClientRead,
@@ -466,6 +467,47 @@ async def passes_clear_of_patrols(machine, client, goal) -> bool:
     return all(float((distance_to_segments(x, y, segments(p)) - p.proximity).min()) >= 0 for p in live)
 
 
+async def own_speed(client) -> float:
+    """Units a second *client*'s wizard walks at, by its speed field, which nothing here writes:
+    what core's walker plans its seconds with (``RouteWalker._expected_speed``), read for a plan
+    costed before any walk. An unreadable field, or one no real wizard has, is on foot."""
+    try:
+        field_value = await client.client_object.speed_multiplier()
+    except Exception:  # noqa: BLE001 - unreadable just now: cost it on foot, as the walker would
+        return WIZARD_SPEED
+    if not isinstance(field_value, int | float) or not 0 <= field_value <= 100:
+        return WIZARD_SPEED
+    return WIZARD_SPEED * (1 + field_value / 100)
+
+
+async def seconds_to(machine, clients: Sequence, goals: Sequence) -> list[list[float | None]] | None:
+    """Seconds each of *clients* would take to walk from where it stands to each of *goals*, at
+    its own speed, along the route its walk would plan there (Avoid Mobs as the walk has it), or
+    None for a goal it has no route to: one list per client, a value per goal.
+
+    None instead when the zone has no walking map, or the first client is loading: the caller
+    then measures by straight line, as everything did before routes were costed. Every client is
+    taken to be in the first one's zone, as a node's are. Each client is one search out from
+    where it stands that settles every goal at once (core's ``ZonePlanner.seconds_to``), all on
+    one planner and side by side in threads, so ten wisps cost what one does."""
+    lead = clients[0]
+    if await lead.is_loading():
+        return None
+    zone = await lead.zone_name()
+    if not zone or not has_map(zone):
+        return None
+    planner = await load_planner(zone)
+    avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
+    aims = [point(g) for g in goals]
+
+    async def one(client) -> list[float | None]:
+        pos = await client.body.position()
+        speed = await own_speed(client)
+        return await plan_in_thread(planner.seconds_to, (pos.x, pos.y, pos.z), aims, avoid, speed)
+
+    return list(await asyncio.gather(*[one(c) for c in clients]))
+
+
 #: How near its path a mob must stand for its patrol to count as walked now. A mob stands on its
 #: path (core's ``FIGHT_REACH`` rests on the same), so this only absorbs a read taken mid-step.
 LIVE_PATROL_REACH = 150.0
@@ -530,7 +572,9 @@ __all__ = [
     "WALKS_WRITE_SPEED",
     "Walked",
     "live_patrols",
+    "own_speed",
     "passes_clear_of_patrols",
+    "seconds_to",
     "walk_all",
     "walk_clients",
     "warm_lookups",
