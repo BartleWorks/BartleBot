@@ -215,7 +215,7 @@ async def test_seconds_to_costs_every_goal_for_every_client_at_its_own_speed(rea
     assert foot[2] is None and mount[2] is None
 
 
-async def test_seconds_to_finds_the_long_way_round(monkeypatch):
+async def test_seconds_to_finds_the_long_way_around(monkeypatch):
     import dataclasses  # noqa: PLC0415
 
     built = split_hall()
