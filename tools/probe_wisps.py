@@ -60,6 +60,10 @@ shared loop at 88-89 units a second, lapping in about 99 s, and one taken is rep
 rose (25% of max each, the third filling it). The wisp then flew in, resting 44-46 off 0.9 s
 after the rise, and left the entity list 1.3-1.8 s after it. Full, the wizard let the
 rest pass within 137-146.
+
+Not run in a dungeon: the user stated, the same day, what group bonus wisps do. They spawn after a
+fight only when the players are in a group, and not after every fight, and float near the center
+of the duel circle, barely moving, on no set path. A dungeon can have world wisps nearby too.
 """
 
 from __future__ import annotations
