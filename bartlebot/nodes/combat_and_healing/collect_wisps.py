@@ -99,7 +99,7 @@ NODE_SPEC = NodeSpec(
         + "\n\n"
         + (
             "Each wisp is chosen by how long the walk there takes, not by how near it looks, so a "
-            "wisp behind a wall loses to one farther off with a shorter way round. A player short "
+            "wisp behind a wall loses to one farther off with a shorter way around. A player short "
             "of both goes first for the one it is nearer failing on. Near the timeout, a walk that "
             "would run past it is made only for a player below a fail threshold."
         )

@@ -39,7 +39,7 @@ def _planner():
 
 def split_hall():
     """Two halls, x 0 to 600 and x 1000 to 2000, each y 0 to 3000, joined only by a corridor
-    along their foot (y 0 to 300): a point across the gap is a long way round."""
+    along their foot (y 0 to 300): a point across the gap is a long way around."""
     vertices = [*_floor(0, 0, 600, 3000), *_floor(600, 0, 1000, 300), *_floor(1000, 0, 2000, 3000)]
     faces = [(k, k + 1, k + 2) for k in range(0, len(vertices), 3)]
     solid = Solid(MESH, WALKABLE, _IDENTITY, (0.0, 0.0, 0.0), 1.0, (), vertices, faces)
@@ -230,7 +230,7 @@ async def test_seconds_to_finds_the_long_way_round(monkeypatch):
 
     ((across, along),) = await walking.seconds_to(_machine(), [client], [(1300.0, 1500.0, 0.0), (300.0, 2900.0, 0.0)])
 
-    assert across > 2500 / 600  # 1,000 units in a straight line, but round by the foot
+    assert across > 2500 / 600  # 1,000 units in a straight line, but around by the foot
     assert along == pytest.approx(1400 / 600, rel=0.1)
     assert along < across
 
