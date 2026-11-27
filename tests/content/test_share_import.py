@@ -719,6 +719,17 @@ def test_a_folder_the_receiver_does_not_have_puts_the_bot_at_the_top(sender, rec
     assert result.bot_paths["bot-1"].parent == receiver.user / "bots"
 
 
+def test_a_bot_from_an_old_numbered_folder_lands_in_the_receivers_current_one(sender, receiver, tmp_path):
+    (receiver.shipped / "bots" / "26_crafting").mkdir(parents=True)
+    bot = _bot()
+    sender.bot(bot)
+    plan = share_export.export_bot(bot, sender.sources(), official=False, folder="25_crafting")
+
+    _, result = _import(receiver, _export(plan, tmp_path))
+
+    assert result.bot_paths["bot-1"].parent == receiver.user / "bots" / "26_crafting"
+
+
 def test_the_folder_travels_beside_the_content_and_is_never_hashed(sender, tmp_path):
     bot = _bot()
     plan = share_export.export_bot(bot, sender.sources(), official=False, folder=WORLD)

@@ -20,8 +20,10 @@ from bartlebot.content.bot_folders import (
     UNBADGED_FOLDERS,
     folder_badge,
     folder_caption,
+    folder_identity,
     folder_number,
     folder_slug,
+    listed_names,
 )
 from bartlebot.game import badge_categories
 from bartlebot.game.art_extraction import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
@@ -96,6 +98,34 @@ def test_the_numbers_follow_the_badge_page():
     assert positions == sorted(positions)
     assert len({n for n, _ in numbered}) == len(numbered)
     assert [name for _, name in numbered] == sorted(name for _, name in numbered)
+
+
+# ---------------------------------------------------------------------------
+# One category's folders under different numbers
+# ---------------------------------------------------------------------------
+
+
+def test_a_categorys_folder_is_the_same_one_under_any_number():
+    assert folder_identity("25_crafting") == folder_identity("26_crafting") == folder_identity("crafting")
+
+
+def test_a_folder_of_the_users_own_is_matched_by_its_whole_name():
+    assert folder_identity("01_farms") != folder_identity("02_farms")
+
+
+def test_the_first_roots_name_is_the_one_listed():
+    shipped, user = ["26_crafting"], ["25_crafting", "01_farms", "02_farms"]
+
+    assert listed_names(shipped, user) == {
+        "26_crafting": "26_crafting",
+        "25_crafting": "26_crafting",
+        "01_farms": "01_farms",
+        "02_farms": "02_farms",
+    }
+
+
+def test_within_one_root_the_highest_number_is_the_one_listed():
+    assert set(listed_names(["crafting", "26_crafting", "25_crafting"]).values()) == {"26_crafting"}
 
 
 # ---------------------------------------------------------------------------

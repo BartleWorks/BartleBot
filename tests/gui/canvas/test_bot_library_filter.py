@@ -380,6 +380,15 @@ def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, l
     assert _names(panel._category_metas()) == ["Graveyard"]
 
 
+def test_a_worlds_old_and_new_folders_share_one_row(qapp, library):
+    _write_bot(library / "31_four_dungeons", "Old Graveyard")
+
+    panel = BotLibraryPanel()
+    panel.refresh()
+
+    assert [key for key, caption in _rows(panel) if caption == "Four Dungeons"] == ["32_four_dungeons"]
+
+
 def test_an_empty_folder_is_not_listed(qapp, library):
     panel = BotLibraryPanel()
     panel.refresh()

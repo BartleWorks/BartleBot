@@ -7,7 +7,8 @@
             taken against the user root, and an absolute one as it is.
 
 New Bot, Save, Save As and crash recovery write only to the user root (#168). Both
-roots keep the same world folders, and the library lists the two as one. A bot is
+roots keep the same world folders, and the library lists the two as one, matching a
+world's folders without their numbers (:mod:`bartlebot.content.bot_folders`). A bot is
 copied rather than linked, so a user bot never overrides an Official one the way a
 subgraph or a strategy does: a user-root file declaring an Official bot's id is left
 out, with a warning, and the Official bot is the one listed.
@@ -28,6 +29,7 @@ from pathlib import Path
 from bartleby.shared import content_hash
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.content.bot_folders import listed_names
 from bartlebot.content.store_roots import declared_id, dev_mode, is_inside, resolve_roots
 from bartlebot.paths import project_root
 
@@ -99,10 +101,15 @@ class LibraryFile:
     """One bot file the library lists."""
 
     path: Path
-    #: The world folder it is in, by its name on disk; ``None`` for a file at the top.
+    #: The world folder it is listed in; ``None`` for a file at the top. The shipped folder's
+    #: name, which a user's folder with an older number does not share: ``path`` has that one.
     folder: str | None
     #: Whether it is an Official bot, from the shipped folder.
     shipped: bool
+
+
+def _subfolders(base: Path) -> list[Path]:
+    return sorted(d for d in base.iterdir() if d.is_dir()) if base.is_dir() else []
 
 
 def library_files(shipped_dir: Path, user_dir: Path) -> list[LibraryFile]:
@@ -113,14 +120,15 @@ def library_files(shipped_dir: Path, user_dir: Path) -> list[LibraryFile]:
     user's.
     """
     roots = [(user_dir, False)] if _same(shipped_dir, user_dir) else [(shipped_dir, True), (user_dir, False)]
+    listed = listed_names(*([d.name for d in _subfolders(base)] for base, _ in roots))
     official: set[str] = set()
     found: list[LibraryFile] = []
     for base, shipped in roots:
         if not base.is_dir():
             continue
         paths = [(None, p) for p in sorted(base.glob("*.json"))]
-        for sub in sorted(d for d in base.iterdir() if d.is_dir()):
-            paths.extend((sub.name, p) for p in sorted(sub.glob("*.json")))
+        for sub in _subfolders(base):
+            paths.extend((listed[sub.name], p) for p in sorted(sub.glob("*.json")))
         for folder, path in paths:
             item_id = declared_id(path)
             if shipped:

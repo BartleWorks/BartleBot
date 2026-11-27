@@ -105,6 +105,23 @@ def test_the_library_lists_both_folders_by_world_folder(tmp_path):
     ]
 
 
+def test_a_user_folder_with_an_older_number_is_listed_under_the_shipped_name(tmp_path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    official = _bot(shipped / "26_crafting" / "b.json", "b")
+    gardening = _bot(shipped / "27_gardening" / "g.json", "g")
+    old = _bot(user / "25_crafting" / "a.json", "a")
+    new = _bot(user / "26_crafting" / "c.json", "c")
+
+    files = bot_roots.library_files(shipped, user)
+
+    assert [(f.path, f.folder) for f in files] == [
+        (old, "26_crafting"),
+        (official, "26_crafting"),
+        (new, "26_crafting"),
+        (gardening, "27_gardening"),
+    ]
+
+
 def test_a_user_bot_declaring_an_official_id_is_left_out_with_a_warning(tmp_path, caplog):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     official = _bot(shipped / "01_wizard_city" / "official.json", "same-id", "Official")

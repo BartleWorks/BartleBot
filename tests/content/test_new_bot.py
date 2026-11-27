@@ -13,6 +13,7 @@ from bartlebot.content.new_bot import (
     create_bot,
     file_stem,
     library_folders,
+    matching_folder,
     starting_points,
     unique_file_name,
 )
@@ -230,6 +231,22 @@ def test_the_library_folders_are_listed_in_folder_order_empty_ones_too(tmp_path)
 
     assert library_folders(tmp_path) == ["02_krokotopia", "13_aquila"]
     assert library_folders(tmp_path / "missing") == []
+
+
+def test_a_world_numbered_differently_is_offered_once_under_the_first_folders_name(tmp_path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    (shipped / "26_crafting").mkdir(parents=True)
+    (user / "25_crafting").mkdir(parents=True)
+
+    assert library_folders(shipped, user) == ["26_crafting"]
+
+
+def test_a_folder_is_matched_whatever_its_number():
+    folders = ["25_ahmarra", "26_crafting"]
+
+    assert matching_folder(folders, "25_crafting") == "26_crafting"
+    assert matching_folder(folders, "40_my_farms") is None
+    assert matching_folder(folders, None) is None
 
 
 def test_a_templates_authors_are_not_the_new_bots(tmp_path):

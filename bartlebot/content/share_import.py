@@ -88,7 +88,7 @@ from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy, read_bot_names
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.content import bot_roots
-from bartlebot.content.new_bot import file_stem, library_folders, unique_file_name
+from bartlebot.content.new_bot import file_stem, library_folders, matching_folder, unique_file_name
 from bartlebot.content.share_export import (
     BOT,
     BOT_COMBAT_STRATEGY,
@@ -620,10 +620,8 @@ def _earlier_copy(sources: Sources, inc: Incoming) -> tuple[str, Outcome, Holdin
 
 
 def _folder(sources: Sources, folder: str | None) -> str | None:
-    """``folder`` when the receiver's library has a folder of that name, else None, for the top."""
-    if not folder:
-        return None
-    return folder if folder in library_folders(*_bot_dirs(sources)) else None
+    """The receiver's folder for ``folder``, whatever its number, else None, for the top."""
+    return matching_folder(library_folders(*_bot_dirs(sources)), folder)
 
 
 def plan_import(

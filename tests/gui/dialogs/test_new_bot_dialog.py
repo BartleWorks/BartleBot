@@ -267,6 +267,18 @@ def test_the_folder_opens_on_the_one_being_looked_at(qapp, store, bots_dir):
     assert dialog.folder_picker.folder() == "13_aquila"
 
 
+def test_an_old_numbered_folder_opens_on_the_shipped_one_and_saves_there(qapp, store, tmp_path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    for folder in (shipped / "02_krokotopia", shipped / "26_crafting", user / "25_crafting"):
+        folder.mkdir(parents=True)
+
+    dialog = NewBotDialog(starting_points(store), user, initial_folder="25_crafting", folder_sources=(shipped,))
+
+    assert dialog.folder_picker.folders == ["02_krokotopia", "26_crafting"]
+    assert dialog.folder_picker.folder() == "26_crafting"
+    assert dialog.folder() == user / "26_crafting"
+
+
 def test_a_folder_the_library_does_not_have_falls_back_to_the_first(qapp, store, bots_dir):
     dialog = NewBotDialog(starting_points(store), bots_dir, initial_folder="99_nowhere")
 

@@ -60,6 +60,7 @@ from bartlebot.content.new_bot import (
     clean_stem,
     file_stem,
     library_folders,
+    matching_folder,
     unique_file_name,
 )
 from bartlebot.game import bot_art
@@ -154,7 +155,8 @@ class NewBotDialog(QDialog):
         folder_sources: tuple[str | Path, ...] = (),
     ) -> None:
         """``bots_dir`` is where the bot is written: the user's own folder. ``folder_sources``
-        are other folders whose world folders are offered too, the shipped one's above all."""
+        are other folders whose world folders are offered too, the shipped one's above all,
+        and their folder names win over the user's older numbers."""
         super().__init__(parent)
         self.setWindowTitle("New Bot")
         set_help_topic(self, "new_bot")
@@ -346,10 +348,10 @@ class NewBotDialog(QDialog):
         self._tags.set_editable(True)
         form.addRow("Tags", self._tags)
 
-        folders = library_folders(self._bots_dir, *self._folder_sources)
+        folders = library_folders(*self._folder_sources, self._bots_dir)
         self._folder = FolderPicker(folders)
         if folders:
-            self._folder.set_folder(initial_folder if initial_folder in folders else folders[0])
+            self._folder.set_folder(matching_folder(folders, initial_folder) or folders[0])
         else:
             # Nothing to choose between: the bot goes in the library's own directory.
             self._folder.setText(self._bots_dir.name)

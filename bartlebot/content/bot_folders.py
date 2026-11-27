@@ -11,6 +11,15 @@ WHY THE FOLDER NAMES STAY READABLE
     Explorer's order the same as the library's, and is stripped before the lookup, so
     renumbering a folder never touches this table.
 
+WHY A CATEGORY'S FOLDERS ARE ONE FOLDER
+    A new world moves the number of every folder after it, but the user's own folders keep
+    the number they were made with: a bot saved in ``25_crafting`` stays there after the
+    shipped folder becomes ``26_crafting``. So a game category's folder is matched without
+    its number (:func:`folder_identity`), and listed once, under the shipped folder's name
+    (:func:`listed_names`). Nothing moves or renames a user's files. A folder outside the
+    table is the user's own, and is matched by its whole name: ``01_farms`` and
+    ``02_farms`` stay two.
+
 WHY THE TABLE IS WRITTEN OUT
     The two names are ours and the game's, and no rule joins them: ``four_dungeons`` is
     ``4Dungeons``, ``monstrology`` is ``MonsterMagic``, ``dragonspyre`` is
@@ -24,6 +33,7 @@ listed like any other, with a caption made from its name and no icon.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 
 from bartlebot.game import badge_categories
 
@@ -85,6 +95,31 @@ def folder_number(dir_name: str) -> int | None:
     """'26_crafting' -> 26, or None for an unnumbered folder."""
     match = _NUMBER.match(dir_name)
     return int(match.group()[:-1]) if match else None
+
+
+def folder_identity(dir_name: str) -> str:
+    """What makes two folder names one folder: a game category's slug, else the whole name."""
+    slug = folder_slug(dir_name)
+    return slug if slug in FOLDER_BADGES else dir_name
+
+
+def listed_names(*groups: Iterable[str]) -> dict[str, str]:
+    """Every folder name in ``groups``, mapped to the name the library lists it under.
+
+    Each group is the folder names under one root, the most authoritative root first: the
+    shipped one, whose numbers are current. Within a root, the highest number wins.
+    """
+    chosen: dict[str, str] = {}
+    listed: dict[str, str] = {}
+    for group in groups:
+        for name in sorted(group, key=_by_number, reverse=True):
+            listed[name] = chosen.setdefault(folder_identity(name), name)
+    return listed
+
+
+def _by_number(dir_name: str) -> tuple[int, str]:
+    number = folder_number(dir_name)
+    return (-1 if number is None else number, dir_name)
 
 
 def folder_badge(dir_name: str) -> str | None:

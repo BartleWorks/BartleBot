@@ -247,8 +247,9 @@ hash, and never travels in a share file.
 ### Where things go
 
 A bot goes to the user's own folder, in the world folder the file names when the
-receiver's library has one of that name, and at the top otherwise; Update and Replace
-write over the receiver's file. A deck goes to the library; loading it into a slot uses
+receiver's library has it, and at the top otherwise. A world's folder is matched without
+its number (`content/bot_folders.py`), so a file made before a renumbering still lands.
+Update and Replace write over the receiver's file. A deck goes to the library; loading it into a slot uses
 the existing controls for taking only the cards the receiver owns. An imported Bot
 Combat Strategy is added to its bot's, and becomes the **active pick only when the bot has
 none** (`share_import.assign_active_picks`), so an import never changes how an existing
