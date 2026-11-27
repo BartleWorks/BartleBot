@@ -29,12 +29,14 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
 from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only
 
 from tests.strategies.fight import (
+    AEGIS,
     AMPLIFY,
     ATTENUATE,
     BALANCEBLADE,
     EPIC,
     FAIRY,
     FEINT,
+    INDEMNITY,
     KRAKEN,
     MASS_FEINT,
     MASS_HEX,
@@ -149,6 +151,60 @@ async def test_a_sharpened_blade_stacks_on_a_plain_one():
     turn = await cast(default_dsl(), solo(STORM_BLADE, SHARPENED_BLADE, SIRENS, me=me))
 
     assert turn == Turn("Storm Blade", "P1", "Sharpened Blade", fuses=(("Sharpened Blade", "Storm Blade"),))
+
+
+# ---------------------------------------------------------------------------
+# Aegis and Indemnity: a buff's protecting backup (Official set 11)
+# ---------------------------------------------------------------------------
+
+
+async def test_without_a_sharpened_blade_the_blade_takes_aegis():
+    turn = await cast(default_dsl(), solo(STORM_BLADE, AEGIS, SIRENS))
+
+    assert turn == Turn("Storm Blade", "P1", "Aegis", fuses=(("Aegis", "Storm Blade"),))
+
+
+async def test_a_sharpened_blade_comes_before_aegis():
+    turn = await cast(default_dsl(), solo(STORM_BLADE, AEGIS, SHARPENED_BLADE, SIRENS))
+
+    assert turn.enchant == "Sharpened Blade"
+    assert ("Aegis", "Storm Blade") not in turn.fuses
+
+
+async def test_an_aegis_blade_does_not_stack_on_a_plain_one():
+    """The game stacks a protected blade as the plain one, so with one up the hitter hits."""
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    assert (await cast(default_dsl(), solo(STORM_BLADE, AEGIS, SIRENS, me=me))).card == "Sirens"
+
+
+async def test_a_plain_blade_does_not_stack_on_an_aegis_one():
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging(AEGIS)])
+
+    assert (await cast(default_dsl(), solo(STORM_BLADE, SIRENS, me=me))).card == "Sirens"
+
+
+async def test_without_a_potent_trap_the_feint_takes_indemnity():
+    turn = await cast(default_dsl(), solo(FEINT, INDEMNITY, SIRENS, enemies=[BOSS]))
+
+    assert turn == Turn("Feint", "Boss", "Indemnity", fuses=(("Indemnity", "Feint"),))
+
+
+async def test_the_shield_takes_aegis():
+    turn = await cast(default_dsl(), solo(TOWER_SHIELD, AEGIS, SIRENS))
+
+    assert turn == Turn("Tower Shield", "P1", "Aegis", fuses=(("Aegis", "Tower Shield"),))
+
+
+async def test_enchanting_ahead_never_fuses_aegis():
+    """An Aegis fused early would leave no room for a Sharpened Blade drawn later. The blade
+    won't stack and the round's card is an aura, which attacks nothing, so the enchant-ahead
+    line runs; it leaves Aegis in hand."""
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    turn = await cast(default_dsl(), solo(AMPLIFY, STORM_BLADE, AEGIS, me=me))
+
+    assert turn == Turn("Amplify", None, None, fuses=())
 
 
 async def test_a_feint_already_on_the_boss_is_not_cast_again_before_the_hit():
@@ -497,7 +553,7 @@ async def test_every_card_kind_is_cast_where_it_is_the_right_card(kind: str):
 #: What a line for each card kind in goal 3 reads like, in some shipped player strategy.
 _KIND_TEXT = {
     "mass feint": '"Feint Mass - Amulet"',
-    "feint": "any<trap & !aoe & stacks>[potent] @ boss",
+    "feint": 'any<trap & !aoe & stacks>[potent | "Indemnity"] @ boss',
     "other trap": "any<trap & aoe",
     "blade": "any<blade",
     "aura": "any<aura",

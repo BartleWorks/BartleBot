@@ -244,8 +244,8 @@ can cast wins:
    gate reads `health`, the participant's own, and never `is_dead`, which reads the game
    stats' hit points: wizsprinter's targeting has found those still reading alive for a
    killed enemy.
-4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
-   which ranking points at Feint; `any<blade & stacks>[sharp] @ ally(last)`; and a mass
+4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent | "Indemnity"] @ boss`,
+   which ranking points at Feint; `any<blade & stacks>[sharp | "Aegis"] @ ally(last)`; and a mass
    trap, `any<trap & aoe & stacks>`.
 5. The same buffs without `stacks`, in the same order. A buff that won't add to the next
    hit still stays up for the one after, which a two-hit Challenge Mode fight wants.
@@ -302,7 +302,7 @@ cast wins:
 2. `?(ally(last).health < 50% && ally(last).health > 0) any<heal> @ ally(last)`, then
    `?(self.health < 30%) any<heal> @ self`. Healing is its job, and a hitter at 50% can
    die to one boss hit.
-3. `?(ally(last).beneficial_wards == 0 && ally(last).health > 0) any<ward> @ ally(last)`,
+3. `?(ally(last).beneficial_wards == 0 && ally(last).health > 0) any<ward>["Aegis"] @ ally(last)`,
    then the same for itself. One shield at a time, so a second never stacks; Feint's
    drawback on P1 is a harmful ward and doesn't count.
 4. A survival aura while none is up: `any<aura & inc_damage>` (Stabilize), then
@@ -322,11 +322,11 @@ wins:
 
 1. Enchant ahead (below).
 2. `?(self.health < 30%) any<heal> @ self`.
-3. `?(self.beneficial_wards == 0) any<ward> @ self`: a deck that carries a shield carries
+3. `?(self.beneficial_wards == 0) any<ward>["Aegis"] @ self`: a deck that carries a shield carries
    it out of necessity, so it goes up before any buff, one at a time. A user who wants no
    shields leaves them out of the deck.
-4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
-   the support's Feint line; `any<blade & stacks>[sharp] @ self`; and
+4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent | "Indemnity"] @ boss`,
+   the support's Feint line; `any<blade & stacks>[sharp | "Aegis"] @ self`; and
    `?(self.beneficial_auras == 0) any<aura & out_damage>`, an aura only while none is up.
 5. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`,
    then, with no boss left, `?(all(enemies).is_boss == 0) any<damage>[any<mod_damage>] @ enemy`.
@@ -396,6 +396,26 @@ Two rules hold for the line:
   exist for bosses that cheat when a blade or a feint is cast.
 
 `LAST_RESORT_DSL` carries the line too, since it is Default's text.
+
+**Every blade, trap and shield cast names a protecting backup** (Official set 11). A blade
+line enchants `[sharp | "Aegis"]`, a trap line `[potent | "Indemnity"]`, and a shield line
+`["Aegis"]`: the first in hand is fused, and with neither the card is cast bare, as before.
+Aegis and Indemnity protect a buff from removal at no cost to its size, so a protected
+copy always beats a bare one, but Sharpened Blade and Potent Trap add to it, so they come
+first. A card takes one enchant, and wizsprinter's `|` inside a bracket names backups for
+that one; a second bracket is a second step, for a fusion. Three rules hold:
+
+- **The names are quoted.** A name matches a card's template name, and an unquoted `aegis`
+  also matches pet cards such as `Pet - TechmancerAegis`. Neither enchant has an item or
+  treasure version, so `"Aegis"` and `"Indemnity"` are only the trained cards.
+- **Enchanting ahead never fuses them.** An Aegis fused early would leave no room on the
+  card for a Sharpened Blade drawn later.
+- **A protected copy stacks as the plain one.** The game doesn't stack an Aegis Stormblade
+  with a plain one, so wizsprinter's `stacks` counts it as no enchant (its `CONDITIONS.md`);
+  a Sharpened copy still stacks with either.
+
+No shipped deck carries either card: they help only where something removes a buff, and
+take a slot everywhere. A player who adds them gets them used.
 
 **The set's version in `strategies/official_set.json` rises whenever a shared Official
 item changes**, so a product
