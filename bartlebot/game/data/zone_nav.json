@@ -6914,7 +6914,7 @@
             ],
             "opens_after": 5
           },
-          "verified": false,
+          "verified": true,
           "source": "recorded",
           "note": "unlock entered by hand; the walk's xyz was recorded"
         },
@@ -6933,7 +6933,7 @@
             ],
             "opens_after": 5
           },
-          "verified": false,
+          "verified": true,
           "source": "recorded",
           "note": "unlock entered by hand; the walk's xyz was recorded"
         },
@@ -6952,7 +6952,7 @@
             ],
             "opens_after": 5
           },
-          "verified": false,
+          "verified": true,
           "source": "recorded",
           "note": "unlock entered by hand; the walk's xyz was recorded"
         }
