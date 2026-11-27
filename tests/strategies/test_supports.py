@@ -20,6 +20,7 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
 from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only
 
 from tests.strategies.fight import (
+    AEGIS,
     AMPLIFY,
     ATTENUATE,
     BALANCEBLADE,
@@ -27,6 +28,7 @@ from tests.strategies.fight import (
     FAIRY,
     FEINT,
     FIRE_PRISM,
+    INDEMNITY,
     MASS_FEINT,
     MASS_FIRE_PRISM,
     MASS_HEX,
@@ -153,6 +155,22 @@ async def test_a_boss_already_holding_that_feint_gets_a_blade_on_p1_instead():
     # is not an attack.
     fuses = (("Sharpened Blade", "Storm Blade"), ("Potent Trap", "Feint"))
     assert turn == Turn("Storm Blade", "P1", "Sharpened Blade", fuses=fuses)
+
+
+async def test_without_a_sharpened_blade_p1_gets_an_aegis_blade():
+    turn = await cast(support_dsl(), as_p2(STORM_BLADE, AEGIS, enemies=[MOB, MOB], round=2))
+
+    assert turn == Turn("Storm Blade", "P1", "Aegis", fuses=(("Aegis", "Storm Blade"),))
+
+
+async def test_an_indemnity_feint_is_not_cast_onto_a_boss_holding_a_plain_one():
+    """It stacks as the plain Feint, so P1 gets the blade instead."""
+    boss = Enemy("Boss", boss=True, hanging=[FEINT.hanging()])
+
+    turn = await cast(support_dsl(), as_p2(FEINT, INDEMNITY, STORM_BLADE, enemies=[boss]))
+
+    assert turn.card == "Storm Blade"
+    assert turn.target == "P1"
 
 
 async def test_a_boss_fight_blades_p1_before_a_mass_trap():

@@ -34,8 +34,17 @@ from wizwalker.memory.memory_objects.enums import HangingDisposition
 class Effect:
     """One effect on a card in hand, as `DynamicSpellEffect` reads it."""
 
-    def __init__(self, effect_type: SpellEffects, target: EffectTarget, param: int = 0, rounds: int = 0):
+    def __init__(
+        self,
+        effect_type: SpellEffects,
+        target: EffectTarget,
+        param: int = 0,
+        rounds: int = 0,
+        *,
+        protected: bool = False,
+    ):
         self.type, self.target, self.param, self.rounds = effect_type, target, param, rounds
+        self.protected_ = protected
 
     async def effect_type(self):
         return self.type
@@ -48,6 +57,9 @@ class Effect:
 
     async def num_rounds(self):
         return self.rounds
+
+    async def protected(self):
+        return self.protected_
 
     def __repr__(self):
         return f"Effect({self.type.name} @ {self.target.name}, {self.param})"
@@ -68,9 +80,11 @@ class Hanging:
         effect_type: SpellEffects = SpellEffects.modify_outgoing_damage,
         disposition: HangingDisposition = HangingDisposition.both,
         param: int = 0,
+        protected: bool = False,
         unreadable: bool = False,
     ):
         self._ids = (spell_id, enchant_id)
+        self._protected = protected
         self._type = effect_type
         self._param = param
         self._disposition = disposition
@@ -96,6 +110,10 @@ class Hanging:
 
     async def disposition(self):
         return self._disposition
+
+    async def protected(self):
+        """As in game, an effect an Aegis or Indemnity was fused into reads `protected`."""
+        return self._protected
 
     def __repr__(self):
         return f"Hanging{self._ids}"
@@ -332,6 +350,9 @@ class Card(CombatCard):
 
     def fuse(self, enchant: Card) -> None:
         self.enchant_id = enchant.template_id_
+        if enchant.base_name in ("Aegis", "Indemnity"):
+            # As in game: the fused card's effects read `protected`.
+            self._effects = [Effect(e.type, e.target, e.param, e.rounds, protected=True) for e in self._effects]
         self.enchanted_by = enchant
         self.window = _Window()
 
