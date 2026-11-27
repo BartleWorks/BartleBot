@@ -187,9 +187,19 @@
     "Spellements",
     "Housing",
     "Boss",
+    "Challenge Mode",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Sinek",
+        "Glossy Damage Amethyst"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -266,7 +276,7 @@
           "y": -13276.0,
           "z": 250.24
         },
-        "offers_challenge_mode": false,
+        "offers_challenge_mode": true,
         "offers_team_up": true
       }
     },
@@ -314,13 +324,13 @@
         "from_zone": "Ahmarra/Interiors/AH_Z05I02_RuinedHermitage",
         "to_zone": "Ahmarra/AH_Z05_EasternSea",
         "xyz": {
-          "x": 4.88,
-          "y": -2225.59,
+          "x": 16.88,
+          "y": -2295.51,
           "z": 2.1
         },
         "reset_xyz": {
-          "x": 15.88,
-          "y": -1642.51,
+          "x": 18.73,
+          "y": -2048.88,
           "z": 2.1
         },
         "stagger": false
@@ -349,6 +359,16 @@
       "trigger": "advance",
       "source": "t_1",
       "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -407,36 +427,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_7",
       "dest": "t_3",
       "when": "SUCCESS",
@@ -450,6 +440,26 @@
       "source": "t_7",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -499,6 +509,9 @@
     "version": 1
   },
   "history": [
+    "df13dfc4beeeccfef8de8537f090d670b5e9d37dfd5195609ec08ebcd9066b35",
+    "8f6cf43c7de5babb8b314e4ecf421411cd36ea337a765ef7e159f8b9875f86bd",
+    "44b73ce84366cfe84813bdfed15a702fd02532dcc41cba53aea5a7135e7d3224",
     "9f8980c0f7648dadbfb383103d4d3a84138bd57e2a27bfa3c7b8bd7d1e96d60e"
   ]
 }

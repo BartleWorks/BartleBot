@@ -22,10 +22,12 @@ import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+import numpy as np
 from bartleby.runtime import run_trace
 from bartleby.runtime.arbiter import Busy, LeaseLost, Owner
 from bartleby.runtime.clients import game_keys
 from bartleby.runtime.movement import zone_maps
+from bartleby.runtime.movement.patrols import Patrol, distance_to_segments, segments
 from bartleby.runtime.movement.walk import (
     ARRIVE_GOAL,
     ClientRead,
@@ -436,19 +438,49 @@ def _in_ambient_session(machine) -> bool:
 
 async def passes_clear_of_patrols(machine, client, goal) -> bool:
     """Whether a walk from where *client* stands to *goal*, planned as the walk would be (Avoid
-    Mobs), keeps outside every patrol's trigger radius: what Collect Wisps' Only Safe asks of a
-    wisp before walking to it. A walk that cannot be planned here (no map, no route) counts as
-    clear: the walk itself meets that, and says where."""
+    Mobs), keeps outside the trigger radius of every patrol a mob is walking now: what Collect
+    Wisps' Only Safe asks of a wisp before walking to it. A walk that cannot be planned here (no
+    map, no route) counts as clear: the walk itself meets that, and says where.
+
+    The map's patrols come from the zone's spawn files, which list a mob whether or not it is
+    alive, so only the patrols :func:`live_patrols` finds a mob on count. Without that, a boss
+    room's wisps were all refused after the fight: the party stood in the dead boss's radius, so
+    every route started inside it (Captain Nemo's Ruined Hermitage, 2026-11-27)."""
     zone = await client.zone_name()
     if not zone or not has_map(zone):
         return True
+    mobs = [at for _key, _name, at in await ClientRead(client).mobs()]
+    if not mobs:
+        return True
     planner = await load_planner(zone)
+    live = live_patrols(planner.patrols, mobs)
+    if not live:
+        return True
     pos = await client.body.position()
     avoid = bool(machine.get_option(AVOID_MOBS, AVOID_MOBS_OPTION.default))
     route = await plan_in_thread(planner.route, (pos.x, pos.y, pos.z), point(goal), avoid)
     if route is None:
         return True
-    return min(float(planner.clearance[j, i]) for _, j, i in route.nodes) >= 0
+    cells = np.asarray([planner.grid.world(*node)[:2] for node in route.nodes], dtype=float)
+    x, y = cells[:, 0], cells[:, 1]
+    return all(float((distance_to_segments(x, y, segments(p)) - p.proximity).min()) >= 0 for p in live)
+
+
+#: How near its path a mob must stand for its patrol to count as walked now. A mob stands on its
+#: path (core's ``FIGHT_REACH`` rests on the same), so this only absorbs a read taken mid-step.
+LIVE_PATROL_REACH = 150.0
+
+
+def live_patrols(patrols: Sequence[Patrol], mobs: Sequence[Point]) -> list[Patrol]:
+    """The *patrols* with one of *mobs*, the positions of the mobs loaded now, within
+    :data:`LIVE_PATROL_REACH` of their path. A patrol whose mob was beaten, or is farther than a
+    client loads mobs (some 3,800 units), has none: it is no danger to a walk starting now."""
+    if not mobs:
+        return []
+    at = np.asarray([m[:2] for m in mobs], dtype=float)
+    return [
+        p for p in patrols if float(distance_to_segments(at[:, 0], at[:, 1], segments(p)).min()) <= LIVE_PATROL_REACH
+    ]
 
 
 async def warm_lookups(client) -> None:
@@ -494,8 +526,10 @@ __all__ = [
     "AVOID_MOBS",
     "AVOID_MOBS_OPTION",
     "FIGHT_PREEMPT_WAIT",
+    "LIVE_PATROL_REACH",
     "WALKS_WRITE_SPEED",
     "Walked",
+    "live_patrols",
     "passes_clear_of_patrols",
     "walk_all",
     "walk_clients",

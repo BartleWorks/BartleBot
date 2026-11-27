@@ -125,7 +125,8 @@ async def run(machine, clients: list, params: dict) -> str:
          wanted resource, keep scanning for up to Safety Delay: wisps spawn after a fight
          and load in after a move, and failing before they do sends the group to the
          potion route for health a wisp was about to give. With only_safe, a wisp whose
-         route passes inside a patrol's trigger radius is skipped too.
+         route passes inside the trigger radius of a patrol a live mob walks is skipped
+         too; a beaten mob's patrol is no danger (walking.passes_clear_of_patrols).
       3. Walk the clients below the threshold for that wisp's kind to it, all at once; the
          rest stay still, keeping their ghost window. Stop when no wisp is left or the
          timeout expires.

@@ -10,7 +10,7 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.combat_and_healing.handle_combat as hc
 from bartlebot.nodes import combat_runner
-from tests.conftest import FakeClient, FakeEntity, FakeMachine, see_each_other
+from tests.conftest import FakeClient, FakeEntity, FakeMachine, moves, see_each_other
 
 
 @pytest.fixture(autouse=True)
@@ -230,6 +230,104 @@ async def test_combat_order_sequential():
     for c in (c1, c2):
         c.teleport.assert_not_called()
         c.tp_to.assert_not_called()
+
+
+_HOLD = XYZ(50.0, 100.0, 0.0)
+
+
+async def test_the_players_after_the_first_walk_to_wait_their_turn_while_it_starts_the_fight():
+    c1, c2, c3 = FakeClient(), FakeClient(), FakeClient()
+    for c in (c1, c2, c3):
+        c.find_closest_mob.return_value = FakeEntity()
+        c.in_battle.return_value = True
+    waiting = asyncio.Event()
+    sent_to_wait: list[int] = []
+
+    async def _wait_turn(machine, client, index, target):
+        sent_to_wait.append(index)
+        await client.walk_to(_HOLD)
+        if len(sent_to_wait) == 2:
+            waiting.set()
+
+    async def _start_the_fight(target):
+        # The first is still walking in when the others have gone to wait.
+        await asyncio.wait_for(waiting.wait(), 5)
+
+    c1.walk_to.side_effect = _start_the_fight
+
+    with (
+        _patch_run_combat(),
+        _patch_resolve_combat([1, 2, 3]),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(hc, "wait_turn_near", new=_wait_turn),
+    ):
+        result = await hc.run(FakeMachine(), [c1, c2, c3], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert sorted(sent_to_wait) == [1, 2]
+    assert moves(c1) == [_xyz(_MOB)]
+    for c in (c2, c3):
+        assert moves(c) == [_xyz(_HOLD), _xyz(_CENTER)]
+
+
+async def test_a_turn_starts_once_its_player_has_finished_walking_to_wait():
+    c1, c2 = FakeClient(), FakeClient()
+    for c in (c1, c2):
+        c.find_closest_mob.return_value = FakeEntity()
+        c.in_battle.return_value = True
+    events: list[str] = []
+
+    async def _wait_turn(machine, client, index, target):
+        # Slower than the first player's whole entry.
+        await asyncio.sleep(0.05)
+        events.append("waiting")
+
+    async def _walk(target):
+        events.append("stepped in")
+
+    c2.walk_to.side_effect = _walk
+
+    with (
+        _patch_run_combat(),
+        _patch_resolve_combat([1, 2]),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(hc, "wait_turn_near", new=_wait_turn),
+    ):
+        result = await hc.run(FakeMachine(), [c1, c2], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert events == ["waiting", "stepped in"]
+
+
+async def test_a_failed_entry_calls_off_the_waits_still_walking():
+    c1, c2 = FakeClient(), FakeClient()
+    for c in (c1, c2):
+        c.find_closest_mob.return_value = FakeEntity()
+        c.in_battle.return_value = False
+    called_off = asyncio.Event()
+
+    async def _wait_turn(machine, client, index, target):
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            called_off.set()
+            raise
+
+    with (
+        _patch_run_combat(),
+        _patch_resolve_combat([1, 2]),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
+        patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.05),
+        patch.object(hc, "wait_turn_near", new=_wait_turn),
+    ):
+        result = await hc.run(FakeMachine(), [c1, c2], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert called_off.is_set()
 
 
 async def test_combat_order_invalid_client_number_skipped():
