@@ -128,9 +128,10 @@ The objects are added to the link by hand: no zone change happens at them for th
 Ahmarra's Forbidden City has one portal to three Akashic Cities, and the gate button pressed picks
 which: a walk link to each city, all at the portal, each with an `unlock` of its own button. The
 portal can be walked into 5 seconds after the press and does not close. Pressing another button
-switches it, so the step's own press is what makes its city sure. No button opens dialogue. Whether
-one player's press opens it for the others is not yet confirmed in game; the step assumes it does,
-as it does for the Oasis gate.
+switches it, so the step's own press is what makes its city sure. No button opens dialogue. Unlike
+the Oasis gate the portal is not shared: it opens only for whoever pressed the button. So these
+unlocks are `per_player`: every player in the group presses before anyone walks in, and one who
+misses the step presses again.
 
 ### World Gates, HOME and side worlds
 
@@ -229,7 +230,7 @@ and avoiding `home` keeps a route to the gates it can reach without pressing HOM
 | `kind`, `from`, `to` | link | one direction of one zone change |
 | `board` | ride | `object` (the default) or `walk`: how the ride is boarded, which decides its coordinates |
 | `xyz`, `reset_xyz` | walk, ride boarded on foot | as `enter_zone`; `reset_xyz` optional: without it the zone's `arrivals` entry for the reverse walk, else each player's position when the step starts |
-| `unlock` | walk | `{"objects": [{interact_xyz, reset_xyz}, …], "opens_after": seconds}`: a gate those objects open |
+| `unlock` | walk | `{"objects": [{interact_xyz, reset_xyz}, …], "opens_after": seconds}`: a gate those objects open. `"per_player": true` when it opens only for whoever used them |
 | `interact_xyz`, `reset_xyz` | object, ride boarded by interacting | as `enter_zone_via_object` |
 | `sequential`, `object_use_delay` | object | as `enter_zone_via_object` |
 | `ride_zone` | ride | the cutscene zone the ride passes through; left out for the boats, required on foot |

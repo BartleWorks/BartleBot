@@ -6912,7 +6912,8 @@
                 "reset_xyz": {"x": -23.8, "y": -9393.21, "z": 2017.11}
               }
             ],
-            "opens_after": 5
+            "opens_after": 5,
+            "per_player": true
           },
           "verified": true,
           "source": "recorded",
@@ -6931,7 +6932,8 @@
                 "reset_xyz": {"x": -23.8, "y": -9393.21, "z": 2017.11}
               }
             ],
-            "opens_after": 5
+            "opens_after": 5,
+            "per_player": true
           },
           "verified": true,
           "source": "recorded",
@@ -6950,7 +6952,8 @@
                 "reset_xyz": {"x": -23.8, "y": -9393.21, "z": 2017.11}
               }
             ],
-            "opens_after": 5
+            "opens_after": 5,
+            "per_player": true
           },
           "verified": true,
           "source": "recorded",

@@ -657,7 +657,7 @@ def test_a_gated_walk_carries_its_unlock_and_pays_for_the_wait():
     [step] = zone_nav.plan(zone_nav.parse(_raw(gated)), _HUB, _S1)
     [plain] = zone_nav.plan(zone_nav.parse(_raw(_walk(_HUB, _S1))), _HUB, _S1)
 
-    assert step.params["unlock"] == {"objects": spots, "opens_after": 20.0}
+    assert step.params["unlock"] == {"objects": spots, "opens_after": 20.0, "per_player": False}
     gated_cost, plain_cost = zone_nav.step_cost(step), zone_nav.step_cost(plain)
     assert gated_cost.transitions == plain_cost.transitions
     assert gated_cost.waiting - plain_cost.waiting == 20.0
@@ -674,6 +674,26 @@ def test_a_gated_walk_carries_its_unlock_and_pays_for_the_wait():
 def test_an_incomplete_unlock_is_refused(unlock):
     with pytest.raises(ValueError, match="unlock"):
         zone_nav.parse(_raw(_walk(_HUB, _S1, unlock=unlock)))
+
+
+def test_per_player_must_be_true_or_false():
+    spots = [{"interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}]
+    unlock = {"objects": spots, "opens_after": 5, "per_player": "yes"}
+
+    with pytest.raises(ValueError, match="per_player"):
+        zone_nav.parse(_raw(_walk(_HUB, _S1, unlock=unlock)))
+
+
+def test_each_player_opens_the_shipped_akashic_portal_and_one_opens_the_oasis_gate():
+    nav = zone_nav.load()
+    gates = {s.to_zone: s.params["unlock"]["per_player"] for s in nav.links if "unlock" in s.params}
+
+    assert sorted(zone for zone, per_player in gates.items() if per_player) == [
+        "Ahmarra/AH_Z07_AkashicCityB",
+        "Ahmarra/AH_Z08_AkashicCityY",
+        "Ahmarra/AH_Z09_AkashicCityW",
+    ]
+    assert [per_player for zone, per_player in gates.items() if zone.startswith("Krokotopia/")] == [False]
 
 
 def test_only_a_walk_can_be_unlocked():

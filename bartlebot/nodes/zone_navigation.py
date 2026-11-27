@@ -90,8 +90,8 @@ class GoHome:
         return "SUCCESS" if await wizard_city.teleport_home_and_verify_dorm(machine, clients) else "FAILURE"
 
 
-def step_call(step: zone_nav.Step) -> list[tuple[Runs, dict]] | str:
-    """The nodes and params that run `step`, in order, or why it cannot run.
+def step_call(step: zone_nav.Step, players: int = 1) -> list[tuple[Runs, dict]] | str:
+    """The nodes and params that run `step` for a group of `players`, in order, or why it cannot run.
 
     Every step is one zone-entry node, except a walk through a gate that has to be opened first.
     """
@@ -101,7 +101,9 @@ def step_call(step: zone_nav.Step) -> list[tuple[Runs, dict]] | str:
         walk = (enter_zone, {**zones, "xyz": p["xyz"], **({"reset_xyz": p["reset_xyz"]} if "reset_xyz" in p else {})})
         if not (unlock := p.get("unlock")):
             return [walk]
-        # The gate is shared, so one player opens it for the group; then it takes a while to appear.
+        # A shared gate is opened by one player for the group; one that opens only for whoever used
+        # the object is opened by every player. Then it takes a while to appear.
+        openers = list(range(1, players + 1)) if unlock["per_player"] else [1]
         opening = [
             (
                 interact,
@@ -109,7 +111,7 @@ def step_call(step: zone_nav.Step) -> list[tuple[Runs, dict]] | str:
                     "zone": step.from_zone,
                     "interact_xyz": spot["interact_xyz"],
                     "reset_xyz": spot["reset_xyz"],
-                    "interact_clients": [1],
+                    "interact_clients": openers,
                     "has_dialogue": False,
                 },
             )
@@ -612,7 +614,7 @@ class _Trip:
                 return self.failed(f"no route from {zones[0]!r} to {self.target!r}"), deferred
 
             step = route[0]
-            calls = step_call(step)
+            calls = step_call(step, len(group))
             if isinstance(calls, str):
                 return self.failed(calls), deferred
             if self.hop_before(step, zones[0], group) and not await self.hop_now():
@@ -668,8 +670,10 @@ class _Trip:
         if not again:
             return behind
         self.machine.log(f"Player(s) {self.who(again)} missed the {step.kind} step; trying it once more")
-        # A gate that has been opened stays open: only the walk through it is retried.
-        await self.run_calls(calls[-1:] if step.params.get("unlock") else calls, again)
+        # A shared gate that has been opened stays open, so only the walk through it is retried.
+        # One each player opens for itself may be what this one missed, so it is opened again.
+        unlock = step.params.get("unlock")
+        await self.run_calls(calls[-1:] if unlock and not unlock["per_player"] else calls, again)
         made, _ = await self.sort(step, again)
         leaders += made
         return [c for c in behind if not any(c is m for m in made)]
