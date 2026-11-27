@@ -551,7 +551,7 @@ a port or a walk in game before the user's go-ahead for that stage.
 | 1 | core #38 | costing routes: a walk that stops before its first step when its plan is too long, the plan kept, and one search for several goals (1.1); room from walls where there is room (1.2) | landed, core v0.15.5 |
 | 2 | #341 | Collect Wisps by route time, neediest first | landed |
 | 3 | #342 | a long walk to one of ours becomes a port | landed |
-| 4 | #343 | how wisps move: a probe, in game | |
+| 4 | #343 | how wisps move: a probe, in game | landed |
 | 5 | core #39 | walking to a moving wisp | |
 | 6 | #344 | full, by the game's word, and a timeout that waits for progress | |
 
