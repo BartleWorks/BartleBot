@@ -38,9 +38,11 @@ The bot stops after 15 consecutive failures on this node.
 
 **Usage notes**
 
-Only the players below a threshold walk, all to the same wisp at once. The rest stay where they are, which keeps them safe from enemies for a while after a fight. A player who arrives after the wisp is taken goes on to the next one.
+Only the players below a threshold walk. Those short of health walk to a health wisp and those short of mana to a mana wisp, both at once, and the rest stay where they are, which keeps them safe from enemies for a while after a fight. A player who arrives after the wisp is taken goes on to the next one.
 
-Place it right after a fight or a zone change. Wisps take a moment to appear, so when none is in sight and a player is below a fail threshold, the node waits up to Safety Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait.
+Each wisp is chosen by how long the walk there takes, not by how near it looks, so a wisp behind a wall loses to one farther off with a shorter way round. A player short of both goes first for the one it is nearer failing on. Near the timeout, a walk that would run past it is made only for a player below a fail threshold.
+
+Place it right after a fight or a zone change. Wisps take a moment to appear, so when a player is below a fail threshold and no wisp of that kind is in sight, the node waits up to Safety Delay for one. If nobody is below a fail threshold, it doesn't wait.
 
 With Challenge Mode on, a player outside the dungeon is measured against the lower maximum its next entry scales it to, as in Handle Potions.
 

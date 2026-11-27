@@ -91,15 +91,23 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=15,
     usage_notes=(
         (
-            "Only the players below a threshold walk, all to the same wisp at once. The rest stay "
-            "where they are, which keeps them safe from enemies for a while after a fight. A player "
-            "who arrives after the wisp is taken goes on to the next one."
+            "Only the players below a threshold walk. Those short of health walk to a health wisp "
+            "and those short of mana to a mana wisp, both at once, and the rest stay where they "
+            "are, which keeps them safe from enemies for a while after a fight. A player who "
+            "arrives after the wisp is taken goes on to the next one."
+        )
+        + "\n\n"
+        + (
+            "Each wisp is chosen by how long the walk there takes, not by how near it looks, so a "
+            "wisp behind a wall loses to one farther off with a shorter way round. A player short "
+            "of both goes first for the one it is nearer failing on. Near the timeout, a walk that "
+            "would run past it is made only for a player below a fail threshold."
         )
         + "\n\n"
         + (
             "Place it right after a fight or a zone change. Wisps take a moment to appear, so when "
-            "none is in sight and a player is below a fail threshold, the node waits up to Safety "
-            "Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait."
+            "a player is below a fail threshold and no wisp of that kind is in sight, the node "
+            "waits up to Safety Delay for one. If nobody is below a fail threshold, it doesn't wait."
         )
         + "\n\n"
         + (
@@ -114,24 +122,29 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: scaled_ratios.ratios() (SprintyClient.calc_health_ratio(), calc_mana_ratio()),
           SprintyClient.get_health_wisps(), SprintyClient.get_mana_wisps(),
-          SprintyClient.get_mobs(), walking.walk_clients()
+          SprintyClient.get_mobs(), walking.seconds_to(), walking.walk_clients()
 
-    Flow, one wisp at a time with a fresh scan each time:
+    Flow, a round at a time with a fresh scan each round (collect_as_group):
       1. Read every client's ratios. Health wisps are wanted if any client is below
          if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
          stop — nobody moves.
-      2. List the wanted wisps not visited yet, drop any within SAFE_RADIUS of an
-         enemy (when only_safe), and pick the one nearest the clients that need one. On
-         the first, when nothing qualifies and a client is below a fail threshold for a
-         wanted resource, keep scanning for up to Safety Delay: wisps spawn after a fight
-         and load in after a move, and failing before they do sends the group to the
-         potion route for health a wisp was about to give. With only_safe, a wisp whose
-         route passes inside the trigger radius of a patrol a live mob walks is skipped
-         too; a beaten mob's patrol is no danger (walking.passes_clear_of_patrols).
-      3. Walk the clients below the threshold for that wisp's kind to it, all at once; the
-         rest stay still, keeping their ghost window. Stop when no wisp is left or the
-         timeout expires.
-      4. Re-check all ratios. Return FAILURE if any client's health is still below
+      2. List the wanted wisps not visited yet, and drop any within SAFE_RADIUS of an enemy
+         (when only_safe). On the first round, when a client is below a fail threshold for a
+         wanted kind and no wisp of that kind qualifies, keep scanning for up to Safety Delay:
+         wisps spawn after a fight and load in after a move, and failing before they do sends
+         the group to the potion route for health a wisp was about to give.
+      3. Split the clients short of a kind into a health group and a mana group; one short of
+         both goes with the kind it is further below its fail threshold on. Each group picks
+         the wisp of its kind with the least total walking seconds from its walkers
+         (walking.seconds_to), dropping one any walker has no route to; with no walking map,
+         the least total straight-line distance. With only_safe, a wisp whose route passes
+         inside the trigger radius of a patrol a live mob walks is skipped too; a beaten mob's
+         patrol is no danger (walking.passes_clear_of_patrols).
+      4. Walk both groups at once; the rest stay still, keeping their ghost window. Near the
+         timeout, a group whose planned walk runs past the time left goes only if one of its
+         walkers is below that kind's fail threshold. Stop when no wisp is left or the timeout
+         expires.
+      5. Re-check all ratios. Return FAILURE if any client's health is still below
          fail_if_health_below or mana is still below fail_if_mana_below.
 
     A visited wisp is never picked again, so one that lingers in memory after collection,
