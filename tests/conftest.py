@@ -276,6 +276,8 @@ class FakeMachine:
         self.is_stopped = False
         # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
         self.port_map = None
+        # Mirrors BotMachine.no_port_zones: the zones that refused a port this run.
+        self.no_port_zones: set[str] = set()
         # Mirrors BotMachine.node_scratch: what a node keeps for its own rerun.
         self.node_scratch: dict[str, object] = {}
         # The real record, retaining as it does mid-run, so node tests exercise its rules.
@@ -559,7 +561,7 @@ def walk_double(monkeypatch):
 
     from bartlebot.nodes import walking  # noqa: PLC0415
 
-    async def walk(machine, client, number, goal, avoid, approach=False, fight=False, spare=()):
+    async def walk(machine, client, number, goal, avoid, approach=False, fight=False, spare=(), call=None):
         target = goal if isinstance(goal, XYZ) else XYZ(*walking.point(goal))
         ended = None
         if (walk_to := getattr(client, "walk_to", None)) is not None:

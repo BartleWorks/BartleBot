@@ -29,7 +29,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Collection, Sequence
+from dataclasses import dataclass
 
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import group_manager
@@ -258,7 +260,23 @@ async def _online_friends(client) -> list[str] | None:
         await node_helpers.close_friends_list(client)
 
 
-async def port_waves(machine, clients: list, waiting: list, arrived: list, port_map: PortMap) -> list:
+@dataclass
+class Batch:
+    """One batch of ports :func:`port_waves` sent: the movers, their target and route, the movers
+    that landed with it, whether the game refused one, and the seconds from the first click to
+    the landing check's end."""
+
+    movers: list
+    target: object
+    route: str
+    landed: list
+    refused: bool
+    seconds: float
+
+
+async def port_waves(
+    machine, clients: list, waiting: list, arrived: list, port_map: PortMap, *, batches: list[Batch] | None = None
+) -> list:
     """Port every client in `waiting` to one in `arrived`, and return those still waiting.
 
     Each wave sends every waiting client with a route to someone who has arrived, in ROUTES'
@@ -274,6 +292,9 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
     by the group record (_led): checked every wave rather than kept, since a crash or a relog
     moves the leadership mid-run. A leader-route mover that does not land throws the record
     away (group_manager.forget_group) before the next wave.
+
+    `batches`, when given, gets a :class:`Batch` for every batch sent, in the order they were sent
+    within each wave: how a walk that ports tells a refusal from a route that went nowhere.
     """
     waiting, arrived = list(waiting), list(arrived)
 
@@ -284,23 +305,25 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
     learned: set[int] = set()
     while waiting:
         led = await _led(pool, arrived, waiting, port_map, learned)
-        batches: dict[tuple[int, str], tuple[object, list]] = {}
+        sends: dict[tuple[int, str], tuple[object, list]] = {}
         for client in waiting:
             for route in ROUTES:
                 target = next((a for a in arrived if route in port_map.routes(client, a, led.get(id(a)))), None)
                 if target is not None:
-                    batches.setdefault((id(target), route), (target, []))[1].append(client)
+                    sends.setdefault((id(target), route), (target, []))[1].append(client)
                     break
-        if not batches:
+        if not sends:
             break
         outcomes = await asyncio.gather(
             *(
                 _port_batch(machine, movers, target, route, port_map, number)
-                for (_, route), (target, movers) in batches.items()
+                for (_, route), (target, movers) in sends.items()
             )
         )
-        moved = [client for landed, _ in outcomes for client in landed]
-        if not moved and not any(demoted for _, demoted in outcomes):
+        if batches is not None:
+            batches.extend(batch for _, _, batch in outcomes)
+        moved = [client for landed, _, _ in outcomes for client in landed]
+        if not moved and not any(demoted for _, demoted, _ in outcomes):
             break
         arrived += moved
         waiting = [c for c in waiting if not any(c is m for m in moved)]
@@ -354,8 +377,9 @@ async def _proven(target, clients: list, candidates: list, learned: set[int]) ->
     return await group_manager.learn_group(target, clients)
 
 
-async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> tuple[list, bool]:
-    """Port `movers` to `target` along `route`; return the ones that landed with it, and whether a route was demoted.
+async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> tuple[list, bool, Batch]:
+    """Port `movers` to `target` along `route`; return the ones that landed with it, whether a
+    route was demoted, and the :class:`Batch` that records it.
 
     Landing is the target's zone *and* its realm, the second told by the two seeing each
     other (#130): a port that fails silently can leave a mover in the right zone on the
@@ -363,6 +387,11 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     """
     who, to = [number(c) for c in movers], number(target)
     machine.log(f"Porting player(s) {who} to player {to} {_HOW[route]}")
+    began = time.monotonic()
+
+    def batch(landed: list, refused: bool = False) -> Batch:
+        return Batch(list(movers), target, route, list(landed), refused, time.monotonic() - began)
+
     try:
         if route == LEADER:
             # Teleport to Leader takes no name: each mover goes to its own leader, which the
@@ -376,7 +405,7 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
         machine.log(f"The {route} route from player(s) {who} to player {to} could not start", logging.WARNING)
         if route == LEADER:
             group_manager.forget_group(target)
-        return [], _demote(port_map, movers, target, route)
+        return [], _demote(port_map, movers, target, route), batch([])
     if result.refusal:
         machine.log(f"Port to player {to} refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
 
@@ -414,7 +443,7 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
         if strays and route == LEADER:
             # The record said these were in its group; a port that went elsewhere says otherwise.
             group_manager.forget_group(target)
-    return landed, demoted
+    return landed, demoted, batch(landed, bool(result.refusal))
 
 
 def _demote(port_map: PortMap, movers: list, target, route: str) -> bool:
