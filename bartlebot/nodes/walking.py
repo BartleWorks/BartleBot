@@ -42,6 +42,7 @@ from bartleby.runtime.movement.walk import (
     RouteWalker,
     WalkEnd,
     WalkResult,
+    own_speed,
     plan_in_thread,
 )
 from wizwalker import XYZ
@@ -766,19 +767,6 @@ async def passes_clear_of_patrols(machine, client, goal) -> bool:
     cells = np.asarray([planner.grid.world(*node)[:2] for node in route.nodes], dtype=float)
     x, y = cells[:, 0], cells[:, 1]
     return all(float((distance_to_segments(x, y, segments(p)) - p.proximity).min()) >= 0 for p in live)
-
-
-async def own_speed(client) -> float:
-    """Units a second *client*'s wizard walks at, by its speed field, which nothing here writes:
-    what core's walker plans its seconds with (``RouteWalker._expected_speed``), read for a plan
-    costed before any walk. An unreadable field, or one no real wizard has, is on foot."""
-    try:
-        field_value = await client.client_object.speed_multiplier()
-    except Exception:  # noqa: BLE001 - unreadable just now: cost it on foot, as the walker would
-        return WIZARD_SPEED
-    if not isinstance(field_value, int | float) or not 0 <= field_value <= 100:
-        return WIZARD_SPEED
-    return WIZARD_SPEED * (1 + field_value / 100)
 
 
 async def seconds_to(machine, clients: Sequence, goals: Sequence) -> list[list[float | None]] | None:
