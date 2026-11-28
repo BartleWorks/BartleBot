@@ -121,10 +121,10 @@ PORT_MARGIN = 2.0
 PORT_LONGEST = PORT_COST + PORT_MARGIN
 
 #: The longest a long walker waits on the other movers of its call, all told, before it walks
-#: (:func:`_wait_bound`). As long as :data:`PORT_LONGEST`, since a mover is waited for only while
-#: it plans or walks a plan no longer than that. Its own constant, so a test that scales the
-#: port's costs down keeps this ceiling.
-PORT_WAIT_LONGEST = PORT_LONGEST
+#: (:func:`_wait_bound`). The run logs showed movers waiting up to 18.5 s for another mover on a
+#: long walk (2026-11-27), and the user chose 5 s. Its own figure, not :data:`PORT_LONGEST`, so
+#: costing a port differently never moves it, and a test that scales the port's costs down keeps it.
+MOVER_WAIT_LONGEST = 5.0
 
 #: Planners come from here, so a test can hand the walk a zone of its own.
 load_planner = zone_maps.load
@@ -652,13 +652,13 @@ async def _port_or_walk(  # noqa: PLR0913 - the walk's state, passed whole
 def _wait_bound(planned: float) -> float:
     """The longest a mover planned at *planned* seconds waits on others before it walks.
 
-    At most :data:`PORT_WAIT_LONGEST`: a mover is waited for only while it plans or walks a plan
-    no longer than :data:`PORT_LONGEST`, so one that has not arrived by then has been held up on
-    its way, and walking is the better bet. A wait that comes to nothing then costs at most those
-    7 s, never most of a long walk, as waiting until a port no longer saved :data:`PORT_MARGIN`
-    once did: 50 s before a 55 s walk (2026-11-27). Shorter still for a walk planned under 14 s: a
-    wait past *planned* less :data:`PORT_COST` and :data:`PORT_MARGIN` leaves no port worth taking."""
-    return min(PORT_WAIT_LONGEST, planned - PORT_MARGIN - PORT_COST)
+    At most :data:`MOVER_WAIT_LONGEST`: a mover not arrived by then has most likely been held up
+    on its way, and walking is the better bet. A wait that comes to nothing then costs at most
+    those 5 s, never most of a long walk, as waiting until a port no longer saved
+    :data:`PORT_MARGIN` once did: 50 s before a 55 s walk (2026-11-27). Shorter still for a walk
+    planned under 12 s: a wait past *planned* less :data:`PORT_COST` and :data:`PORT_MARGIN`
+    leaves no port worth taking."""
+    return min(MOVER_WAIT_LONGEST, planned - PORT_MARGIN - PORT_COST)
 
 
 async def _port_to(machine, call: _Call, mover, number: int, best: _Target, to: int, zone: str, planned: float) -> bool:
@@ -925,10 +925,10 @@ __all__ = [
     "HOP_SETTLE",
     "HOP_SPAN",
     "HOP_START_TOLERANCE",
+    "MOVER_WAIT_LONGEST",
     "PORT_COST",
     "PORT_LONGEST",
     "PORT_MARGIN",
-    "PORT_WAIT_LONGEST",
     "TELEPORT_TO_XYZ",
     "WALKING_PACE",
     "hop",
