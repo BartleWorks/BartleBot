@@ -11,7 +11,7 @@ The nodes in the node browser's **Combat and Healing** group, with the help it s
 
 ## Collect Wisps { #collect-wisps }
 
-Collects health and mana wisps after a fight, until every player meets its thresholds or no wisps are left. Fails if a player is still below the fail thresholds, so you can route to a potion node.
+Collects health and mana wisps after a fight, until every player meets its thresholds, is full by the game's word, or no wisps are left. Fails if a player is still below the fail thresholds, so you can route to a potion node.
 
 The bot stops after 15 consecutive failures on this node.
 
@@ -21,14 +21,14 @@ The bot stops after 15 consecutive failures on this node.
 |---|---|---|
 | **Collect Health Wisps If Below** | Players below this share of their health collect health wisps. At 0%, health wisps are skipped. | below full health |
 | **Collect Mana Wisps If Below** | Players below this share of their mana collect mana wisps. At 0%, mana wisps are skipped. | below full mana |
-| **Timeout (s)** | The longest to spend collecting. 0 means no limit. | 10 seconds |
+| **Timeout (s)** | The longest to go without a wisp helping anyone. 0 means no limit. | 10 seconds |
 | **Fail If Health Still Below** | After collecting, the node fails if any player's health is still below this. At 0%, it never fails on health. | 50% |
 | **Fail If Mana Still Below** | After collecting, the node fails if any player's mana is still below this. At 0%, it never fails on mana. | 50% |
 | **Only Collect Safe Wisps** | When on, skips wisps within 1500 units of an enemy, and wisps the walk to would pass inside a patrolling enemy's range, so collecting doesn't start a fight. Turn off only where enemies are always nearby. | skip wisps near enemies |
 
 **Returns**
 
-- **SUCCESS**: Every player is at or above both fail thresholds.
+- **SUCCESS**: Every player is at or above both fail thresholds, or full by the game's word.
 - **FAILURE**: A player is still below a fail threshold.
 
 **Bot options** it adds to the bot's **Options** tab:
@@ -40,9 +40,11 @@ The bot stops after 15 consecutive failures on this node.
 
 Only the players below a threshold walk. Those short of health walk to a health wisp and those short of mana to a mana wisp, both at once, and the rest stay where they are, which keeps them safe from enemies for a while after a fight. A player who arrives after the wisp is taken goes on to the next one.
 
-Each wisp is chosen by how long the walk there takes, not by how near it looks, so a wisp behind a wall loses to one farther off with a shorter way around. A player short of both goes first for the one it is nearer failing on. Near the timeout, a walk that would run past it is made only for a player below a fail threshold.
+Each wisp is chosen by how long the walk there takes, not by how near it looks, so a wisp behind a wall loses to one farther off with a shorter way around. A player short of both goes first for the one it is nearer failing on. The timeout counts from the last time a wisp helped anyone, so a long walk that pays off is never cut short; a walk that would run past it is made only for a player below a fail threshold.
 
 Wisps drift, so a walk follows the wisp as it moves, and stops about 300 units short of it: a wizard picks a wisp up from farther off than that, and the wisp flies the rest of the way. If nobody who walked to it got it and it is still there, they walk right up to it once.
+
+A player's maximum health sometimes reads higher than it is, so a player at full health can look short. When a player walked right up to a wisp, got nothing, and the wisp is still there a moment later, the game is saying that player is full of that kind: it walks to no more of them, and doesn't fail the node on it. That costs one wasted walk at most.
 
 Place it right after a fight or a zone change. Wisps take a moment to appear, so when a player is below a fail threshold and no wisp of that kind is in sight, the node waits up to Safety Delay for one. If nobody is below a fail threshold, it doesn't wait.
 

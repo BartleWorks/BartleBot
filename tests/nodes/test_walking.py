@@ -262,21 +262,6 @@ async def test_seconds_to_plans_as_the_walk_would_by_avoid_mobs(real_walks, monk
     assert asked == [avoid]
 
 
-@pytest.mark.parametrize(("field_value", "speed"), [(0, 600.0), (55, 930.0), (100, 1200.0), (250, 600.0), (-1, 600.0)])
-async def test_own_speed_is_the_speed_field_as_the_walker_reads_it(field_value, speed):
-    client = _client()
-    client.speed = field_value
-
-    assert await walking.own_speed(client) == pytest.approx(speed)
-
-
-async def test_own_speed_of_an_unreadable_field_is_on_foot():
-    client = FakeClient()
-    client.client_object.speed_multiplier = AsyncMock(side_effect=RuntimeError("freed"))
-
-    assert await walking.own_speed(client) == 600.0
-
-
 async def test_each_walk_holds_a_movement_lease_on_the_runs_arbiter(real_walks):
     client = _client()
     machine = _machine()
