@@ -534,6 +534,32 @@ The rules every stage keeps:
 - **Logs name players by number**, and BartleBuddy's settings take no migration while it is
   unreleased.
 
+## Deck building
+
+Epic BartleBuddy #36: BartleBuddy shows the cards in every wizard's deck as BartleBot draws
+them, saves a wizard's cards as a deck preset, and lets a deck set name the preset each deck
+should hold; Put on still only changes decks, and Build puts the cards in, on every wizard at
+once. BartleBot's deck reading and building and its deck card move to core, so both apps run
+one deck builder. It is Auto-combat's Later card "Building a preset into a deck". Filed in
+BartleBuddy, with the family stages' issues in core.
+https://claude.ai/artifact/FaVRuGPynDYjDitka7XpoZ
+
+**Planned. No stage has started.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | core #26 | deck building in core: `deck_io` and the zone names snapshot move from BartleBot | planned |
+| 2 | core #27 | the deck card in core: `DeckCard`, which BartleBot's Combat tab draws | planned |
+| 3 | BartleBuddy #37 | decks on now: each wizard's cards on the Combat tab, and saving them as a preset | planned |
+| 4 | BartleBuddy #38 | presets in deck sets: a preset per deck, the set's preview, and the check on Put on | planned |
+| 5 | BartleBuddy #39 | building: every wizard's deck at once, with progress, Stop and archmastery on build | planned |
+
+No feature doc yet. Until Stage 1, BartleBot's deck reading and building is its own
+`bartlebot/combat/deck_io.py`, and `docs/COMBAT_CONFIG.md` says how its decks work.
+
+After it, filed at close-out: reading cards without the deck page, equipment sets in a deck set
+(Auto-combat's Later card), and a deck per duel strategy (BartleBot #276).
+
 ## Wisps and ports
 
 Epic #340: a group moves by whichever is quicker, walking or porting to one of its own, and
@@ -572,3 +598,38 @@ The rules every stage keeps:
 - **Logs name players by number**, never by wizard name.
 - **The restricted-zone check stays complete**, and core imports neither product.
 - **No game file is committed**: tests build their zones in code.
+
+## BartleBuddy hardening
+
+Epic BartleBuddy #41: the fixes from the BartleBuddy implementation review of 2026-11-27 (nine
+reviewers, two verifiers, 92 findings on BartleBuddy's `master` at `5864fbc`). No game is left
+hooked, every automated action reaches the right wizard and never a PvP fight, settings survive
+a bad file, two threads and two apps, and what both products need is in core once. BartleBot's
+PvP checks, its tracers and its authoring tools' Auto-combat are among what moves. Filed in
+BartleBuddy, with the family stages' issues in core.
+https://claude.ai/artifact/EvMRTmx5M8V7jM8cs9K5yY, and the review it came from:
+https://claude.ai/artifact/QsR1LoSGKn5rCnJRgYq9xx
+
+**Planned. No stage has started.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | core #30 | PvP refusal in core: the restriction list and checks move from BartleBot, and BartleBuddy's Auto-combat refuses a restricted fight | planned |
+| 2 | BartleBuddy #42 | tests that catch a miswire: a controller fixture that runs its work, shared runtime fixtures, a driven clock and the private-write rule | planned |
+| 3 | BartleBuddy #43 | Quit and Stop all always unhook: one guarded way out, a task keeper, the Stop all lock and unhook by client | planned |
+| 4 | BartleBuddy #44 | a wizard is its client, in every fight: fights keyed by client, late joiners, ids per player and a combat that backs off | planned |
+| 5 | BartleBuddy #45 | a follower or watcher that fails is seen and remade: supervised followers and a chat watch that follows the latest focus | planned |
+| 6 | BartleBuddy #46 | settings that survive a bad field: validation by section and on assignment, the unreadable copy and atomic saves | planned |
+| 7 | core #31 | the game's own settings, recorded once for the family: the originals in the vendor's preferences, with a migration in both products | planned |
+| 8 | core #32 | the keyboard stays with the game: the focus filter decides once per press, and Stop all is armed only over our windows | planned |
+| 9 | core #33 | chat-aware hotkeys for the family: the chat watch and hotkey sets in core, game text fields, and shared hotkey rows | planned |
+| 10 | BartleBuddy #47 | the session in parts: `TeamState`, `Following`, `StopAll`, `SessionSizes` and `TeamViewBuilder` behind the `Session` façade | planned |
+| 11 | BartleBuddy #48 | the game view says what's on screen: the honest view toggle, pill problems, detach, and the window edge | planned |
+| 12 | BartleBuddy #49 | the sidebar, settings and menus: one action table, a Combat tab off the GUI thread, menus that don't leak, and UI_TEXT fixes | planned |
+| 13 | core #34 | diagnostics for the family: the stall, game-hang and window-show tracers in core, and a run-trace reader | planned |
+| 14 | core #35 | one Auto-combat for the family: BartleBuddy's Auto-combat by duel id in core, used by BartleBot's authoring tools | planned |
+| 15 | core #36 | guards for the family's rules: UTF-8, American English, art, account names in logs, agreeing pins and the PvP check | planned |
+| 16 | BartleBuddy #50 | probes and tools: a probe kit, retired probes, `tools/CLAUDE.md` and tests that keep probes runnable | planned |
+
+No feature doc yet: each stage's sub-issue restates its part. The review's decks groundwork went
+to the Deck building epic, and its packaging groundwork to BartleBuddy #4.
