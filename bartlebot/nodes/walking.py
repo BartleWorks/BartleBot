@@ -48,6 +48,7 @@ from bartleby.runtime.movement.walk import (
 from wizwalker import XYZ
 
 from bartlebot.nodes.param_schema import BotOptionSpec
+from bartlebot.options import player_realms
 from bartlebot.options.option_groups import GROUP_GENERAL
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,12 @@ PORT_MARGIN = 2.0
 #: The longest walk never asked whether a port would be quicker, since no port can beat it by
 #: :data:`PORT_MARGIN`: a walk planned at no more than this is walked.
 PORT_LONGEST = PORT_COST + PORT_MARGIN
+
+#: The longest a long walker waits on the other movers of its call, all told, before it walks
+#: (:func:`_wait_bound`). As long as :data:`PORT_LONGEST`, since a mover is waited for only while
+#: it plans or walks a plan no longer than that. Its own constant, so a test that scales the
+#: port's costs down keeps this ceiling.
+PORT_WAIT_LONGEST = PORT_LONGEST
 
 #: Planners come from here, so a test can hand the walk a zone of its own.
 load_planner = zone_maps.load
@@ -373,8 +380,11 @@ async def _walk_or_port(  # noqa: PLR0913 - _walk_one's arguments, passed on
     planner = await load_planner(zone)
     into_exit = bool(planner.exits_at(*goal))
     read = _TimedRead(client)
-    walker = RouteWalker(client, planner, avoid=avoid, watch_mobs=avoid, read=read, label=f"P{number}")
     asks = call is not None and not fight and not into_exit and zone not in _no_port_zones(machine)
+    # Its first tick is the first moment a walk is known to be on a short plan: the walker ticks
+    # only once its plan is made and found no longer than PORT_LONGEST, never while planning.
+    ticked = (lambda _tick: call.short(client)) if asks else None
+    walker = RouteWalker(client, planner, avoid=avoid, watch_mobs=avoid, read=read, label=f"P{number}", on_tick=ticked)
     ported = False
     with run_trace.span("walk", client=client, zone=zone, goal=[round(v) for v in goal], fight=fight):
         try:
@@ -422,45 +432,70 @@ async def _walk_or_port(  # noqa: PLR0913 - _walk_one's arguments, passed on
 class _Call:
     """One :func:`walk_clients` call that ports are on for: the run's port map, the call's movers,
     and how each one's walk stands, so a long walker can port to a short one of the same call
-    once it has arrived."""
+    once it has arrived.
+
+    A mover's first walk is planning, then either long (:meth:`long`) or short, walking a plan
+    no longer than :data:`PORT_LONGEST` (:meth:`short`), until it ends. Every change bumps
+    :attr:`generation`, which a waiter reads *before* it looks at how the movers stand, so a
+    change made while it looked is never slept through (:meth:`changed`)."""
 
     def __init__(self, port_map, clients: Sequence, numbers: Sequence[int]) -> None:
         self.port_map = port_map
         self.clients = list(clients)
         self.numbers = {id(c): n for c, n in zip(clients, numbers)}
-        self.started = time.monotonic()
+        self.generation = 0
         self._first = {id(c) for c in clients}  # on its first walk: planning it, or walking a short plan
+        self._short: dict[int, float] = {}  # walking a short first plan, since this monotonic time
         self._arrived: set[int] = set()
         self._changed = asyncio.Event()
 
     def has(self, client) -> bool:
         return id(client) in self.numbers
 
-    def walking(self, client) -> bool:
-        """Whether *client*, a mover of this call, is still on its first walk: planning it, or
-        walking a plan no longer than :data:`PORT_LONGEST`."""
-        return id(client) in self._first
+    def planning(self, client) -> bool:
+        """Whether *client*, a mover of this call, is still planning its first walk: whether it
+        is short or long is not known yet, so it is no target."""
+        return id(client) in self._first and id(client) not in self._short
+
+    def short_since(self, client) -> float | None:
+        """When *client* began walking its short first plan, or None unless it is walking one."""
+        return self._short.get(id(client))
 
     def arrived(self, client) -> bool:
         return id(client) in self._arrived
 
+    def short(self, client) -> None:
+        """*client*'s first walk has begun on a plan no longer than :data:`PORT_LONGEST`: called
+        on each of its walker's ticks, it marks only the first, and only on that first walk."""
+        if id(client) in self._first and id(client) not in self._short:
+            self._short[id(client)] = time.monotonic()
+            self._pulse()
+
     def long(self, client) -> None:
         """*client*'s first plan was too long: it is no target until it arrives."""
         self._first.discard(id(client))
+        self._short.pop(id(client), None)
         self._pulse()
 
     def ended(self, client, arrived: bool) -> None:
         self._first.discard(id(client))
+        self._short.pop(id(client), None)
         if arrived:
             self._arrived.add(id(client))
         self._pulse()
 
     def _pulse(self) -> None:
+        self.generation += 1
         self._changed.set()
         self._changed = asyncio.Event()
 
-    async def changed(self, timeout: float) -> None:
-        """Wait until a mover's walk changes how it stands, or *timeout* passes."""
+    async def changed(self, since: int, timeout: float) -> None:
+        """Wait until a mover's walk changes how it stands, or *timeout* passes. *since* is the
+        :attr:`generation` read before the caller looked: a change made after that returns at
+        once, even one made before this call (found live, 2026-11-27: a waiter that missed its
+        peer's change sat out its whole deadline, and then walked the whole way)."""
+        if self.generation != since:
+            return
         event = self._changed
         with contextlib.suppress(TimeoutError):
             await asyncio.wait_for(event.wait(), max(timeout, 0.0))
@@ -507,8 +542,29 @@ async def _free_in(machine, client, zone: str) -> bool:
         return False
 
 
+def _on_my_realm(machine, mover, target) -> bool:
+    """Whether a port from *mover* to *target* keeps to Player Realms: always while it is
+    Together, and while it is Separate only once the two have been seen sharing a zone, realm
+    and instance, with neither loading since (``machine.are_together``). A port onto a player
+    not known to share the mover's realm could carry it onto another's, which Separate never
+    does, as straggler recovery's ``_recovery_batches`` keeps to as well."""
+    if not player_realms.machine_is_separate(machine):
+        return True
+    together = getattr(machine, "are_together", None)
+    return together is not None and bool(together([mover, target]))
+
+
+def _candidates(machine, call: _Call, mover) -> list:
+    """The players of ours *mover* may port to at all: the call's movers and the rest of the run's
+    players, each with a route from *mover* and on its realm as Player Realms has it."""
+    party = [*call.clients, *(c for c in getattr(machine, "clients", None) or () if not call.has(c))]
+    return [
+        c for c in party if c is not mover and _reaches(call.port_map, mover, c) and _on_my_realm(machine, mover, c)
+    ]
+
+
 async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
-    machine, call: _Call, mover, zone: str, planner, goal: Point, avoid: bool, planned: float, speed: float, skip
+    machine, call: _Call, mover, zone: str, planner, goal: Point, avoid: bool, planned: float, speed: float
 ) -> list[_Target]:
     """The players of ours *mover* could port to now, each with its trip.
 
@@ -516,23 +572,23 @@ async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
     in the zone, not fighting, holding no movement lease, and with a route from *mover*. Its walk
     on to *goal* is a ``seconds_to`` search from it, at *speed*, the mover's own, unless its
     straight line there already misses *planned* by :data:`PORT_MARGIN`, which is never searched.
-    A mover of the call still on its first walk is walking to *goal* too, so its trip is the wait
-    for it, at most what is left of :data:`PORT_LONGEST` since the call began, and the walk on
-    from up to :data:`ARRIVED_WITHIN` short of the goal, where its walk stops. Those whose ids
-    are in *skip* are left out.
+    A mover of the call walking a short first plan is walking to *goal* too, so its trip is the
+    wait for it, at most what is left of :data:`PORT_LONGEST` since it began walking, and the walk
+    on from up to :data:`ARRIVED_WITHIN` short of the goal, where its walk stops. A mover still
+    planning is no target: its plan may be as long as the mover's own.
     """
-    party = [*call.clients, *(c for c in getattr(machine, "clients", None) or () if not call.has(c))]
-    candidates = [c for c in party if c is not mover and id(c) not in skip and _reaches(call.port_map, mover, c)]
+    candidates = _candidates(machine, call, mover)
     now = time.monotonic()
 
     async def one(target) -> _Target | None:
-        if call.walking(target):
+        since = call.short_since(target)
+        if since is not None:
             # It stops up to ARRIVED_WITHIN short of the goal, so that walk on counts too: without
             # it, one still walking once PORT_LONGEST had passed undercut one already arrived.
-            wait = max(0.0, PORT_LONGEST - (now - call.started))
+            wait = max(0.0, PORT_LONGEST - (now - since))
             return _Target(target, wait + PORT_COST + ARRIVED_WITHIN / speed, waits=True)
         if call.has(target) and not call.arrived(target):
-            return None  # long, porting or failed: no anchor yet
+            return None  # planning, long, porting or failed: no anchor yet
         if not await _free_in(machine, target, zone):
             return None
         at = point(await target.body.position())
@@ -557,31 +613,51 @@ async def _port_or_walk(  # noqa: PLR0913 - the walk's state, passed whole
     """Port *mover*, whose *first* walk ended :attr:`WalkEnd.TOO_LONG`, to the one of ours whose
     trip beats walking by :data:`PORT_MARGIN`, if one does; whether it ported.
 
-    A target still on its first walk of the call is waited for, as long as a port to it would
-    still save the margin, and every target is costed again whenever a mover's walk changes, so
-    the first to arrive is the one ported to. A refusal marks the zone for the rest of the run
+    A mover of the call walking a short first plan is waited for to arrive, and one still
+    planning is waited for to say whether it is short. Every target is costed again whenever a
+    mover's walk changes, so the first to arrive is the one ported to. All the waiting together
+    lasts at most :func:`_wait_bound`: past it, only a target standing ready counts, and with
+    none the mover walks. A refusal marks the zone for the rest of the run
     (``machine.no_port_zones``). A port that lands nowhere walks too."""
     planned, speed = first.planned, first.speed or WIZARD_SPEED
-    skip: set[int] = set()
-    deadlines: dict[int, float] = {}
+    deadline: float | None = None
+    told: set[int] = set()
     while True:
-        targets = await _port_targets(machine, call, mover, zone, planner, goal, avoid, planned, speed, skip)
+        seen = call.generation  # before looking, so a change made while it looks is not slept through
+        targets = await _port_targets(machine, call, mover, zone, planner, goal, avoid, planned, speed)
+        over = deadline is not None and time.monotonic() >= deadline
+        if over:
+            targets = [t for t in targets if not t.waits]
         best = _quickest(targets, planned)
-        if best is None:
+        if best is not None and not best.waits:
+            return await _port_to(
+                machine, call, mover, number, best, _number_of(machine, call, best.client), zone, planned
+            )
+        planning = [] if over else [c for c in _candidates(machine, call, mover) if call.planning(c)]
+        if best is None and not planning:
             machine.log(f"P{number}: no port beats its {planned:.1f} s walk; walking", logging.DEBUG)
             return False
-        to = _number_of(machine, call, best.client)
-        if not best.waits:
-            return await _port_to(machine, call, mover, number, best, to, zone, planned)
-        if id(best.client) not in deadlines:
-            # Until a port to it would no longer save the margin: then it is passed over.
-            deadlines[id(best.client)] = time.monotonic() + planned - PORT_MARGIN - PORT_COST
-            machine.log(f"P{number}: waiting for P{to} to arrive, to port to it", logging.DEBUG)
-        left = deadlines[id(best.client)] - time.monotonic()
-        if left <= 0:
-            skip.add(id(best.client))
-        else:
-            await call.changed(left)
+        if deadline is None:
+            deadline = time.monotonic() + _wait_bound(planned)
+        for client in [best.client] if best is not None else planning:
+            if id(client) not in told:
+                told.add(id(client))
+                what = "arrive" if best is not None else "plan its walk"
+                to = _number_of(machine, call, client)
+                machine.log(f"P{number}: waiting for P{to} to {what}, to port to it", logging.DEBUG)
+        await call.changed(seen, deadline - time.monotonic())
+
+
+def _wait_bound(planned: float) -> float:
+    """The longest a mover planned at *planned* seconds waits on others before it walks.
+
+    At most :data:`PORT_WAIT_LONGEST`: a mover is waited for only while it plans or walks a plan
+    no longer than :data:`PORT_LONGEST`, so one that has not arrived by then has been held up on
+    its way, and walking is the better bet. A wait that comes to nothing then costs at most those
+    5 s, never most of a long walk, as waiting until a port no longer saved :data:`PORT_MARGIN`
+    once did: 50 s before a 55 s walk (2026-11-27). Shorter still for a walk planned under 10 s: a
+    wait past *planned* less :data:`PORT_COST` and :data:`PORT_MARGIN` leaves no port worth taking."""
+    return min(PORT_WAIT_LONGEST, planned - PORT_MARGIN - PORT_COST)
 
 
 async def _port_to(machine, call: _Call, mover, number: int, best: _Target, to: int, zone: str, planned: float) -> bool:
@@ -697,7 +773,8 @@ async def walk_clients(
     longer than :data:`PORT_LONGEST` may be a port instead: to the player of ours, outside the
     call or a mover of it that has arrived, whose :data:`PORT_COST` plus walk on beats walking by
     :data:`PORT_MARGIN`. The mover ports through ``port_map``, under its movement lease, and walks
-    the rest. A walk into a fight or an exit always walks, and so does every walk in a zone that
+    the rest. With Player Realms Separate, only a player seen on the mover's own realm is a
+    target. A walk into a fight or an exit always walks, and so does every walk in a zone that
     has refused a port this run (``machine.no_port_zones``).
     """
     labels = list(numbers) if numbers is not None else player_numbers(machine, clients)
@@ -850,6 +927,7 @@ __all__ = [
     "PORT_COST",
     "PORT_LONGEST",
     "PORT_MARGIN",
+    "PORT_WAIT_LONGEST",
     "TELEPORT_TO_XYZ",
     "WALKING_PACE",
     "hop",

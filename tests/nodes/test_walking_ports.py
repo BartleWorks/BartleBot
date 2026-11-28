@@ -6,22 +6,25 @@ here are short, so ``PORT_COST`` and ``PORT_MARGIN`` are scaled down by ten (:fu
 the decision at the real values is :func:`test_at_the_real_values_a_port_wins_only_by_the_margin`.
 """
 
+import asyncio
 import json
 import logging
+import time
 
 import pytest
 from bartleby.runtime import run_trace
-from bartleby.runtime.clients import group_manager
+from bartleby.runtime.clients import group_manager, sightings
 from bartleby.runtime.clients.group_manager import GroupRecord
 from bartleby.runtime.game import wizard_names
-from bartleby.runtime.movement.walk import WalkEnd
+from bartleby.runtime.movement.walk import WalkEnd, WalkResult
 
 from bartlebot.clients import port_map
 from bartlebot.clients.authoring_tools import _HandWalk
 from bartlebot.clients.port_map import Batch, PortMap
 from bartlebot.nodes import walking
+from bartlebot.options import player_realms
 from tests.conftest import FakeMachine
-from tests.nodes.test_walking import ZONE, _client, real_walks  # noqa: F401 - real_walks is a fixture
+from tests.nodes.test_walking import ZONE, _client, _planner, real_walks  # noqa: F401 - real_walks is a fixture
 
 # Synthetic names from tools/name_key_samples.json -- never a real player's.
 _NAMES = ("Luke SkullHunter", "Misha SkullSeer", "Michelle HistoryBond", "Naomi HexPaint")
@@ -397,17 +400,215 @@ async def test_a_long_walk_to_a_moving_goal_asks_once_where_it_is_ports_and_walk
     _no_names(machine)
 
 
-async def test_a_target_still_walking_long_after_the_call_began_never_beats_one_that_has_arrived(_scaled):
-    from tests.nodes.test_walking import _planner  # noqa: PLC0415
-
+async def test_a_target_still_walking_long_after_it_began_never_beats_one_that_has_arrived(_scaled):
     mover, arrived, walking_still = _party((200.0, 1000.0, 0.0), (3380.0, 1000.0, 0.0), (3000.0, 1000.0, 0.0))
     machine = _run([mover, arrived, walking_still])
     call = walking._Call(machine.port_map, [mover, arrived, walking_still], [1, 2, 3])
-    call.started -= 10.0  # far past PORT_LONGEST: a target still walking is waited for not at all
+    call.short(walking_still)
+    call._short[id(walking_still)] -= 10.0  # far past PORT_LONGEST: a target still walking is waited for not at all
     call.ended(arrived, True)
 
-    targets = await walking._port_targets(machine, call, mover, ZONE, _planner(), GOAL, True, 2.7, 1200.0, set())
+    targets = await walking._port_targets(machine, call, mover, ZONE, _planner(), GOAL, True, 2.7, 1200.0)
     best = walking._quickest(targets, 2.7)
 
     assert {t.client for t in targets} == {arrived, walking_still}
     assert best.client is arrived and not best.waits
+
+
+# --- Waiting on the call's other movers (found live on 2026-11-27) ---
+
+
+@pytest.fixture
+def real_ports(monkeypatch):
+    """``walking.port`` faked, at the real PORT_COST and PORT_MARGIN, with no walk at all: these
+    drive ``_port_or_walk`` itself, so a wait that runs to its bound costs the real 5 s."""
+    return _Ports(monkeypatch)
+
+
+def _too_long(mover, planned: float) -> WalkResult:
+    """The first walk of *mover* ended TOO_LONG, planned at *planned* seconds, at 1,200 a second."""
+    result = WalkResult(WalkEnd.TOO_LONG, ZONE, mover.position, GOAL)
+    result.planned, result.speed = planned, 1200.0
+    return result
+
+
+async def _decide(machine, call, mover, planned: float, *also) -> tuple[bool, float]:
+    """``_port_or_walk`` for *mover*, its first walk just gone long, beside the coroutines in
+    *also*: whether it ported, and how many seconds it took to decide."""
+    call.long(mover)
+    began = time.monotonic()
+    ported, *_ = await asyncio.wait_for(
+        asyncio.gather(
+            walking._port_or_walk(machine, call, mover, 1, ZONE, _planner(), GOAL, True, _too_long(mover, planned)),
+            *also,
+        ),
+        timeout=15.0,
+    )
+    return ported, time.monotonic() - began
+
+
+async def _after_turns(turns: int, then) -> None:
+    for _ in range(turns):
+        await asyncio.sleep(0)
+    then()
+
+
+@pytest.mark.parametrize("turns", [0, 1, 2, 3, 5])
+async def test_a_peer_arriving_while_the_mover_costs_its_targets_is_ported_to_at_once(real_ports, turns):
+    # The lost wakeup: a peer whose walk changed in the loop turns between the mover costing it and
+    # the mover starting to wait was slept through to the deadline, and the mover then walked
+    # the whole way (P4 18.5 s behind in Bale Flotilla, P3 about 38 s in Dark Water Trench).
+    mover, peer = _party((200.0, 1000.0, 0.0), (3000.0, 1000.0, 0.0))
+    machine = _run([mover, peer])
+    call = walking._Call(machine.port_map, [mover, peer], [1, 2])
+    call.short(peer)
+
+    def arrive():
+        peer.place(GOAL)
+        call.ended(peer, True)
+
+    ported, took = await _decide(machine, call, mover, 20.0, _after_turns(turns, arrive))
+
+    assert ported
+    assert real_ports.calls == [(mover, peer)]
+    assert took < 2.0, f"slept {took:.1f} s through the peer's arrival"
+
+
+async def test_a_peer_still_planning_is_no_target_until_its_walk_is_known_short(_scaled):
+    mover, peer = _party((200.0, 1000.0, 0.0), (3000.0, 1000.0, 0.0))
+    machine = _run([mover, peer])
+    call = walking._Call(machine.port_map, [mover, peer], [1, 2])
+
+    planning = await walking._port_targets(machine, call, mover, ZONE, _planner(), GOAL, True, 2.7, 1200.0)
+    call.short(peer)
+    walking_short = await walking._port_targets(machine, call, mover, ZONE, _planner(), GOAL, True, 2.7, 1200.0)
+
+    assert call.planning(peer) is False and call.short_since(peer) is not None
+    assert planning == []
+    assert [(t.client, t.waits) for t in walking_short] == [(peer, True)]
+
+
+async def test_a_peer_whose_plan_turns_out_long_too_is_waited_on_only_until_it_says_so(real_ports):
+    mover, peer = _party((200.0, 1000.0, 0.0), (210.0, 1000.0, 0.0))
+    machine = _run([mover, peer])
+    call = walking._Call(machine.port_map, [mover, peer], [1, 2])
+
+    async def plans_long():
+        await asyncio.sleep(0.05)
+        call.long(peer)
+
+    ported, took = await _decide(machine, call, mover, 20.0, plans_long())
+
+    assert not ported and real_ports.calls == []
+    assert took < 2.0
+    logged = [m for m, *_ in machine.logs]
+    assert "P1: waiting for P2 to plan its walk, to port to it" in logged
+    assert "P1: no port beats its 20.0 s walk; walking" in logged
+
+
+async def test_movers_whose_plans_are_all_long_from_one_spot_walk_at_once_none_waiting_on_another(ports, monkeypatch):
+    # Bale Flotilla and Eastern Sea, 2026-11-27: four plans from one spot, all too long, came back
+    # together, and one or three movers waited on a peer's plan that was as long as their own.
+    party = _party(*[(200.0, 1000.0 + 20.0 * k, 0.0) for k in range(4)])
+    machine = _run(party)
+    took = []
+    real = walking._port_or_walk
+
+    async def timed(*args):
+        began = time.monotonic()
+        try:
+            return await real(*args)
+        finally:
+            took.append(time.monotonic() - began)
+
+    monkeypatch.setattr(walking, "_port_or_walk", timed)
+
+    walked = await walking.walk_clients(machine, party, GOAL)
+
+    assert all(w.ok for w in walked)
+    assert ports.calls == []
+    assert len(took) == 4
+    assert max(took) < 1.0, took  # a wait slept through would last the bound, 2.2 s here
+
+
+def test_the_wait_bound_is_port_longest_at_most_and_never_past_what_a_port_could_save():
+    assert walking._wait_bound(55.2) == walking.PORT_WAIT_LONGEST == walking.PORT_LONGEST == 5.0
+    assert walking._wait_bound(6.0) == pytest.approx(1.0)
+    assert walking._wait_bound(walking.PORT_LONGEST) == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("peer_is", ["walking, and never arrives", "planning, and never finishes"])
+async def test_a_wait_that_comes_to_nothing_ends_at_the_bound_and_the_mover_walks(ports, peer_is, monkeypatch):
+    # The bound is the ceiling under test, so it is compressed here alone, to 0.5 s. Waiting until
+    # a port no longer saved the margin, as before, was 19.5 s of this 20 s walk.
+    monkeypatch.setattr(walking, "PORT_WAIT_LONGEST", 0.5)
+    mover, peer = _party((200.0, 1000.0, 0.0), (3000.0, 1000.0, 0.0))
+    machine = _run([mover, peer])
+    call = walking._Call(machine.port_map, [mover, peer], [1, 2])
+    if peer_is.startswith("walking"):
+        call.short(peer)
+
+    ported, took = await _decide(machine, call, mover, 20.0)
+
+    assert not ported and ports.calls == []
+    assert 0.45 <= took < 3.0
+    assert any(m == "P1: no port beats its 20.0 s walk; walking" for m, *_ in machine.logs)
+
+
+# --- Player Realms ---
+
+
+def _seen_together(machine, *clients) -> None:
+    """Note one check in which *clients* each see the others: one zone, realm and instance."""
+    gids = [9000 + k for k in range(len(clients))]
+    readings = [sightings.Reading(g, ZONE, None, False, frozenset(gids) - {g}) for g in gids]
+    machine.note_sightings(sightings.Sightings(list(clients), readings))
+
+
+def _separate(clients) -> FakeMachine:
+    return _run(clients, **{player_realms.OPTION: player_realms.SEPARATE})
+
+
+@pytest.mark.parametrize("seen", [False, True])
+async def test_separate_ports_only_to_a_player_seen_on_the_movers_realm(ports, seen):
+    mover, anchor = _party((200.0, 1000.0, 0.0), GOAL)
+    machine = _separate([mover, anchor])
+    if seen:
+        _seen_together(machine, mover, anchor)
+
+    (walked,) = await walking.walk_clients(machine, [mover], GOAL)
+
+    assert walked.ok
+    if seen:
+        assert ports.calls == [(mover, anchor)] and not _moved(mover)
+    else:
+        assert ports.calls == [] and _moved(mover), "a player not seen on its realm may be on another"
+
+
+@pytest.mark.parametrize("seen", [False, True])
+async def test_separate_waits_only_for_a_short_walker_seen_on_the_movers_realm(ports, seen):
+    long_walker, short = _party((200.0, 1000.0, 0.0), (3200.0, 1000.0, 0.0))
+    machine = _separate([long_walker, short])
+    if seen:
+        _seen_together(machine, long_walker, short)
+
+    walked = await walking.walk_clients(machine, [long_walker, short], GOAL)
+
+    assert all(w.ok for w in walked)
+    waited = [m for m, *_ in machine.logs if m.startswith("P1: waiting for P2")]
+    if seen:
+        assert ports.calls == [(long_walker, short)]
+    else:
+        assert ports.calls == [] and waited == []
+        assert _moved(long_walker)
+
+
+async def test_separate_with_no_record_of_who_is_together_ports_nobody():
+    mover, anchor = _party((200.0, 1000.0, 0.0), GOAL)
+
+    class _NoRecord:
+        def get_option(self, name, default=None):
+            return player_realms.SEPARATE if name == player_realms.OPTION else default
+
+    assert not walking._on_my_realm(_NoRecord(), mover, anchor)
+    assert walking._on_my_realm(FakeMachine(), mover, anchor), "Together ports to anyone with a route"
