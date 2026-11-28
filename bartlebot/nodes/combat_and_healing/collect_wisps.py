@@ -5,7 +5,14 @@ import logging
 import time
 from dataclasses import dataclass, field
 
-from bartleby.runtime.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
+from bartleby.runtime.timing import (
+    POLL_INTERVAL,
+    WISP_COLLECT_DELAY,
+    WISP_COLLECT_TIMEOUT,
+    WISP_LISTED_EVERY,
+    WISP_TAKE_WAIT,
+    jitter,
+)
 from wizwalker import XYZ
 
 from bartlebot.nodes import walking
@@ -18,12 +25,6 @@ from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamFie
 #: wizard took a health wisp (core's ``docs/WIZARD101.md``, *How wisps move*). Mana wisps were
 #: not measured, so a walker that ends here with no pickup closes in (:func:`_walk_to_wisp`).
 WISP_REACH = 300.0
-#: Seconds between the checks, while a walk follows a wisp, that the client still lists it: a
-#: freed entity can go on reading the numbers it had.
-WISP_LISTED_EVERY = 1.0
-#: Seconds a walker that ended within reach waits for a ratio to rise before closing in. The
-#: ratio rises as a wisp is taken, before it flies the rest of the way.
-WISP_TAKE_WAIT = 0.3
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
