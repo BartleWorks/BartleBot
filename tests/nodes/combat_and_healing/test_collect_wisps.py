@@ -1,6 +1,8 @@
 """Unit tests for the collect_wisps node."""
 
 import asyncio
+import logging
+import time
 from itertools import count
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -29,6 +31,7 @@ def _no_delay():
         patch.object(cw, "WISP_COLLECT_DELAY", 0),
         patch.object(cw, "POLL_INTERVAL", 0.002),
         patch.object(cw, "WISP_TAKE_WAIT", 0),
+        patch.object(cw, "WISP_LINGER", 0),
         patch.object(cw, "WISP_LISTED_EVERY", float("inf")),
     ):
         yield
@@ -166,9 +169,14 @@ async def test_a_player_short_of_both_whose_kind_has_no_wisp_goes_for_the_other(
 
 async def test_visited_wisp_is_excluded_from_the_next_scan():
     """Each hop scans afresh, passing the ids already visited so none is picked twice."""
-    client = _client(health=0.2)  # never rises
+    client = _client(health=0.2)
     first, second = _entity(100), _entity(200)
     client.get_health_wisps.side_effect = [[first], [second], []]
+
+    async def _a_little(_goal):  # each wisp gives a little, so nobody closes in or is full
+        client.calc_health_ratio.return_value += 0.1
+
+    client.walk_to.side_effect = _a_little
 
     params = {**_DEFAULT_PARAMS, "fail_if_health_below": 0.0}
     await cw.run(FakeMachine(), [client], params)
@@ -179,8 +187,7 @@ async def test_visited_wisp_is_excluded_from_the_next_scan():
     # The node keeps adding to one set, so every call shows its final contents.
     assert all(ids == {first_id, second_id} for ids in scanned_with)
     assert client.get_health_wisps.call_count == 3
-    # Each walked up to once as well: the ratio never rose.
-    assert _walk_targets(client) == [(100, 0, 0), (100, 0, 0), (200, 0, 0), (200, 0, 0)]
+    assert _walk_targets(client) == [(100, 0, 0), (200, 0, 0)]
 
 
 async def test_no_wisps_above_fail_threshold_succeeds():
@@ -440,14 +447,16 @@ async def test_a_client_that_missed_a_wisp_goes_on_to_the_next():
     """It reached the wisp after the other took it: still short, so the next scan sends it on."""
     first, late = _client(health=0.6), _client(health=0.6)
     near, far = _entity(300), _entity(900)
-    first.get_health_wisps.side_effect = [[near, far], [far], []]
+    first.get_health_wisps.side_effect = lambda visited=frozenset(): [
+        w for w in (near, far) if w.global_id_full.return_value not in visited
+    ]
     _refill_on_walk(first, health=1.0)  # the first to arrive takes it; the late one gets nothing
 
     await cw.collect_as_group(FakeMachine(), [first, late], 1.0, 0.0, None, True)
 
     assert _walk_targets(first) == [(300, 0, 0)]
-    # The first's rise says the near wisp was taken, so nobody walks up to it; the far one,
-    # which the late one's ratio never rises for either, it walks up to once.
+    # The first's rise says the near wisp was taken, so nobody walks up to it, and the late
+    # one is not full; the far one, which its ratio never rises for either, it walks up to once.
     assert _walk_targets(late) == [(300, 0, 0), (900, 0, 0), (900, 0, 0)]
 
 
@@ -605,7 +614,7 @@ async def test_the_wisp_its_walkers_reach_soonest_in_all_wins(monkeypatch):
 async def test_a_wisp_with_no_route_is_dropped_and_not_searched_for_again(monkeypatch):
     unreachable, open_ = _entity(300), _entity(900)
     client = _client(health=0.2)  # never rises
-    client.get_health_wisps.side_effect = lambda visited: [
+    client.get_health_wisps.side_effect = lambda visited=frozenset(): [
         w for w in (unreachable, open_) if w.global_id_full.return_value not in visited
     ]
     calls = _route_seconds(monkeypatch, lambda _c, x: None if x == 300 else 6.0)
@@ -720,9 +729,10 @@ async def test_a_wisp_behind_a_wall_loses_to_a_farther_one_with_a_shorter_route(
 
 
 async def test_timeout_stops_collection():
-    """Health never rises and wisps keep appearing → the timeout ends the loop."""
+    """Health never rises and wisps keep coming, each gone before a full check could see it →
+    the timeout ends the loop."""
     client = _client(health=0.1)
-    client.get_health_wisps.side_effect = lambda _visited: [_entity(100)]
+    client.get_health_wisps.side_effect = lambda _visited=None: [_entity(100)]
 
     params = {**_DEFAULT_PARAMS, "timeout": 0.05, "fail_if_health_below": 0.0}
     result = await cw.run(FakeMachine(), [client], params)
@@ -888,3 +898,218 @@ async def test_a_wisp_goal_asks_the_client_for_its_list_no_oftener_than_wisp_lis
         assert await goal() is not None
 
     lead.get_health_wisps.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Full by the game's word, and a timeout that waits for progress (Stage 6 of #340)
+# ---------------------------------------------------------------------------
+
+
+def _staying(client: FakeClient, *wisps) -> None:
+    """*wisps* stay in *client*'s list for good; a scan leaves out those it was told were visited."""
+    client.get_health_wisps.side_effect = lambda visited=frozenset(): [
+        w for w in wisps if w.global_id_full.return_value not in visited
+    ]
+
+
+def _clock(monkeypatch) -> list[float]:
+    """A clock for collect_wisps alone, which only the test moves: ``clock[0]`` is now."""
+    clock = [0.0]
+    monkeypatch.setattr(cw, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+    return clock
+
+
+async def test_a_player_whose_ratio_never_rises_beside_a_wisp_that_stays_is_full_after_one():
+    """The misread max: health reads 0.3, under the 0.5 fail threshold, and no wisp raises it."""
+    client = _client(health=0.3)
+    near, far = _entity(300), _entity(900)
+    _staying(client, near, far)
+    machine = FakeMachine()
+
+    result = await cw.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _walk_targets(client) == [(300, 0, 0)] * 2  # there, and up to it once; never the far one
+    assert any(
+        "P1 is full of health by the game's word" in m and "stayed 0.30" in m and level == logging.DEBUG
+        for m, level in machine.logs
+    )
+    assert any(
+        "P1's health reads 0.30, under the fail threshold 0.5" in m and "counted full" in m and level == logging.INFO
+        for m, level in machine.logs
+    )
+
+
+async def test_a_player_full_of_health_still_walks_for_mana():
+    client = _client(health=0.3, mana=0.6)
+    _staying(client, _entity(300))
+    mana_wisp = _entity(-500)
+    client.get_mana_wisps.side_effect = lambda visited=frozenset(): [
+        w for w in (mana_wisp,) if w.global_id_full.return_value not in visited
+    ]
+
+    async def _mana_only(goal):
+        if goal.x < 0:
+            client.calc_mana_ratio.return_value = 1.0
+
+    client.walk_to.side_effect = _mana_only
+
+    result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _walk_targets(client) == [(300, 0, 0), (300, 0, 0), (-500, 0, 0)]
+
+
+async def test_a_player_that_missed_a_wisp_someone_else_took_is_not_full_and_goes_on():
+    """Another player took it: it reads as it did, but once the linger is over the client lists
+    it no more."""
+    client = _client(health=0.3)
+    taken, other = _entity(300), _entity(900)
+    listed = [taken, other]
+    client.get_health_wisps.side_effect = lambda visited=frozenset(): [
+        w for w in listed if w.global_id_full.return_value not in visited
+    ]
+
+    async def _walk(goal):
+        if goal.x == 300 and len(_walk_targets(client)) == 2:  # the close-in: someone else takes it
+            listed.remove(taken)
+        if goal.x == 900:
+            client.calc_health_ratio.return_value = 0.9
+
+    client.walk_to.side_effect = _walk
+    machine = FakeMachine()
+
+    result = await cw.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _walk_targets(client) == [(300, 0, 0), (300, 0, 0), (900, 0, 0)]
+    assert not any("full of health" in m for m, _ in machine.logs)
+
+
+async def test_the_wisp_list_is_read_for_a_verdict_only_once_the_linger_is_over(monkeypatch):
+    """A taken wisp stays listed 1.3 to 1.8 s, so a read any sooner would see one another took."""
+    monkeypatch.setattr(cw, "WISP_LINGER", 0.05)
+    client = _client(health=0.3)
+    walked, listed_at = [], []
+
+    async def _walk(_goal):
+        walked.append(time.monotonic())
+
+    def _list(visited=None):
+        if visited is None:
+            listed_at.append(time.monotonic())
+        return [wisp]
+
+    wisp = _entity(300)
+    client.walk_to.side_effect = _walk
+    client.get_health_wisps.side_effect = _list
+
+    await cw.collect_as_group(FakeMachine(), [client], 1.0, 0.0, None, True)
+
+    assert len(walked) == 2 and listed_at
+    assert listed_at[-1] - walked[-1] >= 0.05
+
+
+async def test_nobody_is_full_when_anyone_who_walked_rose_during_the_linger():
+    late_riser, still = _client(health=0.6), _client(health=0.6)
+    _staying(late_riser, _entity(300))
+    walks = []
+
+    async def _walk(_goal):
+        walks.append(1)
+        if len(walks) == 4:  # both closed in; the game's answer comes late for one of them
+            late_riser.calc_health_ratio.return_value = 1.0
+
+    late_riser.walk_to.side_effect = still.walk_to.side_effect = _walk
+
+    full = await cw.collect_as_group(FakeMachine(), [late_riser, still], 1.0, 0.0, None, True)
+
+    assert full.of(cw.HEALTH, (1.0, 0.6)) == set()
+
+
+async def test_a_rise_after_the_verdict_withdraws_it():
+    """Full of health at 0.3; then health rises to 0.4 on a mana walk, so the game did give it
+    something: no longer full, and under the fail threshold, it fails the node."""
+    client = _client(health=0.3, mana=0.6)
+    _staying(client, _entity(300))
+    mana_wisp = _entity(-500)
+    client.get_mana_wisps.side_effect = lambda visited=frozenset(): [
+        w for w in (mana_wisp,) if w.global_id_full.return_value not in visited
+    ]
+
+    async def _walk(goal):
+        if goal.x < 0:
+            client.calc_mana_ratio.return_value = 1.0
+            client.calc_health_ratio.return_value = 0.4  # a health wisp drifted by
+
+    client.walk_to.side_effect = _walk
+    machine = FakeMachine()
+
+    result = await cw.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert any("P1's health rose to 0.40: not full after all" in m for m, _ in machine.logs)
+
+
+def test_full_is_withdrawn_by_a_rise_and_reads_as_full_until_then():
+    full = cw._Full()
+    full.add(cw.HEALTH, 1, 0.3)
+
+    assert full.of(cw.HEALTH, (0.2, 0.3)) == {1}
+    assert full.of(cw.MANA, (0.2, 0.3)) == set()
+    assert full.as_read(cw.HEALTH, (0.2, 0.3)) == (0.2, 1.0)
+
+    machine = FakeMachine()
+    full.withdraw_risen(machine, {cw.HEALTH: (0.2, 0.35), cw.MANA: (1.0, 1.0)})
+
+    assert full.of(cw.HEALTH, (0.2, 0.3)) == set()
+
+
+async def test_a_15s_hop_that_raises_a_ratio_with_timeout_10_is_followed_by_the_next(monkeypatch):
+    clock = _clock(monkeypatch)
+    client = _client(health=0.3)
+    _staying(client, _entity(300), _entity(900))
+
+    async def _slow(_goal):
+        clock[0] += 15.0
+        client.calc_health_ratio.return_value += 0.3
+
+    client.walk_to.side_effect = _slow
+
+    await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 10.0})
+
+    assert _walk_targets(client) == [(300, 0, 0), (900, 0, 0)]
+
+
+async def test_hops_that_raise_nothing_end_the_node_10s_after_the_last_that_did(monkeypatch):
+    """One hop raises, then three raise nothing, each wisp gone by the time the walk ends: the
+    clock counts from the hop that raised, so a fourth would start 12 s after it, and does not."""
+    clock = _clock(monkeypatch)
+    client = _client(health=0.3)
+
+    def _gone_after_its_walk(x):
+        wisp = _entity(x)
+        wisp.location.side_effect = [XYZ(x, 0, 0), XYZ(x, 0, 0), RuntimeError("freed")]
+        return wisp
+
+    client.get_health_wisps.side_effect = [[_gone_after_its_walk(100 * n)] for n in range(1, 10)]
+
+    async def _walk(goal):
+        clock[0] += 4.0
+        if goal.x == 100:
+            client.calc_health_ratio.return_value = 0.6
+
+    client.walk_to.side_effect = _walk
+    machine = FakeMachine()
+
+    await cw.run(machine, [client], {**_DEFAULT_PARAMS, "timeout": 10.0})
+
+    assert _walk_targets(client) == [(100, 0, 0), (200, 0, 0), (300, 0, 0), (400, 0, 0)]
+    assert any("no wisp has helped anyone for 10.0s" in m for m, _ in machine.logs)
+
+
+def test_the_timeout_says_it_waits_for_progress():
+    (timeout,) = [p for p in cw.PARAM_SCHEMA if p.key == "timeout"]
+
+    assert timeout.help == "The longest to go without a wisp helping anyone. 0 means no limit."
+    assert timeout.default == 10.0

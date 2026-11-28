@@ -9,6 +9,7 @@ from bartleby.runtime.timing import (
     POLL_INTERVAL,
     WISP_COLLECT_DELAY,
     WISP_COLLECT_TIMEOUT,
+    WISP_LINGER,
     WISP_LISTED_EVERY,
     WISP_TAKE_WAIT,
     jitter,
@@ -47,7 +48,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="timeout",
         type="float",
         label="Timeout (s)",
-        help="The longest to spend collecting. 0 means no limit.",
+        help="The longest to go without a wisp helping anyone. 0 means no limit.",
         default=WISP_COLLECT_TIMEOUT,
         default_hint=seconds(WISP_COLLECT_TIMEOUT),
     ),
@@ -88,14 +89,14 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Collects health and mana wisps after a fight, until every player meets its thresholds or "
-        "no wisps are left. Fails if a player is still below the fail thresholds, so you can "
-        "route to a potion node."
+        "Collects health and mana wisps after a fight, until every player meets its thresholds, "
+        "is full by the game's word, or no wisps are left. Fails if a player is still below the "
+        "fail thresholds, so you can route to a potion node."
     ),
     params=PARAM_SCHEMA,
     required_bot_options=[SAFETY_DELAY_OPTION, walking.AVOID_MOBS_OPTION],
     returns=[
-        ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds."),
+        ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds, or full by the game's word."),
         ReturnSpec(
             "FAILURE",
             "A player is still below a fail threshold.",
@@ -113,8 +114,9 @@ NODE_SPEC = NodeSpec(
         + (
             "Each wisp is chosen by how long the walk there takes, not by how near it looks, so a "
             "wisp behind a wall loses to one farther off with a shorter way around. A player short "
-            "of both goes first for the one it is nearer failing on. Near the timeout, a walk that "
-            "would run past it is made only for a player below a fail threshold."
+            "of both goes first for the one it is nearer failing on. The timeout counts from the "
+            "last time a wisp helped anyone, so a long walk that pays off is never cut short; a "
+            "walk that would run past it is made only for a player below a fail threshold."
         )
         + "\n\n"
         + (
@@ -122,6 +124,14 @@ NODE_SPEC = NodeSpec(
             "units short of it: a wizard picks a wisp up from farther off than that, and the wisp "
             "flies the rest of the way. If nobody who walked to it got it and it is still there, "
             "they walk right up to it once."
+        )
+        + "\n\n"
+        + (
+            "A player's maximum health sometimes reads higher than it is, so a player at full "
+            "health can look short. When a player walked right up to a wisp, got nothing, and the "
+            "wisp is still there a moment later, the game is saying that player is full of that "
+            "kind: it walks to no more of them, and doesn't fail the node on it. That costs one "
+            "wasted walk at most."
         )
         + "\n\n"
         + (
@@ -165,15 +175,19 @@ async def run(machine, clients: list, params: dict) -> str:
          walkers is below that kind's fail threshold. Each walk follows its wisp as it moves and
          ends within WISP_REACH of it, or once it is gone (_WispGoal); when nobody in the group
          got it and it is still there, those whose walks arrived walk right up to it once
-         (_walk_to_wisp). Stop when no wisp is left or the timeout expires.
+         (_walk_to_wisp). One that closed in, took nothing, and still sees the wisp listed
+         WISP_LINGER later is full of that kind by the game's word, for the rest of the node
+         unless its ratio rises. Stop when no wisp is left, or when the timeout has passed
+         since a hop last raised anyone's ratio.
       5. Re-check all ratios. Return FAILURE if any client's health is still below
-         fail_if_health_below or mana is still below fail_if_mana_below.
+         fail_if_health_below or mana is still below fail_if_mana_below, unless the game
+         said it is full of that kind (logged at INFO).
 
     A visited wisp is never picked again, so one that lingers in memory after collection,
     or a ratio reading that never rises, ends the loop instead of spinning on one spot.
 
     FAILURE: any client is still below a fail threshold after wisps are exhausted or the
-    timeout expires — e.g. a stale/bugged health ratio reading that never crosses the threshold.
+    timeout expires, and was never found full of that kind.
     """
     if_health_below: float = params.get("if_health_below", 1.0)
     if_mana_below: float = params.get("if_mana_below", 1.0)
@@ -191,7 +205,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"only_safe={only_safe}, scaled_to={scaled_to}, safety_delay={safety_delay}"
     )
 
-    await collect_as_group(
+    full = await collect_as_group(
         machine,
         clients,
         if_health_below,
@@ -207,8 +221,20 @@ async def run(machine, clients: list, params: dict) -> str:
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
 
-    health_failures = [i for i, h in enumerate(final_health) if h < fail_if_health_below]
-    mana_failures = [i for i, m in enumerate(final_mana) if m < fail_if_mana_below]
+    final = {HEALTH: final_health, MANA: final_mana}
+    for kind, below in ((HEALTH, fail_if_health_below), (MANA, fail_if_mana_below)):
+        for i in sorted(full.of(kind, final[kind])):
+            if final[kind][i] < below:
+                machine.log(
+                    f"collect_wisps: P{i + 1}'s {kind} reads {final[kind][i]:.2f}, under the fail threshold "
+                    f"{below}, but the game gave it no {kind} wisp: counted full"
+                )
+    health_failures = [
+        i for i, h in enumerate(final_health) if h < fail_if_health_below and i not in full.of(HEALTH, final_health)
+    ]
+    mana_failures = [
+        i for i, m in enumerate(final_mana) if m < fail_if_mana_below and i not in full.of(MANA, final_mana)
+    ]
 
     machine.log(
         f"Post-collection ratios — health: {[f'{h:.2f}' for h in final_health]}, "
@@ -252,9 +278,9 @@ async def collect_as_group(
     fail_if_health_below: float = 0.0,
     fail_if_mana_below: float = 0.0,
     safety_delay: float = 0.0,
-) -> None:
+) -> "_Full":
     """Walk the players who need a wisp from wisp to wisp until nobody needs one, none is left,
-    or time runs out.
+    or no wisp has helped anyone for `timeout_val` seconds, and return who the game said is full.
 
     The game gives a wisp to each wizard that reaches it together, and only to the first
     otherwise. Walking, the players no longer arrive at one moment, so only those below the
@@ -272,6 +298,12 @@ async def collect_as_group(
     before it and the seconds planned; the next hop's line, or the post-collection one, shows
     what it gave.
 
+    The timeout is a progress deadline: its clock restarts whenever a round's ratios show a rise
+    for anyone, so a slow hop that delivers is never cut short, and hops that deliver nothing
+    still end. A walker the game said is full of a kind (:func:`_walk_to_wisp`) counts as not
+    short of it, so it walks to no more of that kind, until its ratio of that kind rises, which
+    withdraws the verdict (:class:`_Full`).
+
     `scaled_to` is the Challenge Mode level the ratios are read against (scaled_ratios), or
     None for the plain ratios.
 
@@ -279,15 +311,25 @@ async def collect_as_group(
     appear: for each kind a player is below the fail threshold of, until one of that kind is in
     sight. Their defaults never wait, which is what a caller with no fail threshold wants.
     """
-    loop = asyncio.get_running_loop()
-    start = loop.time()
+    helped_at = time.monotonic()  # when a round last saw anyone's ratio rise, or the start
     visited: set[int] = set()
     fail_below = {HEALTH: fail_if_health_below, MANA: fail_if_mana_below}
+    full = _Full()
     hop = 0
     first = True
+    previous: dict[str, tuple] | None = None
 
     while True:
-        health, mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
+        read_health, read_mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
+        read = {HEALTH: read_health, MANA: read_mana}
+        if previous is not None and any(
+            now > before for kind in read for now, before in zip(read[kind], previous[kind])
+        ):
+            helped_at = time.monotonic()
+        previous = read
+        full.withdraw_risen(machine, read)
+        # A player full by the game's word is not short of that kind, whatever its ratio reads.
+        health, mana = (full.as_read(kind, read[kind]) for kind in (HEALTH, MANA))
         ratios = {HEALTH: health, MANA: mana}
         wanted = {
             kind
@@ -295,11 +337,11 @@ async def collect_as_group(
             if below > 0.0 and any(r < below for r in ratios[kind])
         }
         if not wanted:
-            return
-        elapsed = loop.time() - start
+            return full
+        elapsed = time.monotonic() - helped_at
         if timeout_val is not None and elapsed > timeout_val:
-            machine.log(f"collect_wisps: timed out after {timeout_val}s", logging.DEBUG)
-            return
+            machine.log(f"collect_wisps: no wisp has helped anyone for {timeout_val}s; stopping", logging.DEBUG)
+            return full
         left = None if timeout_val is None else timeout_val - elapsed
 
         needy_kinds = {k for k in wanted if 0.0 < fail_below[k] and any(r < fail_below[k] for r in ratios[k])}
@@ -319,7 +361,7 @@ async def collect_as_group(
         ]
         if not picks:
             machine.log("collect_wisps: no wanted wisp left to collect", logging.DEBUG)
-            return
+            return full
 
         going: list[_Pick] = []
         skipped = False
@@ -348,22 +390,59 @@ async def collect_as_group(
         if not going:
             if skipped:
                 continue
-            return
+            return full
 
         for pick in going:
             hop += 1
             planned = "by straight line" if pick.planned is None else f"planned {pick.planned:.1f}s"
             machine.log(
                 f"collect_wisps: hop {hop} to a {pick.kind} wisp ({pick.note}) for {_players(pick.walkers)}, "
-                f"{planned}; before — health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
+                f"{planned}; before — health: {[f'{h:.2f}' for h in read_health]}, "
+                f"mana: {[f'{m:.2f}' for m in read_mana]}",
                 logging.DEBUG,
             )
-        await asyncio.gather(*[_walk_to_wisp(machine, clients, pick, ratios[pick.kind], scaled_to) for pick in going])
+        verdicts = await asyncio.gather(
+            *[_walk_to_wisp(machine, clients, pick, read[pick.kind], scaled_to) for pick in going]
+        )
+        for pick, found in zip(going, verdicts):
+            for i, ratio in found.items():
+                full.add(pick.kind, i, ratio)
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
 
 HEALTH = "health"
 MANA = "mana"
+
+
+class _Full:
+    """The players the game said are full, by kind: each one's place in the node's clients, and
+    the ratio of that kind it read when the game said so. Its max health may read higher than it
+    is, so the ratio itself says nothing; a later rise in it does, and withdraws the verdict,
+    since the game gave that player something after all."""
+
+    def __init__(self) -> None:
+        self._at: dict[str, dict[int, float]] = {HEALTH: {}, MANA: {}}
+
+    def add(self, kind: str, i: int, ratio: float) -> None:
+        self._at[kind][i] = ratio
+
+    def of(self, kind: str, read) -> set[int]:
+        """Who is full of *kind*, given every client's ratio of it as read now."""
+        return {i for i, ratio in self._at[kind].items() if read[i] <= ratio}
+
+    def withdraw_risen(self, machine, read: dict[str, tuple]) -> None:
+        """Drop every verdict whose ratio has risen since."""
+        for kind, at in self._at.items():
+            for i in [i for i, ratio in at.items() if read[kind][i] > ratio]:
+                del at[i]
+                machine.log(
+                    f"collect_wisps: P{i + 1}'s {kind} rose to {read[kind][i]:.2f}: not full after all", logging.DEBUG
+                )
+
+    def as_read(self, kind: str, read) -> tuple:
+        """*read*, with each player full of *kind* reading as full."""
+        full = self.of(kind, read)
+        return tuple(1.0 if i in full else ratio for i, ratio in enumerate(read))
 
 
 @dataclass
@@ -546,31 +625,58 @@ async def _listed_ids(lead, kind: str) -> set[int]:
     return ids
 
 
-async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: int | None) -> None:
+async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: int | None) -> dict[int, float]:
     """Walk *pick*'s walkers to its wisp, following it as it moves, each ending within
-    :data:`WISP_REACH` of it or once it is gone. *before* is every client's ratio of the pick's
-    kind before the walk.
+    :data:`WISP_REACH` of it or once it is gone, and return the walkers the game said are full of
+    its kind: each one's place in the node's clients, with the ratio it read. *before* is every
+    client's ratio of the pick's kind before the walk.
 
     When nobody who walked had that ratio rise :data:`WISP_TAKE_WAIT` after, and the wisp is
     still there, those whose walks arrived walk on to it once, to the walker's own arrival
     distance: a smaller reach than the health wisps' (mana wisps were not measured), or a still
     wizard beside a wisp that barely moves, would otherwise be taken for the game's word that
-    the player is full. A rise for any of them means the wisp was taken, so nobody closes in."""
+    the player is full. A rise for any of them means the wisp was taken, so nobody closes in.
+
+    Those whose close-in arrived beside the wisp are full when, :data:`WISP_LINGER` later, nobody
+    in the group has had a rise and the client still lists the wisp: a wisp someone else took
+    stays listed for 1.3 to 1.8 s, so a read any sooner would call a player full who was only
+    too late."""
     goal = _WispGoal(clients[0], pick)
     walkers = [clients[i] for i in pick.walkers]
     numbers = [i + 1 for i in pick.walkers]
     walked = await walking.walk_clients(machine, walkers, goal, reach=WISP_REACH, numbers=numbers)
     await asyncio.sleep(WISP_TAKE_WAIT)
-    side = 0 if pick.kind == HEALTH else 1
-    now = [(await scaled_ratios.ratios(c, scaled_to))[side] for c in walkers]
-    if any(r > before[i] for i, r in zip(pick.walkers, now)):
-        return
-    closing = [(c, n) for c, n, w in zip(walkers, numbers, walked) if w.ok]
+    now = await _ratios_of(clients, pick, scaled_to)
+    if any(now[i] > before[i] for i in pick.walkers):
+        return {}
+    closing = [i for i, w in zip(pick.walkers, walked) if w.ok]
     if not closing or await goal() is None:
-        return
+        return {}
     machine.log(
-        f"collect_wisps: {', '.join(f'P{n}' for _c, n in closing)} came within {WISP_REACH:.0f} of the "
+        f"collect_wisps: {_players(closing)} came within {WISP_REACH:.0f} of the "
         f"{pick.kind} wisp and nobody took it: walking up to it",
         logging.DEBUG,
     )
-    await walking.walk_clients(machine, [c for c, _n in closing], goal, numbers=[n for _c, n in closing])
+    closed = await walking.walk_clients(machine, [clients[i] for i in closing], goal, numbers=[i + 1 for i in closing])
+    beside = [i for i, w in zip(closing, closed) if w.ok]
+    if not beside or goal.gone:
+        return {}
+    await asyncio.sleep(WISP_LINGER)
+    now = await _ratios_of(clients, pick, scaled_to)
+    if any(now[i] > before[i] for i in pick.walkers):
+        return {}
+    if await goal() is None or pick.wisp_id not in await _listed_ids(clients[0], pick.kind):
+        return {}
+    for i in beside:
+        machine.log(
+            f"collect_wisps: P{i + 1} is full of {pick.kind} by the game's word: it walked up to a "
+            f"{pick.kind} wisp that stayed, and its ratio stayed {now[i]:.2f}",
+            logging.DEBUG,
+        )
+    return {i: now[i] for i in beside}
+
+
+async def _ratios_of(clients: list, pick: _Pick, scaled_to: int | None) -> dict[int, float]:
+    """Each of *pick*'s walkers' ratio of its kind now, by the walker's place in *clients*."""
+    side = 0 if pick.kind == HEALTH else 1
+    return {i: (await scaled_ratios.ratios(clients[i], scaled_to))[side] for i in pick.walkers}
