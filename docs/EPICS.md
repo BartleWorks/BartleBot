@@ -553,7 +553,7 @@ a port or a walk in game before the user's go-ahead for that stage.
 | 3 | #342 | a long walk to one of ours becomes a port | landed |
 | 4 | #343 | how wisps move: a probe, in game | landed |
 | 5 | core #39 | walking to a moving wisp: the walk follows it and ends within reach, and closes in once when nobody took it | landed, core v0.15.6 |
-| 6 | #344 | full, by the game's word, and a timeout that waits for progress | |
+| 6 | #344 | full, by the game's word, and a timeout that waits for progress | landed, core v0.15.7 |
 
 Core's `docs/WALKING.md` is the feature as built: *Routes* for `seconds_to`, *Walking a route*
 for a plan too long and the plan kept, and *A bot run* for what BartleBot does with them. The
