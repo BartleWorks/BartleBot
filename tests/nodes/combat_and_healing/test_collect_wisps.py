@@ -787,7 +787,9 @@ def _reaches(monkeypatch, walk_double) -> list:
     return seen
 
 
-async def test_a_walk_goes_to_where_the_wisp_is_now_within_wisp_reach(monkeypatch, walk_double):
+async def test_a_walk_goes_right_up_to_where_the_wisp_is_now(monkeypatch, walk_double):
+    """To the wisp itself, at the walker's own arrival distance: a walk that stopped 300 short
+    of it often took nothing in game until a second walk closed the gap."""
     reaches = _reaches(monkeypatch, walk_double)
     client = _client(health=0.6)
     wisp = _entity(300)
@@ -798,10 +800,12 @@ async def test_a_walk_goes_to_where_the_wisp_is_now_within_wisp_reach(monkeypatc
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert _walk_targets(client) == [(650, 40, 0)]
-    assert reaches == [cw.WISP_REACH]
+    assert reaches == [None]  # no reach short of it: walk_clients' default, ARRIVED_WITHIN
 
 
-async def test_nobody_rising_and_the_wisp_still_there_walks_those_who_arrived_up_to_it_once(monkeypatch, walk_double):
+async def test_nobody_rising_and_the_wisp_still_there_walks_those_who_arrived_up_to_it_once_more(
+    monkeypatch, walk_double
+):
     from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
 
     reaches = _reaches(monkeypatch, walk_double)
@@ -813,9 +817,9 @@ async def test_nobody_rising_and_the_wisp_still_there_walks_those_who_arrived_up
     await cw.collect_as_group(machine, [arrived, blocked], 1.0, 0.0, None, True)
 
     assert _walk_targets(arrived) == [(300, 0, 0)] * 2
-    assert _walk_targets(blocked) == [(300, 0, 0)]  # its walk failed: it never came within reach
-    assert reaches == [cw.WISP_REACH, cw.WISP_REACH, None]  # the close-in at the walker's own
-    assert any("P1 came within 300" in m and "walking up to it" in m for m, _ in machine.logs)
+    assert _walk_targets(blocked) == [(300, 0, 0)]  # its walk failed: it never reached the wisp
+    assert reaches == [None, None, None]  # every walk, the close-in too, goes right up to the wisp
+    assert any("P1 walked to the health wisp" in m and "walking up to it once more" in m for m, _ in machine.logs)
 
 
 async def test_a_rise_for_anyone_who_walked_means_the_wisp_was_taken_and_nobody_closes_in():

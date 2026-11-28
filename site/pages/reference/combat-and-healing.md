@@ -42,7 +42,7 @@ Only the players below a threshold walk. Those short of health walk to a health 
 
 Each wisp is chosen by how long the walk there takes, not by how near it looks, so a wisp behind a wall loses to one farther off with a shorter way around. A player short of both goes first for the one it is nearer failing on. The timeout counts from the last time a wisp helped anyone, so a long walk that pays off is never cut short; a walk that would run past it is made only for a player below a fail threshold.
 
-Wisps drift, so a walk follows the wisp as it moves, and stops about 300 units short of it: a wizard picks a wisp up from farther off than that, and the wisp flies the rest of the way. If nobody who walked to it got it and it is still there, they walk right up to it once.
+Wisps drift, so a walk follows the wisp as it moves, right up to it, or as close as the way there allows. If nobody who walked to it got it and it is still there, they walk up to it once more.
 
 A player's maximum health sometimes reads higher than it is, so a player at full health can look short. When a player walked right up to a wisp, got nothing, and the wisp is still there a moment later, the game is saying that player is full of that kind: it walks to no more of them, and doesn't fail the node on it. That costs one wasted walk at most.
 
