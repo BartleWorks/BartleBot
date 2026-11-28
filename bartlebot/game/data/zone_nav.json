@@ -6886,7 +6886,7 @@
           "from": "Ahmarra/AH_Z05_EasternSea",
           "to": "Ahmarra/AH_Z10_DarkWaterTrench",
           "interact_xyz": {"x": 10846.79, "y": -9532.13, "z": -383.15},
-          "reset_xyz": {"x": 10978.34, "y": -9737.17, "z": -359.11},
+          "reset_xyz": {"x": 11045.7, "y": -10078.19, "z": -306.36},
           "verified": true,
           "source": "recorded"
         },
