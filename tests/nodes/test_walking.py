@@ -881,3 +881,46 @@ async def test_a_walk_of_some_players_is_labeled_with_their_player_numbers(monke
     await walking.walk_clients(machine, [party[1]], XYZ(0, 0, 0))
 
     assert numbers == [2]
+
+
+# --- a goal that moves (Stage 5 of #340) -------------------------------------------------------
+
+
+def _drifting(start, velocity):
+    """A goal at *start* moving at *velocity* (units a second, x and y) from now: a wisp's
+    position, read afresh each call. Its reads are counted."""
+    began = time.monotonic()
+    reads = []
+
+    async def goal():
+        t = time.monotonic() - began
+        reads.append(t)
+        return (start[0] + velocity[0] * t, start[1] + velocity[1] * t, start[2])
+
+    goal.reads = reads
+    return goal
+
+
+async def test_a_walk_to_a_goal_that_moves_follows_it_and_ends_within_reach(real_walks):
+    client = _client()
+    goal = _drifting((2400.0, 1000.0, 0.0), (0.0, 300.0))
+
+    [walked] = await walking.walk_clients(_machine(), [client], goal, reach=300.0)
+
+    assert walked.ok, walked.describe()
+    here, there = walked.result.position, walked.result.goal
+    assert there[1] > 1100  # where it read last, not where it began
+    assert ((here[0] - there[0]) ** 2 + (here[1] - there[1]) ** 2) ** 0.5 <= 300
+    assert len(goal.reads) > 5
+
+
+async def test_a_goal_gone_before_the_walk_is_arrived_with_nothing_walked(real_walks):
+    client = _client()
+
+    async def gone():
+        return None
+
+    [walked] = await walking.walk_clients(_machine(), [client], gone)
+
+    assert walked.ok and "gone" in walked.result.detail
+    assert client.inputs == []

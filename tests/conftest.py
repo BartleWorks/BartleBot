@@ -561,7 +561,12 @@ def walk_double(monkeypatch):
 
     from bartlebot.nodes import walking  # noqa: PLC0415
 
-    async def walk(machine, client, number, goal, avoid, approach=False, fight=False, spare=(), call=None):
+    async def walk(machine, client, number, goal, avoid, approach=False, fight=False, spare=(), call=None, reach=None):
+        if callable(goal):  # a goal that moves, as a wisp's: walked to where it reads now
+            goal = await goal()
+            if goal is None:
+                gone = WalkResult(WalkEnd.ARRIVED, "TestZone", None, None, detail="its goal was gone")
+                return walking.Walked(gone, into_exit=False, fight=fight)
         target = goal if isinstance(goal, XYZ) else XYZ(*walking.point(goal))
         ended = None
         if (walk_to := getattr(client, "walk_to", None)) is not None:

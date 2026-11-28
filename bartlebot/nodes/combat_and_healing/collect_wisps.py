@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 
 from bartleby.runtime.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
@@ -12,6 +13,17 @@ from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.help_text import seconds
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
+
+#: Units from a wisp within which a walk to it ends: 100 under the 401 to 418 from which a
+#: wizard took a health wisp (core's ``docs/WIZARD101.md``, *How wisps move*). Mana wisps were
+#: not measured, so a walker that ends here with no pickup closes in (:func:`_walk_to_wisp`).
+WISP_REACH = 300.0
+#: Seconds between the checks, while a walk follows a wisp, that the client still lists it: a
+#: freed entity can go on reading the numbers it had.
+WISP_LISTED_EVERY = 1.0
+#: Seconds a walker that ended within reach waits for a ratio to rise before closing in. The
+#: ratio rises as a wisp is taken, before it flies the rest of the way.
+WISP_TAKE_WAIT = 0.3
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -105,6 +117,13 @@ NODE_SPEC = NodeSpec(
         )
         + "\n\n"
         + (
+            f"Wisps drift, so a walk follows the wisp as it moves, and stops about {WISP_REACH:.0f} "
+            "units short of it: a wizard picks a wisp up from farther off than that, and the wisp "
+            "flies the rest of the way. If nobody who walked to it got it and it is still there, "
+            "they walk right up to it once."
+        )
+        + "\n\n"
+        + (
             "Place it right after a fight or a zone change. Wisps take a moment to appear, so when "
             "a player is below a fail threshold and no wisp of that kind is in sight, the node "
             "waits up to Safety Delay for one. If nobody is below a fail threshold, it doesn't wait."
@@ -142,8 +161,10 @@ async def run(machine, clients: list, params: dict) -> str:
          patrol is no danger (walking.passes_clear_of_patrols).
       4. Walk both groups at once; the rest stay still, keeping their ghost window. Near the
          timeout, a group whose planned walk runs past the time left goes only if one of its
-         walkers is below that kind's fail threshold. Stop when no wisp is left or the timeout
-         expires.
+         walkers is below that kind's fail threshold. Each walk follows its wisp as it moves and
+         ends within WISP_REACH of it, or once it is gone (_WispGoal); when nobody in the group
+         got it and it is still there, those whose walks arrived walk right up to it once
+         (_walk_to_wisp). Stop when no wisp is left or the timeout expires.
       5. Re-check all ratios. Return FAILURE if any client's health is still below
          fail_if_health_below or mana is still below fail_if_mana_below.
 
@@ -336,14 +357,7 @@ async def collect_as_group(
                 f"{planned}; before — health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
                 logging.DEBUG,
             )
-        await asyncio.gather(
-            *[
-                walking.walk_clients(
-                    machine, [clients[i] for i in pick.walkers], pick.location, numbers=[i + 1 for i in pick.walkers]
-                )
-                for pick in going
-            ]
-        )
+        await asyncio.gather(*[_walk_to_wisp(machine, clients, pick, ratios[pick.kind], scaled_to) for pick in going])
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
 
@@ -373,6 +387,7 @@ class _Seen:
 class _Pick:
     """The wisp one group walks to this round."""
 
+    wisp: object
     wisp_id: int
     location: XYZ
     kind: str
@@ -484,4 +499,77 @@ async def _pick_for(
         note = f"{len(candidates)} of {seen.total} {kind} wisps safe, nearest enemy {best.clearance:.0f}"
     else:
         note = f"{seen.total} {kind} wisps, safety check off"
-    return _Pick(await best.wisp.global_id_full(), best.location, kind, walkers, planned, note)
+    return _Pick(best.wisp, await best.wisp.global_id_full(), best.location, kind, walkers, planned, note)
+
+
+class _WispGoal:
+    """Where *pick*'s wisp is now, read afresh on every call, or None once it is gone: what a
+    walk to it follows (core's ``GoalRead``). Gone is an entity that no longer reads, or reads
+    as another one, or, checked every :data:`WISP_LISTED_EVERY`, one *lead*'s list of that kind
+    no longer holds, since a freed entity can go on reading the numbers it had. Once gone it
+    stays gone. Every walker of the group shares one."""
+
+    def __init__(self, lead, pick: _Pick) -> None:
+        self.lead = lead
+        self.pick = pick
+        self.gone = False
+        self._listed_at = time.monotonic()  # the scan that picked it had it listed
+
+    async def __call__(self):
+        if self.gone:
+            return None
+        wisp = self.pick.wisp
+        try:
+            same = await wisp.global_id_full() == self.pick.wisp_id
+            at = await wisp.location()
+        except Exception:  # noqa: BLE001 - freed: taken, or despawned
+            same = False
+        if same and time.monotonic() - self._listed_at >= WISP_LISTED_EVERY:
+            self._listed_at = time.monotonic()
+            same = self.pick.wisp_id in await _listed_ids(self.lead, self.pick.kind)
+        if not same:
+            self.gone = True
+            return None
+        return (float(at.x), float(at.y), float(at.z))
+
+
+async def _listed_ids(lead, kind: str) -> set[int]:
+    """The ids of every wisp of *kind* *lead*'s client lists."""
+    listed = await (lead.get_health_wisps() if kind == HEALTH else lead.get_mana_wisps())
+    ids = set()
+    for wisp in listed:
+        try:
+            ids.add(await wisp.global_id_full())
+        except Exception:  # noqa: BLE001, S112 - freed while listed
+            continue
+    return ids
+
+
+async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: int | None) -> None:
+    """Walk *pick*'s walkers to its wisp, following it as it moves, each ending within
+    :data:`WISP_REACH` of it or once it is gone. *before* is every client's ratio of the pick's
+    kind before the walk.
+
+    When nobody who walked had that ratio rise :data:`WISP_TAKE_WAIT` after, and the wisp is
+    still there, those whose walks arrived walk on to it once, to the walker's own arrival
+    distance: a smaller reach than the health wisps' (mana wisps were not measured), or a still
+    wizard beside a wisp that barely moves, would otherwise be taken for the game's word that
+    the player is full. A rise for any of them means the wisp was taken, so nobody closes in."""
+    goal = _WispGoal(clients[0], pick)
+    walkers = [clients[i] for i in pick.walkers]
+    numbers = [i + 1 for i in pick.walkers]
+    walked = await walking.walk_clients(machine, walkers, goal, reach=WISP_REACH, numbers=numbers)
+    await asyncio.sleep(WISP_TAKE_WAIT)
+    side = 0 if pick.kind == HEALTH else 1
+    now = [(await scaled_ratios.ratios(c, scaled_to))[side] for c in walkers]
+    if any(r > before[i] for i, r in zip(pick.walkers, now)):
+        return
+    closing = [(c, n) for c, n, w in zip(walkers, numbers, walked) if w.ok]
+    if not closing or await goal() is None:
+        return
+    machine.log(
+        f"collect_wisps: {', '.join(f'P{n}' for _c, n in closing)} came within {WISP_REACH:.0f} of the "
+        f"{pick.kind} wisp and nobody took it: walking up to it",
+        logging.DEBUG,
+    )
+    await walking.walk_clients(machine, [c for c, _n in closing], goal, numbers=[n for _c, n in closing])

@@ -380,6 +380,23 @@ async def test_a_too_long_first_walk_is_walked_on_its_kept_plan(ports, monkeypat
     assert "walking the plan kept from the walk before" in caplog.text
 
 
+async def test_a_long_walk_to_a_moving_goal_asks_once_where_it_is_ports_and_walks_on_to_it(ports):
+    mover, anchor = _party((200.0, 1000.0, 0.0), GOAL)
+    machine = _run([mover, anchor])
+    reads = []
+
+    async def drifting():
+        reads.append(len(reads))
+        return (GOAL[0], GOAL[1] + 40.0 * len(reads), GOAL[2])  # a little further on each read
+
+    [walked] = await walking.walk_clients(machine, [mover], drifting, reach=300.0)
+
+    assert walked.ok, walked.describe()
+    assert ports.calls == [(mover, anchor)]
+    assert len(reads) >= 2  # once for the port question, then by the walks
+    _no_names(machine)
+
+
 async def test_a_target_still_walking_long_after_the_call_began_never_beats_one_that_has_arrived(_scaled):
     from tests.nodes.test_walking import _planner  # noqa: PLC0415
 
