@@ -565,28 +565,29 @@ After it, filed at close-out: reading cards without the deck page, equipment set
 Epic #340: a group moves by whichever is quicker, walking or porting to one of its own, and
 Collect Wisps spends its time on the player who needs a wisp most, by the seconds each wisp's
 route takes rather than its straight-line distance. Drafted from the Captain Nemo bot's runs
-of 2026-11-27 (#339).
-https://claude.ai/artifact/TZD7vHp168TRUbY8UTwrgy
+of 2026-11-27 (#339). https://claude.ai/artifact/TZD7vHp168TRUbY8UTwrgy
 
-**In progress. The page is kept current while the stages land.** Core's stages land in
-bartleby-core, and the BartleBot stage that uses each pins that release's tag. No stage runs
-a port or a walk in game before the user's go-ahead for that stage.
+**Complete: all six stages landed by 2026-11-28.**
 
-| stage | issue | what | status |
-|---|---|---|---|
-| 1 | core #38 | costing routes: a walk that stops before its first step when its plan is too long, the plan kept, and one search for several goals (1.1); room from walls where there is room (1.2) | landed, core v0.15.5 |
-| 2 | #341 | Collect Wisps by route time, neediest first | landed |
-| 3 | #342 | a long walk to one of ours becomes a port | landed |
-| 4 | #343 | how wisps move: a probe, in game | landed |
-| 5 | core #39 | walking to a moving wisp: the walk follows it and ends within reach, and closes in once when nobody took it | landed, core v0.15.6 |
-| 6 | #344 | full, by the game's word, and a timeout that waits for progress | landed, core v0.15.7 |
+| stage | issue | what |
+|---|---|---|
+| 1 | core #38 | costing routes: a walk that stops before its first step when its plan is too long, the plan kept, and one search for several goals (1.1); room from walls where there is room (1.2); core v0.15.5 |
+| 2 | #341 | Collect Wisps by route time, neediest first |
+| 3 | #342 | a long walk to one of ours becomes a port |
+| 4 | #343 | how wisps move: a probe, in game |
+| 5 | core #39 | walking to a moving wisp: the walk follows it, and closes in once when nobody took it; core v0.15.6 |
+| 6 | #344 | full, by the game's word, and a timeout that waits for progress; core v0.15.7 |
 
 Core's `docs/WALKING.md` is the feature as built: *Routes* for `seconds_to`, *Walking a route*
 for a plan too long and the plan kept, and *A bot run* for what BartleBot does with them. The
 game's rules it rests on are core's `docs/WIZARD101.md`, *Moving, and what the server allows*:
 a port within a zone, and the zones that refuse one.
 
-The rules every stage keeps:
+At close-out (2026-11-28), two values were set from runs in game: a walk to a wisp goes right
+up to it, since one that stopped 300 units short often took nothing, and `PORT_COST` is 5 s,
+from the run trace's port spans, where the user's estimate had been 3 s.
+
+The rules every stage kept:
 
 - **Old bots load and run unchanged**, and every bot file round-trips byte-identical. No param
   is added, renamed or removed; a saved timeout keeps working.

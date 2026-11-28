@@ -22,11 +22,6 @@ from bartlebot.nodes.help_text import seconds
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
-#: Units from a wisp within which a walk to it ends: 100 under the 401 to 418 from which a
-#: wizard took a health wisp (core's ``docs/WIZARD101.md``, *How wisps move*). Mana wisps were
-#: not measured, so a walker that ends here with no pickup closes in (:func:`_walk_to_wisp`).
-WISP_REACH = 300.0
-
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="if_health_below",
@@ -120,10 +115,9 @@ NODE_SPEC = NodeSpec(
         )
         + "\n\n"
         + (
-            f"Wisps drift, so a walk follows the wisp as it moves, and stops about {WISP_REACH:.0f} "
-            "units short of it: a wizard picks a wisp up from farther off than that, and the wisp "
-            "flies the rest of the way. If nobody who walked to it got it and it is still there, "
-            "they walk right up to it once."
+            "Wisps drift, so a walk follows the wisp as it moves, right up to it, or as close as "
+            "the way there allows. If nobody who walked to it got it and it is still there, they "
+            "walk up to it once more."
         )
         + "\n\n"
         + (
@@ -173,9 +167,9 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Walk both groups at once; the rest stay still, keeping their ghost window. Near the
          timeout, a group whose planned walk runs past the time left goes only if one of its
          walkers is below that kind's fail threshold. Each walk follows its wisp as it moves and
-         ends within WISP_REACH of it, or once it is gone (_WispGoal); when nobody in the group
-         got it and it is still there, those whose walks arrived walk right up to it once
-         (_walk_to_wisp). One that closed in, took nothing, and still sees the wisp listed
+         ends at it, at the walker's own arrival distance, or once it is gone (_WispGoal); when
+         nobody in the group got it and it is still there, those whose walks arrived walk up to
+         it once more (_walk_to_wisp). One that closed in, took nothing, and still sees the wisp listed
          WISP_LINGER later is full of that kind by the game's word, for the rest of the node
          unless its ratio rises. Stop when no wisp is left, or when the timeout has passed
          since a hop last raised anyone's ratio.
@@ -626,16 +620,21 @@ async def _listed_ids(lead, kind: str) -> set[int]:
 
 
 async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: int | None) -> dict[int, float]:
-    """Walk *pick*'s walkers to its wisp, following it as it moves, each ending within
-    :data:`WISP_REACH` of it or once it is gone, and return the walkers the game said are full of
-    its kind: each one's place in the node's clients, with the ratio it read. *before* is every
-    client's ratio of the pick's kind before the walk.
+    """Walk *pick*'s walkers to its wisp, following it as it moves, each ending at it, at the
+    walker's own arrival distance, or once it is gone, and return the walkers the game said are
+    full of its kind: each one's place in the node's clients, with the ratio it read. *before* is
+    every client's ratio of the pick's kind before the walk.
+
+    The walk goes to the wisp itself, never to a reach short of it: walks that stopped 300 off,
+    inside the 401 to 418 a still wizard took a health wisp from (core's ``docs/WIZARD101.md``,
+    *How wisps move*), often took nothing in game until a second walk closed the gap.
 
     When nobody who walked had that ratio rise :data:`WISP_TAKE_WAIT` after, and the wisp is
-    still there, those whose walks arrived walk on to it once, to the walker's own arrival
-    distance: a smaller reach than the health wisps' (mana wisps were not measured), or a still
-    wizard beside a wisp that barely moves, would otherwise be taken for the game's word that
-    the player is full. A rise for any of them means the wisp was taken, so nobody closes in.
+    still there, those whose walks arrived walk up to it once more: a walk to a moving goal may
+    end where its route does, up to the walker's ``REAIM`` from the wisp, the wisp drifts on
+    meanwhile, and a still wizard beside a wisp that barely moves would otherwise be taken for
+    the game's word that the player is full. A rise for any of them means the wisp was taken, so
+    nobody closes in.
 
     Those whose close-in arrived beside the wisp are full when, :data:`WISP_LINGER` later, nobody
     in the group has had a rise and the client still lists the wisp: a wisp someone else took
@@ -644,7 +643,7 @@ async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: 
     goal = _WispGoal(clients[0], pick)
     walkers = [clients[i] for i in pick.walkers]
     numbers = [i + 1 for i in pick.walkers]
-    walked = await walking.walk_clients(machine, walkers, goal, reach=WISP_REACH, numbers=numbers)
+    walked = await walking.walk_clients(machine, walkers, goal, numbers=numbers)
     await asyncio.sleep(WISP_TAKE_WAIT)
     now = await _ratios_of(clients, pick, scaled_to)
     if any(now[i] > before[i] for i in pick.walkers):
@@ -653,8 +652,8 @@ async def _walk_to_wisp(machine, clients: list, pick: _Pick, before, scaled_to: 
     if not closing or await goal() is None:
         return {}
     machine.log(
-        f"collect_wisps: {_players(closing)} came within {WISP_REACH:.0f} of the "
-        f"{pick.kind} wisp and nobody took it: walking up to it",
+        f"collect_wisps: {_players(closing)} walked to the {pick.kind} wisp and nobody took it: "
+        "walking up to it once more",
         logging.DEBUG,
     )
     closed = await walking.walk_clients(machine, [clients[i] for i in closing], goal, numbers=[i + 1 for i in closing])

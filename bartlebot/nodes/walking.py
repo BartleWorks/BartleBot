@@ -107,10 +107,11 @@ HOP_LANDED = ARRIVE_GOAL
 #: Units a second a wizard walks, at its own speed: the median core's walker measured in Unicorn Way.
 WALKING_PACE = 600.0
 
-#: Seconds a port to one of ours within a zone takes, from its first click to landing: the user's
-#: estimate (2026-11-27), to be set from the run trace's port spans once ports have run. A
-#: constant, not a setting: nobody can choose it better than a measurement.
-PORT_COST = 3.0
+#: Seconds a port to one of ours within a zone takes, from its first click to landing, as the user
+#: chose it from the run trace's port spans (2026-11-28): 11 group ports took 3.9 to 11.8 s, a
+#: median of 6.6; two ports within a zone, 3.9 and 5.1 s; and the friends-list clicks alone, 3.4
+#: to 3.9 s. A constant, not a setting: nobody can choose it better than a measurement.
+PORT_COST = 5.0
 
 #: Seconds a port, and the walk on from where it lands, must save over walking straight there.
 PORT_MARGIN = 2.0
@@ -654,8 +655,8 @@ def _wait_bound(planned: float) -> float:
     At most :data:`PORT_WAIT_LONGEST`: a mover is waited for only while it plans or walks a plan
     no longer than :data:`PORT_LONGEST`, so one that has not arrived by then has been held up on
     its way, and walking is the better bet. A wait that comes to nothing then costs at most those
-    5 s, never most of a long walk, as waiting until a port no longer saved :data:`PORT_MARGIN`
-    once did: 50 s before a 55 s walk (2026-11-27). Shorter still for a walk planned under 10 s: a
+    7 s, never most of a long walk, as waiting until a port no longer saved :data:`PORT_MARGIN`
+    once did: 50 s before a 55 s walk (2026-11-27). Shorter still for a walk planned under 14 s: a
     wait past *planned* less :data:`PORT_COST` and :data:`PORT_MARGIN` leaves no port worth taking."""
     return min(PORT_WAIT_LONGEST, planned - PORT_MARGIN - PORT_COST)
 

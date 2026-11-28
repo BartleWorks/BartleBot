@@ -145,12 +145,13 @@ async def test_a_walk_a_port_does_not_beat_by_the_margin_is_walked(ports):
 
 
 async def test_at_the_real_values_a_port_wins_only_by_the_margin():
-    # A player 400 units from the goal, at 600 a second: a port and the walk on take 3.7 s.
+    # A player 400 units from the goal, at 600 a second: a port and the walk on take 5.7 s.
     trip = walking._Target(object(), walking.PORT_COST + 400 / 600)
 
-    assert walking.PORT_LONGEST == walking.PORT_COST + walking.PORT_MARGIN == 5.0
+    assert walking.PORT_COST == 5.0  # the user's pick from the run trace's port spans (2026-11-28)
+    assert walking.PORT_LONGEST == walking.PORT_COST + walking.PORT_MARGIN == 7.0
     assert walking._quickest([trip], 12.0) is trip
-    assert walking._quickest([trip], 5.5) is None
+    assert walking._quickest([trip], 7.5) is None
     assert walking._quickest([], 12.0) is None
 
 
@@ -421,7 +422,7 @@ async def test_a_target_still_walking_long_after_it_began_never_beats_one_that_h
 @pytest.fixture
 def real_ports(monkeypatch):
     """``walking.port`` faked, at the real PORT_COST and PORT_MARGIN, with no walk at all: these
-    drive ``_port_or_walk`` itself, so a wait that runs to its bound costs the real 5 s."""
+    drive ``_port_or_walk`` itself, so a wait that runs to its bound costs the real 7 s."""
     return _Ports(monkeypatch)
 
 
@@ -532,8 +533,8 @@ async def test_movers_whose_plans_are_all_long_from_one_spot_walk_at_once_none_w
 
 
 def test_the_wait_bound_is_port_longest_at_most_and_never_past_what_a_port_could_save():
-    assert walking._wait_bound(55.2) == walking.PORT_WAIT_LONGEST == walking.PORT_LONGEST == 5.0
-    assert walking._wait_bound(6.0) == pytest.approx(1.0)
+    assert walking._wait_bound(55.2) == walking.PORT_WAIT_LONGEST == walking.PORT_LONGEST == 7.0
+    assert walking._wait_bound(8.0) == pytest.approx(1.0)
     assert walking._wait_bound(walking.PORT_LONGEST) == pytest.approx(0.0)
 
 
