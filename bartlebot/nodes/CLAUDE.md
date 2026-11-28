@@ -55,7 +55,7 @@ import of `wiz_navigator` anywhere else in `bartlebot/` (the free camera's own p
 exception).
 
 - **A port is `walk_clients`' choice, never a node's.** In a run with a port map, a walk planned
-  over `walking.PORT_LONGEST` (5 s) ports the mover to the player of ours whose `PORT_COST` plus
+  over `walking.PORT_LONGEST` (7 s) ports the mover to the player of ours whose `PORT_COST` plus
   walk on beats walking by `PORT_MARGIN`, through `port_map.port_waves` under the mover's
   movement lease, and walks the rest (core's `docs/WALKING.md`, *A bot run*). A node never ports
   to shorten its own walk, and never passes anything to ask for one: a walk into a fight or an

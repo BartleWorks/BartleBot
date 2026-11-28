@@ -142,12 +142,13 @@ async def test_a_walk_a_port_does_not_beat_by_the_margin_is_walked(ports):
 
 
 async def test_at_the_real_values_a_port_wins_only_by_the_margin():
-    # A player 400 units from the goal, at 600 a second: a port and the walk on take 3.7 s.
+    # A player 400 units from the goal, at 600 a second: a port and the walk on take 5.7 s.
     trip = walking._Target(object(), walking.PORT_COST + 400 / 600)
 
-    assert walking.PORT_LONGEST == walking.PORT_COST + walking.PORT_MARGIN == 5.0
+    assert walking.PORT_COST == 5.0  # the user's pick from the run trace's port spans (2026-11-28)
+    assert walking.PORT_LONGEST == walking.PORT_COST + walking.PORT_MARGIN == 7.0
     assert walking._quickest([trip], 12.0) is trip
-    assert walking._quickest([trip], 5.5) is None
+    assert walking._quickest([trip], 7.5) is None
     assert walking._quickest([], 12.0) is None
 
 
