@@ -552,7 +552,7 @@ a port or a walk in game before the user's go-ahead for that stage.
 | 2 | #341 | Collect Wisps by route time, neediest first | landed |
 | 3 | #342 | a long walk to one of ours becomes a port | landed |
 | 4 | #343 | how wisps move: a probe, in game | landed |
-| 5 | core #39 | walking to a moving wisp | |
+| 5 | core #39 | walking to a moving wisp: the walk follows it and ends within reach, and closes in once when nobody took it | landed, core v0.15.6 |
 | 6 | #344 | full, by the game's word, and a timeout that waits for progress | |
 
 Core's `docs/WALKING.md` is the feature as built: *Routes* for `seconds_to`, *Walking a route*
