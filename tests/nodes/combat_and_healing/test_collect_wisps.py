@@ -25,7 +25,12 @@ _ids = count(1)
 
 @pytest.fixture(autouse=True)
 def _no_delay():
-    with patch.object(cw, "WISP_COLLECT_DELAY", 0), patch.object(cw, "POLL_INTERVAL", 0.002):
+    with (
+        patch.object(cw, "WISP_COLLECT_DELAY", 0),
+        patch.object(cw, "POLL_INTERVAL", 0.002),
+        patch.object(cw, "WISP_TAKE_WAIT", 0),
+        patch.object(cw, "WISP_LISTED_EVERY", float("inf")),
+    ):
         yield
 
 
@@ -174,7 +179,8 @@ async def test_visited_wisp_is_excluded_from_the_next_scan():
     # The node keeps adding to one set, so every call shows its final contents.
     assert all(ids == {first_id, second_id} for ids in scanned_with)
     assert client.get_health_wisps.call_count == 3
-    assert _walk_targets(client) == [(100, 0, 0), (200, 0, 0)]
+    # Each walked up to once as well: the ratio never rose.
+    assert _walk_targets(client) == [(100, 0, 0), (100, 0, 0), (200, 0, 0), (200, 0, 0)]
 
 
 async def test_no_wisps_above_fail_threshold_succeeds():
@@ -380,7 +386,7 @@ async def test_mobs_are_rescanned_every_hop():
     params = {**_DEFAULT_PARAMS, "fail_if_health_below": 0.0}
     await cw.run(FakeMachine(), [client], params)
 
-    assert _walk_targets(client) == [(0, 0, 0)]
+    assert _walk_targets(client) == [(0, 0, 0)] * 2  # and up to it once: the ratio never rose
     assert client.get_mobs.call_count == 2
 
 
@@ -440,7 +446,9 @@ async def test_a_client_that_missed_a_wisp_goes_on_to_the_next():
     await cw.collect_as_group(FakeMachine(), [first, late], 1.0, 0.0, None, True)
 
     assert _walk_targets(first) == [(300, 0, 0)]
-    assert _walk_targets(late) == [(300, 0, 0), (900, 0, 0)]
+    # The first's rise says the near wisp was taken, so nobody walks up to it; the far one,
+    # which the late one's ratio never rises for either, it walks up to once.
+    assert _walk_targets(late) == [(300, 0, 0), (900, 0, 0), (900, 0, 0)]
 
 
 async def test_only_safe_skips_a_wisp_whose_walk_passes_inside_a_patrols_range(monkeypatch):
@@ -605,7 +613,7 @@ async def test_a_wisp_with_no_route_is_dropped_and_not_searched_for_again(monkey
 
     await cw.collect_as_group(machine, [client], 1.0, 0.0, None, True)
 
-    assert _walk_targets(client) == [(900, 0, 0)]
+    assert _walk_targets(client) == [(900, 0, 0)] * 2  # and up to it once: the ratio never rose
     assert [xs for _clients, xs in calls] == [[300, 900]]
     assert any("dropping a health wisp" in m and "no route there for P1" in m for m, _ in machine.logs)
 
@@ -659,7 +667,7 @@ async def test_a_walk_that_fits_the_time_left_is_made_for_anyone(monkeypatch):
 
     await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 10.0})
 
-    assert _walk_targets(client) == [(300, 0, 0)]
+    assert _walk_targets(client) == [(300, 0, 0)] * 2  # and up to it once: the ratio never rose
 
 
 async def test_the_wait_lasts_until_the_failing_players_kind_is_in_sight():
@@ -730,7 +738,7 @@ async def test_zero_timeout_does_not_limit_collection():
 
     await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 0.0})
 
-    client.walk_to.assert_called_once()
+    assert _walk_targets(client) == [(100, 0, 0)] * 2  # and up to it once: the ratio never rose
 
 
 async def test_challenge_mode_reads_the_fail_threshold_against_the_scaled_max():
@@ -748,3 +756,135 @@ async def test_challenge_mode_reads_the_fail_threshold_against_the_scaled_max():
     result = await cw.run(FakeMachine(bot_config=bot, options={"Challenge Mode": True}), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
+
+
+# ---------------------------------------------------------------------------
+# Following the wisp, and closing in (Stage 5 of #340)
+# ---------------------------------------------------------------------------
+
+
+def _reaches(monkeypatch, walk_double) -> list:
+    """Each walk's reach as walk_clients passed it, None for the default, on the suite's double."""
+    from bartlebot.nodes import walking  # noqa: PLC0415
+
+    seen = []
+
+    async def walk(machine, client, number, goal, avoid, *rest, reach=None, **kw):
+        seen.append(reach)
+        return await walk_double(machine, client, number, goal, avoid, *rest, reach=reach, **kw)
+
+    monkeypatch.setattr(walking, "walk_one", walk)
+    return seen
+
+
+async def test_a_walk_goes_to_where_the_wisp_is_now_within_wisp_reach(monkeypatch, walk_double):
+    reaches = _reaches(monkeypatch, walk_double)
+    client = _client(health=0.6)
+    wisp = _entity(300)
+    wisp.location.side_effect = [XYZ(300, 0, 0)] + [XYZ(650, 40, 0)] * 10  # drifted since the scan
+    _serve_once(client.get_health_wisps, [wisp])
+    _refill_on_walk(client, health=1.0)
+
+    await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert _walk_targets(client) == [(650, 40, 0)]
+    assert reaches == [cw.WISP_REACH]
+
+
+async def test_nobody_rising_and_the_wisp_still_there_walks_those_who_arrived_up_to_it_once(monkeypatch, walk_double):
+    from bartleby.runtime.movement.walk import WalkEnd  # noqa: PLC0415
+
+    reaches = _reaches(monkeypatch, walk_double)
+    arrived, blocked = _client(health=0.6), _client(health=0.6)
+    blocked.walk_to.return_value = WalkEnd.BLOCKED
+    _serve_once(arrived.get_health_wisps, [_entity(300)])
+    machine = FakeMachine()
+
+    await cw.collect_as_group(machine, [arrived, blocked], 1.0, 0.0, None, True)
+
+    assert _walk_targets(arrived) == [(300, 0, 0)] * 2
+    assert _walk_targets(blocked) == [(300, 0, 0)]  # its walk failed: it never came within reach
+    assert reaches == [cw.WISP_REACH, cw.WISP_REACH, None]  # the close-in at the walker's own
+    assert any("P1 came within 300" in m and "walking up to it" in m for m, _ in machine.logs)
+
+
+async def test_a_rise_for_anyone_who_walked_means_the_wisp_was_taken_and_nobody_closes_in():
+    taker, late = _client(health=0.6), _client(health=0.6)
+    _serve_once(taker.get_health_wisps, [_entity(300)])
+    _refill_on_walk(taker, health=1.0)
+
+    await cw.collect_as_group(FakeMachine(), [taker, late], 1.0, 0.0, None, True)
+
+    assert _walk_targets(taker) == _walk_targets(late) == [(300, 0, 0)]
+
+
+async def test_a_wisp_gone_after_the_walk_is_walked_up_to_by_nobody():
+    client = _client(health=0.6)
+    wisp = _entity(300)
+    wisp.location.side_effect = [XYZ(300, 0, 0), XYZ(300, 0, 0), RuntimeError("freed")]
+    _serve_once(client.get_health_wisps, [wisp])
+
+    await cw.collect_as_group(FakeMachine(), [client], 1.0, 0.0, None, True)
+
+    assert _walk_targets(client) == [(300, 0, 0)]
+
+
+def _pick(wisp, kind=cw.HEALTH, wisp_id=None) -> cw._Pick:
+    return cw._Pick(
+        wisp, wisp_id if wisp_id is not None else wisp.global_id_full.return_value, XYZ(0, 0, 0), kind, [0], None, ""
+    )
+
+
+async def test_a_wisp_goal_reads_where_the_wisp_is_now_each_call():
+    wisp = _entity(300)
+    goal = cw._WispGoal(_client(), _pick(wisp))
+
+    first = await goal()
+    wisp.location.return_value = XYZ(500, 20, 5)
+
+    assert first == (300.0, 0.0, 0.0)
+    assert await goal() == (500.0, 20.0, 5.0)
+
+
+async def test_a_wisp_goal_is_gone_once_the_entity_no_longer_reads_and_stays_gone():
+    wisp = _entity(300)
+    goal = cw._WispGoal(_client(), _pick(wisp))
+    wisp.location.side_effect = RuntimeError("freed")
+
+    assert await goal() is None
+    wisp.location.side_effect = None
+    assert await goal() is None
+
+
+async def test_a_wisp_goal_is_gone_once_its_memory_holds_another_entity():
+    wisp = _entity(300)
+    goal = cw._WispGoal(_client(), _pick(wisp))
+    wisp.global_id_full.return_value += 1000
+
+    assert await goal() is None
+
+
+async def test_a_wisp_goal_is_gone_once_the_client_no_longer_lists_it(monkeypatch):
+    monkeypatch.setattr(cw, "WISP_LISTED_EVERY", 0.0)
+    lead = _client()
+    health, mana = _entity(300), _entity(300)
+    lead.get_health_wisps.return_value = [health]
+    lead.get_mana_wisps.return_value = []
+    listed, unlisted = cw._WispGoal(lead, _pick(health)), cw._WispGoal(lead, _pick(mana, cw.MANA))
+
+    assert await listed() == (300.0, 0.0, 0.0)
+    assert await unlisted() is None  # a freed entity reading the numbers it had
+    lead.get_health_wisps.return_value = []
+    assert await listed() is None
+
+
+async def test_a_wisp_goal_asks_the_client_for_its_list_no_oftener_than_wisp_listed_every(monkeypatch):
+    monkeypatch.setattr(cw, "WISP_LISTED_EVERY", 60.0)
+    lead = _client()
+    wisp = _entity(300)
+    goal = cw._WispGoal(lead, _pick(wisp))
+
+    for _ in range(5):
+        assert await goal() is not None
+
+    lead.get_health_wisps.assert_not_called()

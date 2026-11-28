@@ -37,6 +37,7 @@ from bartleby.runtime.movement.route import WIZARD_SPEED
 from bartleby.runtime.movement.walk import (
     ARRIVE_GOAL,
     ClientRead,
+    GoalRead,
     Point,
     RouteWalker,
     WalkEnd,
@@ -316,13 +317,19 @@ async def _walk_one(
     fight: bool = False,
     spare: Sequence[int] = (),
     call: _Call | None = None,
+    reach: float = ARRIVE_GOAL,
 ) -> Walked:
     """One client's walk. With *call*, the :func:`walk_clients` call ports are on for, a walk not
     into a fight or an exit, in a zone that has not refused a port this run, first asks whether
-    a port would be quicker (:func:`_port_or_walk`), and the call is told how the walk ended."""
+    a port would be quicker (:func:`_port_or_walk`), and the call is told how the walk ended.
+
+    *goal* is a point, or a :data:`GoalRead` for one that moves (a wisp), which core's walker
+    reads every tick: it is read once here, for the zone's exits and the port question, and a
+    goal gone already is arrived with nothing walked. *reach* is how near the goal a walk has
+    arrived (core's ``RouteWalker.walk``)."""
     result: WalkResult | None = None
     try:
-        result, walked = await _walk_or_port(machine, client, number, goal, avoid, approach, fight, spare, call)
+        result, walked = await _walk_or_port(machine, client, number, goal, avoid, approach, fight, spare, call, reach)
         return walked
     finally:
         if call is not None:
@@ -330,9 +337,28 @@ async def _walk_one(
 
 
 async def _walk_or_port(  # noqa: PLR0913 - _walk_one's arguments, passed on
-    machine, client, number: int, goal, avoid: bool, approach: bool, fight: bool, spare, call: _Call | None
+    machine,
+    client,
+    number: int,
+    goal,
+    avoid: bool,
+    approach: bool,
+    fight: bool,
+    spare,
+    call: _Call | None,
+    reach: float = ARRIVE_GOAL,
 ) -> tuple[WalkResult, Walked]:
+    moving: GoalRead | None = goal if callable(goal) else None
+    if moving is not None:
+        now = await moving()
+        if now is None:
+            pos = await client.body.position()
+            here = (pos.x, pos.y, pos.z)
+            result = WalkResult(WalkEnd.ARRIVED, None, here, here, position=here, detail="its goal was gone")
+            return result, Walked(result)
+        goal = now
     goal = point(goal)
+    walk_to = moving or goal  # what the walker goes to: a moving goal read again every tick
     if await client.is_loading():
         # On its way somewhere already: a walk would start from where it was (#70).
         result = _not_walked(WalkEnd.ZONE_CHANGED, None, None, goal, "it was loading")
@@ -353,15 +379,15 @@ async def _walk_or_port(  # noqa: PLR0913 - _walk_one's arguments, passed on
         try:
             async with machine.arbiter.acquire(client, Owner.MOVEMENT, detail="walking") as lease:
                 if asks:
-                    result = await walker.walk(lease, goal, longest=PORT_LONGEST)
+                    result = await walker.walk(lease, walk_to, longest=PORT_LONGEST, reach=reach)
                     if result.end is WalkEnd.TOO_LONG:
                         call.long(client)
                         ported = await _port_or_walk(machine, call, client, number, zone, planner, goal, avoid, result)
                         # From where it landed, or on the plan kept from where it stands: the same
                         # walker, with no longest, so the walk after a port never ports again.
-                        result = await walker.walk(lease, goal)
+                        result = await walker.walk(lease, walk_to, reach=reach)
                 else:
-                    result = await walker.walk(lease, goal, fight=fight, spare=spare)
+                    result = await walker.walk(lease, walk_to, fight=fight, spare=spare, reach=reach)
                 if approach and (front := _in_front(result)) is not None:
                     # The point is inside the object the client lists, so it is closed: stand
                     # at its edge instead, where its prompt shows (Stage 4 of #322).
@@ -382,6 +408,7 @@ async def _walk_or_port(  # noqa: PLR0913 - _walk_one's arguments, passed on
             stalls=result.recoveries,
             detours=result.detours,
             replans=result.replans,
+            reaims=result.reaims,
             mob_reads=read.mob_reads,
             mob_read_s=round(read.mob_seconds, 3),
             mob_read_max=round(read.mob_longest, 3),
@@ -489,7 +516,8 @@ async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
     on to *goal* is a ``seconds_to`` search from it, at *speed*, the mover's own, unless its
     straight line there already misses *planned* by :data:`PORT_MARGIN`, which is never searched.
     A mover of the call still on its first walk is walking to *goal* too, so its trip is the wait
-    for it, at most what is left of :data:`PORT_LONGEST` since the call began. Those whose ids
+    for it, at most what is left of :data:`PORT_LONGEST` since the call began, and the walk on
+    from up to :data:`ARRIVED_WITHIN` short of the goal, where its walk stops. Those whose ids
     are in *skip* are left out.
     """
     party = [*call.clients, *(c for c in getattr(machine, "clients", None) or () if not call.has(c))]
@@ -498,7 +526,10 @@ async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
 
     async def one(target) -> _Target | None:
         if call.walking(target):
-            return _Target(target, max(0.0, PORT_LONGEST - (now - call.started)) + PORT_COST, waits=True)
+            # It stops up to ARRIVED_WITHIN short of the goal, so that walk on counts too: without
+            # it, one still walking once PORT_LONGEST had passed undercut one already arrived.
+            wait = max(0.0, PORT_LONGEST - (now - call.started))
+            return _Target(target, wait + PORT_COST + ARRIVED_WITHIN / speed, waits=True)
         if call.has(target) and not call.arrived(target):
             return None  # long, porting or failed: no anchor yet
         if not await _free_in(machine, target, zone):
@@ -626,8 +657,13 @@ async def walk_clients(
     fight: bool = False,
     spare: Sequence[int] = (),
     wait_for_preempt: bool = True,
+    reach: float = ARRIVE_GOAL,
 ) -> list[Walked]:
     """Walk every one of *clients* to *goal* at once, each from where it stands.
+
+    *goal* is a point, or a :data:`GoalRead` for a goal that moves, such as a wisp, which each
+    walk reads every tick and ends within *reach* of, or once it reads None (core's
+    ``RouteWalker.walk``). The port question reads it once.
 
     Returns a :class:`Walked` per client, in order. A failed walk is logged under the node
     with where it ended (the zone, both points, and the closed gate in the way when one is
@@ -668,6 +704,8 @@ async def walk_clients(
     port_map = getattr(machine, "port_map", None)
     # Passed only when ports are on, so a walk double without it walks as before.
     extra = {"call": _Call(port_map, clients, labels)} if port_map is not None else {}
+    if reach != ARRIVE_GOAL:
+        extra["reach"] = reach  # likewise, so a double that knows no reach walks as before
     walked = list(
         await asyncio.gather(
             *[walk_one(machine, c, n, goal, avoid, approach, fight, spare, **extra) for c, n in zip(clients, labels)]

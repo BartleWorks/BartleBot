@@ -42,6 +42,8 @@ Only the players below a threshold walk. Those short of health walk to a health 
 
 Each wisp is chosen by how long the walk there takes, not by how near it looks, so a wisp behind a wall loses to one farther off with a shorter way around. A player short of both goes first for the one it is nearer failing on. Near the timeout, a walk that would run past it is made only for a player below a fail threshold.
 
+Wisps drift, so a walk follows the wisp as it moves, and stops about 300 units short of it: a wizard picks a wisp up from farther off than that, and the wisp flies the rest of the way. If nobody who walked to it got it and it is still there, they walk right up to it once.
+
 Place it right after a fight or a zone change. Wisps take a moment to appear, so when a player is below a fail threshold and no wisp of that kind is in sight, the node waits up to Safety Delay for one. If nobody is below a fail threshold, it doesn't wait.
 
 With Challenge Mode on, a player outside the dungeon is measured against the lower maximum its next entry scales it to, as in Handle Potions.

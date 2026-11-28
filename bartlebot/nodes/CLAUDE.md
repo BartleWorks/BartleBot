@@ -101,6 +101,10 @@ exception).
 - **A pickup walks to `node_helpers.pickup_spot`**, never onto the entity blindly: from outside
   a zone exit that holds it (or not at all, past `PICKUP_REACH`), and from the far side of an
   entity named in Keep Away From, whose prompt would show instead (#35).
+- **A goal that moves is passed as a `GoalRead`**, a coroutine function reading where it is now,
+  or None once it is gone, never as a point read once: Collect Wisps' `_WispGoal` is the model.
+  The walk follows it and ends within `walk_clients(..., reach=…)` of it (core's
+  `docs/WALKING.md`, *Walking a route*). The port question reads it once.
 - **A walk arrives within `walking.ARRIVED_WITHIN` (50) of its goal, not on it.** A check of
   "is the client at the point" uses that margin, as Mark Location's does; one of a few units
   sends the client walking again every pass.
