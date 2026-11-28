@@ -141,6 +141,9 @@ def test_a_saved_edit_is_taken_up(map_file, mapped):
     assert ALLEY in zone_nav.load().worlds["Mock"].zones
 
 
+# A known flake (#349): the replace was refused once under -n auto (WinError 5, the file still
+# open), and passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 def test_the_file_is_watched_through_saves_that_replace_it(map_file, mapped):
     for zones in ((STREET, ALLEY), (STREET,), (ALLEY,)):
         scratch = map_file.with_suffix(".tmp")

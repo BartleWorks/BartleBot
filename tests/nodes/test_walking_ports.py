@@ -422,7 +422,7 @@ async def test_a_target_still_walking_long_after_it_began_never_beats_one_that_h
 @pytest.fixture
 def real_ports(monkeypatch):
     """``walking.port`` faked, at the real PORT_COST and PORT_MARGIN, with no walk at all: these
-    drive ``_port_or_walk`` itself, so a wait that runs to its bound costs the real 7 s."""
+    drive ``_port_or_walk`` itself, so a wait that runs to its bound costs the real 5 s."""
     return _Ports(monkeypatch)
 
 
@@ -532,8 +532,11 @@ async def test_movers_whose_plans_are_all_long_from_one_spot_walk_at_once_none_w
     assert max(took) < 1.0, took  # a wait slept through would last the bound, 2.2 s here
 
 
-def test_the_wait_bound_is_port_longest_at_most_and_never_past_what_a_port_could_save():
-    assert walking._wait_bound(55.2) == walking.PORT_WAIT_LONGEST == walking.PORT_LONGEST == 7.0
+def test_the_wait_bound_is_mover_wait_longest_at_most_and_never_past_what_a_port_could_save():
+    assert walking.MOVER_WAIT_LONGEST == 5.0  # the user's pick, after movers waited up to 18.5 s (2026-11-27)
+    assert walking.PORT_LONGEST == 7.0  # costing a port never moves the wait
+    assert walking._wait_bound(55.2) == walking.MOVER_WAIT_LONGEST
+    assert walking._wait_bound(12.0) == pytest.approx(5.0)
     assert walking._wait_bound(8.0) == pytest.approx(1.0)
     assert walking._wait_bound(walking.PORT_LONGEST) == pytest.approx(0.0)
 
@@ -542,7 +545,7 @@ def test_the_wait_bound_is_port_longest_at_most_and_never_past_what_a_port_could
 async def test_a_wait_that_comes_to_nothing_ends_at_the_bound_and_the_mover_walks(ports, peer_is, monkeypatch):
     # The bound is the ceiling under test, so it is compressed here alone, to 0.5 s. Waiting until
     # a port no longer saved the margin, as before, was 19.5 s of this 20 s walk.
-    monkeypatch.setattr(walking, "PORT_WAIT_LONGEST", 0.5)
+    monkeypatch.setattr(walking, "MOVER_WAIT_LONGEST", 0.5)
     mover, peer = _party((200.0, 1000.0, 0.0), (3000.0, 1000.0, 0.0))
     machine = _run([mover, peer])
     call = walking._Call(machine.port_map, [mover, peer], [1, 2])
