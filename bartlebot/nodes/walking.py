@@ -489,7 +489,8 @@ async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
     on to *goal* is a ``seconds_to`` search from it, at *speed*, the mover's own, unless its
     straight line there already misses *planned* by :data:`PORT_MARGIN`, which is never searched.
     A mover of the call still on its first walk is walking to *goal* too, so its trip is the wait
-    for it, at most what is left of :data:`PORT_LONGEST` since the call began. Those whose ids
+    for it, at most what is left of :data:`PORT_LONGEST` since the call began, and the walk on
+    from up to :data:`ARRIVED_WITHIN` short of the goal, where its walk stops. Those whose ids
     are in *skip* are left out.
     """
     party = [*call.clients, *(c for c in getattr(machine, "clients", None) or () if not call.has(c))]
@@ -498,7 +499,10 @@ async def _port_targets(  # noqa: PLR0913 - the walk's state, passed whole
 
     async def one(target) -> _Target | None:
         if call.walking(target):
-            return _Target(target, max(0.0, PORT_LONGEST - (now - call.started)) + PORT_COST, waits=True)
+            # It stops up to ARRIVED_WITHIN short of the goal, so that walk on counts too: without
+            # it, one still walking once PORT_LONGEST had passed undercut one already arrived.
+            wait = max(0.0, PORT_LONGEST - (now - call.started))
+            return _Target(target, wait + PORT_COST + ARRIVED_WITHIN / speed, waits=True)
         if call.has(target) and not call.arrived(target):
             return None  # long, porting or failed: no anchor yet
         if not await _free_in(machine, target, zone):
