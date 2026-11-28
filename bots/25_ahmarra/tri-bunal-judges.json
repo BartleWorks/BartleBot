@@ -149,14 +149,14 @@
         "from_zone": "Ahmarra/Interiors/AH_Z10I07_SkallofJudgement",
         "to_zone": "Ahmarra/AH_Z10_DarkWaterTrench",
         "xyz": {
-          "x": -758.83,
-          "y": 265.38,
-          "z": 82.74
+          "x": -1248.25,
+          "y": 547.31,
+          "z": 146.04
         },
         "reset_xyz": {
-          "x": 1620.61,
-          "y": -1109.98,
-          "z": -62.23
+          "x": -455.46,
+          "y": 90.45,
+          "z": 63.88
         },
         "stagger": false
       }
@@ -251,8 +251,48 @@
   "transitions": [
     {
       "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_1",
       "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -301,36 +341,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_7",
       "dest": "t_3",
       "when": "SUCCESS",
@@ -351,8 +361,8 @@
     },
     {
       "trigger": "advance",
-      "source": "t_3",
-      "dest": "state_3",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -361,18 +371,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "t_4",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -423,6 +423,8 @@
     "version": 1
   },
   "history": [
+    "f07e680f67a9fe7ee7ab81e573c3cc326ab2af55895b50f8af72fdd586e2579e",
+    "0cd0f6e67b26d292e6e5aba0cd13284ffd9aaaf5aa22636a383419a5a5cfd1a3",
     "7479fbfc4ff8233b0ba0d85af019577b4dd70ae506b270f3352a81171f45321e",
     "ec38485d53f8664f5deb9bff38dd2ebca01786d25cfcc28af51808113713c513"
   ]
